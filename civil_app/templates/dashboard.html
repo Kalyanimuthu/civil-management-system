@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+  <div>
+    <h2 class="text-2xl font-bold text-slate-800">🏗 Sites Dashboard</h2>
+    <p class="text-sm text-gray-500">Overview of site performance</p>
+  </div>
+
+  <!-- SEARCH -->
+  <input
+    id="siteSearch"
+    placeholder="🔍 Search site..."
+    class="border rounded-lg px-4 py-2 mt-3 sm:mt-0 focus:ring-2 focus:ring-orange-500"
+    onkeyup="filterSites()">
+</div>
+
+<!-- ================= SITE GRID ================= -->
+<div id="siteGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+{% for row in sites %}
+<div class="site-card bg-white rounded-2xl shadow hover:shadow-xl transition p-5 relative"
+     data-name="{{ row.site.name|lower }}">
+
+  <!-- STATUS -->
+  <span class="absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full
+    {% if row.status == 'Done' %}
+      bg-green-100 text-green-700
+    {% else %}
+      bg-red-100 text-red-700
+    {% endif %}">
+    {{ row.status }}
+  </span>
+
+  <!-- SITE NAME -->
+  <h3 class="text-xl font-bold text-slate-800 mb-3">
+    {{ row.site.name }}
+  </h3>
+
+  <!-- TOTALS -->
+  <div class="space-y-2 text-sm">
+
+    <div class="flex justify-between">
+      <span class="text-gray-500">Today</span>
+      <span class="font-semibold text-orange-600">₹{{ row.today_total }}</span>
+    </div>
+
+    <div class="flex justify-between">
+      <span class="text-gray-500">This Week</span>
+      <span class="font-semibold text-blue-600">₹{{ row.weekly_total }}</span>
+    </div>
+
+    <div class="flex justify-between">
+      <span class="text-gray-500">This Month</span>
+      <span class="font-semibold text-green-600">₹{{ row.month_total }}</span>
+    </div>
+
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="mt-5 flex justify-between items-center border-t pt-4">
+
+    <a href="/site/{{ row.site.id }}/"
+       class="text-orange-600 font-semibold hover:underline">
+      Open →
+    </a>
+
+    <a href="/delete-site/{{ row.site.id }}/"
+       onclick="return confirm('Delete this site?')"
+       class="text-red-600 text-sm hover:underline">
+      🗑 Delete
+    </a>
+
+  </div>
+</div>
+{% empty %}
+<p class="col-span-full text-center text-gray-500">
+  No sites available
+</p>
+{% endfor %}
+
+</div>
+
+<!-- ================= SEARCH SCRIPT ================= -->
+<script>
+function filterSites() {
+  let input = document.getElementById("siteSearch").value.toLowerCase();
+  let cards = document.querySelectorAll(".site-card");
+
+  cards.forEach(card => {
+    card.style.display =
+      card.dataset.name.includes(input) ? "block" : "none";
+  });
+}
+</script>
+
+{% endblock %}

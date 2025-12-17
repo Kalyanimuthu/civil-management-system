@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+
+  <!-- PAGE TITLE -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+      👷 Civil Teams
+    </h2>
+    <p class="text-sm text-gray-500">
+      Add, view and manage civil teams
+    </p>
+  </div>
+
+  <!-- ADD TEAM CARD -->
+  <div class="bg-white rounded-xl shadow p-5 mb-8">
+    <h3 class="font-semibold text-gray-700 mb-3">
+      ➕ Add New Team
+    </h3>
+
+    <form method="post" class="flex gap-3">
+      {% csrf_token %}
+      <input
+        name="name"
+        required
+        placeholder="Enter team name"
+        class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+
+      <button
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg font-semibold">
+        Add
+      </button>
+    </form>
+  </div>
+
+  <!-- TEAM LIST -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="px-5 py-3 border-b bg-gray-50">
+      <h3 class="font-semibold text-gray-700">
+        📋 Existing Teams
+      </h3>
+    </div>
+
+    {% if teams %}
+    <ul class="divide-y">
+      {% for t in teams %}
+      <li class="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition">
+        <span class="font-medium text-gray-800">
+          {{ t.name }}
+        </span>
+
+        <a
+          href="{% url 'delete_team' t.id %}"
+          onclick="return confirm('Delete {{ t.name }}?')"
+          class="text-red-600 hover:text-red-800 font-semibold flex items-center gap-1">
+          🗑 Delete
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <div class="p-6 text-center text-gray-500">
+        No teams added yet.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

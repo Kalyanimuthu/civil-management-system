@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+  <h2 class="text-2xl font-bold">
+    {{ site.name }} – Daily Entry
+  </h2>
+
+  <div class="flex gap-2 items-center">
+    <input type="date"
+           id="work_date"
+           value="{{ today|date:'Y-m-d' }}"
+           class="border rounded px-3 py-2">
+
+    <button onclick="goToEdit({{ site.id }})"
+            class="bg-blue-600 text-white px-4 py-2 rounded">
+      ✏ Edit
+    </button>
+
+    <!-- RESET DROPDOWN -->
+    <div class="relative">
+      <button onclick="toggleResetMenu({{ site.id }})"
+              class="bg-red-100 text-red-600 px-4 py-2 rounded font-semibold">
+        Reset ▾
+      </button>
+
+      <div id="resetMenu{{ site.id }}"
+           class="hidden absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
+
+        <a href="{% url 'reset_site_today' site.id %}"
+           onclick="return confirm('Reset today entries?')"
+           class="block px-4 py-2 hover:bg-gray-100">
+          🔄 Reset Today
+        </a>
+
+        <a href="{% url 'reset_site_month' site.id %}"
+           onclick="return confirm('Reset this month entries?')"
+           class="block px-4 py-2 hover:bg-gray-100">
+          📅 Reset Month
+        </a>
+
+        <div class="border-t"></div>
+
+        <a href="{% url 'reset_site_all' site.id %}"
+           onclick="return confirm('Delete ALL entries permanently?')"
+           class="block px-4 py-2 text-red-600 hover:bg-red-50 font-semibold">
+          🗑 Reset All
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
+
+<!-- ================= CIVIL TEAMS ================= -->
+<div class="bg-white rounded-xl shadow p-4 mb-8">
+  <h3 class="text-blue-700 font-bold mb-4">Civil – Teams</h3>
+
+  <div class="grid grid-cols-10 gap-2 text-xs font-semibold text-gray-600 mb-2">
+    <div>Team</div>
+    <div>M F</div>
+    <div>M H</div>
+    <div>H F</div>
+    <div>H H</div>
+    <div>Mason ₹</div>
+    <div>Helper ₹</div>
+    <div>Labour ₹</div>
+    <div>Material ₹</div>
+    <div>Total ₹</div>
+  </div>
+
+  {% for row in civil_rows %}
+    
+    <div class="grid grid-cols-10 gap-2 mb-3 items-center">
+
+      <div class="font-medium">{{ row.team.name }}</div>
+
+      <input name="mason_full_{{ row.team.id }}" value="0" type="number" min="0"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
+             class="border p-2 rounded">
+
+      <input name="mason_half_{{ row.team.id }}" value="0" type="number" min="0"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
+             class="border p-2 rounded">
+
+      <input name="helper_full_{{ row.team.id }}" value="0" type="number" min="0"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
+             class="border p-2 rounded">
+
+      <input name="helper_half_{{ row.team.id }}" value="0" type="number" min="0"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
+             class="border p-2 rounded">
+
+      <input value="{{ row.rate.mason_full_rate }}"
+             class="border p-2 bg-gray-100 text-center" readonly>
+
+      <input value="{{ row.rate.helper_full_rate }}"
+             class="border p-2 bg-gray-100 text-center" readonly>
+
+      <input id="civil_labour_{{ row.team.id }}"
+             value="0"
+             class="border p-2 bg-yellow-100 font-semibold" readonly>
+
+      <input name="material_{{ row.team.id }}" value="0" type="number" min="0"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
+             class="border p-2 rounded">
+
+      <input id="civil_total_{{ row.team.id }}"
+             value="0"
+             class="border p-2 bg-green-100 font-bold" readonly>
+
+    </div>
+    
+  {% endfor %}
+</div>
+
+<!-- ================= OTHER DEPARTMENTS ================= -->
+<div class="bg-white rounded-xl shadow p-4 mb-8">
+  <h3 class="text-orange-600 font-bold mb-4">Other Departments</h3>
+
+  <div class="grid grid-cols-7 gap-2 text-xs font-semibold text-gray-600 mb-2">
+    <div>Department</div>
+    <div>Full</div>
+    <div>Half</div>
+    <div>Rate ₹</div>
+    <div>Labour ₹</div>
+    <div>Material ₹</div>
+    <div>Total ₹</div>
+  </div>
+
+  {% for dept in other_depts %}
+    {% for rate in default_rates %}
+      {% if rate.department_id == dept.id %}
+      <div class="grid grid-cols-7 gap-2 mb-3 items-center">
+
+        <div class="font-medium">{{ dept.name }}</div>
+
+        <input name="dept_full_{{ dept.id }}" value="0" type="number" min="0"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
+               class="border p-2 rounded">
+
+        <input name="dept_half_{{ dept.id }}" value="0" type="number" min="0"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
+               class="border p-2 rounded">
+
+        <input value="{{ rate.full_day_rate }}"
+               class="border p-2 bg-gray-100 text-center" readonly>
+
+        <input id="dept_labour_{{ dept.id }}"
+               value="0"
+               class="border p-2 bg-yellow-100 font-semibold" readonly>
+
+        <input name="dept_material_{{ dept.id }}" value="0" type="number" min="0"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
+               class="border p-2 rounded">
+
+        <input id="dept_total_{{ dept.id }}"
+               value="0"
+               class="border p-2 bg-green-100 font-bold" readonly>
+
+      </div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+
+<!-- ================= SAVE ================= -->
+<button type="submit"
+        class="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-xl font-bold text-lg">
+  ✅ Save All Entries
+</button>
+
+</form>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+function calcCivil(id, masonRate, helperRate) {
+  let mf = +document.querySelector(`[name="mason_full_${id}"]`).value || 0;
+  let mh = +document.querySelector(`[name="mason_half_${id}"]`).value || 0;
+  let hf = +document.querySelector(`[name="helper_full_${id}"]`).value || 0;
+  let hh = +document.querySelector(`[name="helper_half_${id}"]`).value || 0;
+  let material = +document.querySelector(`[name="material_${id}"]`).value || 0;
+
+  let labour = (mf*masonRate)+(mh*(masonRate/2))+(hf*helperRate)+(hh*(helperRate/2));
+  let total = (labour > 0) ? labour + material : 0;
+
+  document.getElementById(`civil_labour_${id}`).value = labour;
+  document.getElementById(`civil_total_${id}`).value = total;
+}
+
+function calcDept(id, rate) {
+  let full = +document.querySelector(`[name="dept_full_${id}"]`).value || 0;
+  let half = +document.querySelector(`[name="dept_half_${id}"]`).value || 0;
+  let material = +document.querySelector(`[name="dept_material_${id}"]`).value || 0;
+
+  let labour = (full || half) ? (full*rate)+(half*(rate/2)) : 0;
+  let total = (labour > 0) ? labour + material : 0;
+
+  document.getElementById(`dept_labour_${id}`).value = labour;
+  document.getElementById(`dept_total_${id}`).value = total;
+}
+
+function toggleResetMenu(id) {
+  const menu = document.getElementById("resetMenu"+id);
+  document.querySelectorAll("[id^='resetMenu']").forEach(m => m.classList.add("hidden"));
+  menu.classList.toggle("hidden");
+}
+
+function goToEdit(siteId) {
+  const date = document.getElementById("work_date").value;
+  if (!date) return alert("Select date");
+  window.location.href = `/site/${siteId}/edit/?date=${date}`;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter") e.preventDefault();
+});
+</script>
+
+{% endblock %}
