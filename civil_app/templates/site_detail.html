@@ -3,7 +3,7 @@
 
 <!-- ================= HEADER ================= -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-  <h2 class="text-2xl font-bold">
+  <h2 class="text-2xl font-bold text-slate-800">
     {{ site.name }} – Daily Entry
   </h2>
 
@@ -11,37 +11,29 @@
     <input type="date"
            id="work_date"
            value="{{ today|date:'Y-m-d' }}"
-           class="border rounded px-3 py-2">
+           class="border rounded-lg px-3 py-2">
 
     <button onclick="goToEdit({{ site.id }})"
-            class="bg-blue-600 text-white px-4 py-2 rounded">
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">
       ✏ Edit
     </button>
 
-    <!-- RESET DROPDOWN -->
+    <!-- RESET -->
     <div class="relative">
       <button onclick="toggleResetMenu({{ site.id }})"
-              class="bg-red-100 text-red-600 px-4 py-2 rounded font-semibold">
+              class="bg-red-100 text-red-600 px-4 py-2 rounded-lg font-semibold">
         Reset ▾
       </button>
 
       <div id="resetMenu{{ site.id }}"
-           class="hidden absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
-
+           class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-xl shadow z-50">
         <a href="{% url 'reset_site_today' site.id %}"
            onclick="return confirm('Reset today entries?')"
-           class="block px-4 py-2 hover:bg-gray-100">
-          🔄 Reset Today
-        </a>
-
+           class="block px-4 py-2 hover:bg-gray-100">🔄 Reset Today</a>
         <a href="{% url 'reset_site_month' site.id %}"
            onclick="return confirm('Reset this month entries?')"
-           class="block px-4 py-2 hover:bg-gray-100">
-          📅 Reset Month
-        </a>
-
+           class="block px-4 py-2 hover:bg-gray-100">📅 Reset Month</a>
         <div class="border-t"></div>
-
         <a href="{% url 'reset_site_all' site.id %}"
            onclick="return confirm('Delete ALL entries permanently?')"
            class="block px-4 py-2 text-red-600 hover:bg-red-50 font-semibold">
@@ -56,15 +48,60 @@
 {% csrf_token %}
 <input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
 
-<!-- ================= CIVIL TEAMS ================= -->
-<div class="bg-white rounded-xl shadow p-4 mb-8">
-  <h3 class="text-blue-700 font-bold mb-4">Civil – Teams</h3>
+<!-- ================================================= -->
+<!-- ================= CIVIL TEAMS =================== -->
+<!-- ================================================= -->
 
+<h3 class="text-blue-700 font-bold mb-4">👷 Civil Teams</h3>
+
+<!-- ========== MOBILE VIEW (CARDS) ========== -->
+<div class="space-y-4 md:hidden">
+  {% for row in civil_rows %}
+  <div class="bg-white rounded-2xl shadow p-4">
+
+    <h4 class="font-semibold text-gray-800 mb-2">
+      {{ row.team.name }}
+    </h4>
+
+    <div class="grid grid-cols-2 gap-2 text-sm">
+      <input name="mason_full_{{ row.team.id }}" placeholder="Mason Full"
+             type="number" min="0" class="border p-3 rounded-lg"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+
+      <input name="mason_half_{{ row.team.id }}" placeholder="Mason Half"
+             type="number" min="0" class="border p-3 rounded-lg"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+
+      <input name="helper_full_{{ row.team.id }}" placeholder="Helper Full"
+             type="number" min="0" class="border p-3 rounded-lg"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+
+      <input name="helper_half_{{ row.team.id }}" placeholder="Helper Half"
+             type="number" min="0" class="border p-3 rounded-lg"
+             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+    </div>
+
+    <input name="material_{{ row.team.id }}" placeholder="Material ₹"
+           type="number" min="0"
+           class="border p-3 rounded-lg w-full mt-2"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+
+    <div class="flex justify-between mt-3 text-sm font-semibold">
+      <span>Labour ₹ <span id="civil_labour_{{ row.team.id }}">0</span></span>
+      <span>Total ₹ <span id="civil_total_{{ row.team.id }}">0</span></span>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ========== DESKTOP VIEW (GRID) ========== -->
+<div class="hidden md:block bg-white rounded-2xl shadow p-4 mb-8">
   <div class="grid grid-cols-10 gap-2 text-xs font-semibold text-gray-600 mb-2">
     <div>Team</div>
     <div>M F</div>
-    <div>M H</div>
     <div>H F</div>
+    <div>M H</div>
     <div>H H</div>
     <div>Mason ₹</div>
     <div>Helper ₹</div>
@@ -74,94 +111,81 @@
   </div>
 
   {% for row in civil_rows %}
-    
-    <div class="grid grid-cols-10 gap-2 mb-3 items-center">
+  <div class="grid grid-cols-10 gap-2 mb-3 items-center">
+    <div class="font-medium">{{ row.team.name }}</div>
 
-      <div class="font-medium">{{ row.team.name }}</div>
+    <input name="mason_full_{{ row.team.id }}" value="0" type="number"
+           class="border p-2 rounded"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <input name="mason_full_{{ row.team.id }}" value="0" type="number" min="0"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
-             class="border p-2 rounded">
+    <input name="helper_full_{{ row.team.id }}" value="0" type="number"
+           class="border p-2 rounded"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <input name="mason_half_{{ row.team.id }}" value="0" type="number" min="0"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
-             class="border p-2 rounded">
+    <input name="mason_half_{{ row.team.id }}" value="0" type="number"
+           class="border p-2 rounded"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <input name="helper_full_{{ row.team.id }}" value="0" type="number" min="0"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
-             class="border p-2 rounded">
+    <input name="helper_half_{{ row.team.id }}" value="0" type="number"
+           class="border p-2 rounded"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <input name="helper_half_{{ row.team.id }}" value="0" type="number" min="0"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
-             class="border p-2 rounded">
+    <input value="{{ row.rate.mason_full_rate }}" readonly
+           class="border p-2 bg-gray-100 text-center">
 
-      <input value="{{ row.rate.mason_full_rate }}"
-             class="border p-2 bg-gray-100 text-center" readonly>
+    <input value="{{ row.rate.helper_full_rate }}" readonly
+           class="border p-2 bg-gray-100 text-center">
 
-      <input value="{{ row.rate.helper_full_rate }}"
-             class="border p-2 bg-gray-100 text-center" readonly>
+    <input id="civil_labour_{{ row.team.id }}" value="0" readonly
+           class="border p-2 bg-yellow-100 font-semibold">
 
-      <input id="civil_labour_{{ row.team.id }}"
-             value="0"
-             class="border p-2 bg-yellow-100 font-semibold" readonly>
+    <input name="material_{{ row.team.id }}" value="0" type="number"
+           class="border p-2 rounded"
+           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <input name="material_{{ row.team.id }}" value="0" type="number" min="0"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})"
-             class="border p-2 rounded">
-
-      <input id="civil_total_{{ row.team.id }}"
-             value="0"
-             class="border p-2 bg-green-100 font-bold" readonly>
-
-    </div>
-    
+    <input id="civil_total_{{ row.team.id }}" value="0" readonly
+           class="border p-2 bg-green-100 font-bold">
+  </div>
   {% endfor %}
 </div>
 
-<!-- ================= OTHER DEPARTMENTS ================= -->
-<div class="bg-white rounded-xl shadow p-4 mb-8">
-  <h3 class="text-orange-600 font-bold mb-4">Other Departments</h3>
+<!-- ================================================= -->
+<!-- ================= OTHER DEPARTMENTS ============== -->
+<!-- ================================================= -->
 
-  <div class="grid grid-cols-7 gap-2 text-xs font-semibold text-gray-600 mb-2">
-    <div>Department</div>
-    <div>Full</div>
-    <div>Half</div>
-    <div>Rate ₹</div>
-    <div>Labour ₹</div>
-    <div>Material ₹</div>
-    <div>Total ₹</div>
-  </div>
+<h3 class="text-orange-600 font-bold mb-4">🏢 Other Departments</h3>
 
+<div class="bg-white rounded-2xl shadow p-4 mb-8">
   {% for dept in other_depts %}
     {% for rate in default_rates %}
       {% if rate.department_id == dept.id %}
-      <div class="grid grid-cols-7 gap-2 mb-3 items-center">
+      <div class="flex flex-col md:grid md:grid-cols-7 gap-2 mb-4">
 
         <div class="font-medium">{{ dept.name }}</div>
 
-        <input name="dept_full_{{ dept.id }}" value="0" type="number" min="0"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
-               class="border p-2 rounded">
+        <input name="dept_full_{{ dept.id }}" placeholder="Full"
+               type="number" min="0"
+               class="border p-3 rounded-lg"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
 
-        <input name="dept_half_{{ dept.id }}" value="0" type="number" min="0"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
-               class="border p-2 rounded">
+        <input name="dept_half_{{ dept.id }}" placeholder="Half"
+               type="number" min="0"
+               class="border p-3 rounded-lg"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
 
-        <input value="{{ rate.full_day_rate }}"
-               class="border p-2 bg-gray-100 text-center" readonly>
+        <input value="{{ rate.full_day_rate }}" readonly
+               class="border p-3 bg-gray-100 rounded-lg text-center">
 
-        <input id="dept_labour_{{ dept.id }}"
-               value="0"
-               class="border p-2 bg-yellow-100 font-semibold" readonly>
+        <input id="dept_labour_{{ dept.id }}" value="0" readonly
+               class="border p-3 bg-yellow-100 rounded-lg font-semibold">
 
-        <input name="dept_material_{{ dept.id }}" value="0" type="number" min="0"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})"
-               class="border p-2 rounded">
+        <input name="dept_material_{{ dept.id }}" placeholder="Material ₹"
+               type="number" min="0"
+               class="border p-3 rounded-lg"
+               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
 
-        <input id="dept_total_{{ dept.id }}"
-               value="0"
-               class="border p-2 bg-green-100 font-bold" readonly>
-
+        <input id="dept_total_{{ dept.id }}" value="0" readonly
+               class="border p-3 bg-green-100 rounded-lg font-bold">
       </div>
       {% endif %}
     {% endfor %}
@@ -175,6 +199,7 @@
 </button>
 
 </form>
+
 
 <!-- ================= JAVASCRIPT ================= -->
 <script>
