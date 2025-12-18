@@ -324,28 +324,35 @@ def default_payment(request):
     if request.method == "POST":
         pay_type = request.POST.get("pay_type")
 
+        # ================= DEPARTMENT PAYMENT =================
         if pay_type == "dept":
             department_id = request.POST.get("department")
             full = to_int(request.POST.get("full"))
 
-            DefaultRate.objects.update_or_create(
-                department_id=department_id,
-                defaults={
-                    "full_day_rate": full,
-                    "half_day_rate": full // 2
-                }
-            )
+            if department_id and full > 0:
+                DefaultRate.objects.update_or_create(
+                    department_id=department_id,
+                    defaults={
+                        "full_day_rate": full,   # ✅ ONLY THIS
+                    }
+                )
 
+        # ================= CIVIL TEAM PAYMENT =================
         if pay_type == "civil":
-            TeamRate.objects.update_or_create(
-                team_id=request.POST.get("team"),
-                defaults={
-                    "mason_full_rate": to_int(request.POST.get("mason")),
-                    "helper_full_rate": to_int(request.POST.get("helper")),
-                    "from_date": date.today(),
-                    "is_locked": False
-                }
-            )
+            team_id = request.POST.get("team")
+            mason = to_int(request.POST.get("mason"))
+            helper = to_int(request.POST.get("helper"))
+
+            if team_id and mason > 0 and helper > 0:
+                TeamRate.objects.update_or_create(
+                    team_id=team_id,
+                    defaults={
+                        "mason_full_rate": mason,
+                        "helper_full_rate": helper,
+                        "from_date": date.today(),
+                        "is_locked": False,
+                    }
+                )
 
         return redirect("default_payment")
 
@@ -353,7 +360,7 @@ def default_payment(request):
         "departments": Department.objects.exclude(name="Civil"),
         "rates": DefaultRate.objects.all(),
         "teams": Team.objects.all(),
-        "team_rates": TeamRate.objects.select_related("team")
+        "team_rates": TeamRate.objects.select_related("team").order_by("team__name"),
     })
 
 # =========================================================

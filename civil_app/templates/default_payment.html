@@ -1,131 +1,245 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- PAGE TITLE -->
-<div class="mb-6">
-  <h1 class="text-2xl font-bold flex items-center gap-2">
-    💰 Payment Settings
-  </h1>
-  
-</div>
+<div class="max-w-6xl mx-auto space-y-10">
 
+  <!-- ================= PAGE HEADER ================= -->
+  <div>
+    <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-2">
+      💰 Payment Settings
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Configure default labour payments for departments and civil teams
+    </p>
+  </div>
 
-<!-- ================= DEPARTMENT DEFAULT PAYMENT ================= -->
-<div class="bg-white rounded-xl shadow p-5 mb-10">
-  <h2 class="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2">
-    🏢 Department Default Payment
-  </h2>
+  <!-- ========================================================= -->
+  <!-- ================= DEPARTMENT PAYMENT ==================== -->
+  <!-- ========================================================= -->
+  <div class="bg-white rounded-2xl shadow-lg p-6">
 
-  <form method="post" class="grid md:grid-cols-3 gap-3 mb-6">
-    {% csrf_token %}
-    <input type="hidden" name="pay_type" value="dept">
+    <h2 class="text-xl font-bold text-orange-600 mb-4">
+      🏢 Department Default Payment
+    </h2>
 
-    <select name="department" class="border p-2 rounded">
-      {% for d in departments %}
-        <option value="{{ d.id }}">{{ d.name }}</option>
-      {% endfor %}
-    </select>
+    <!-- ADD / UPDATE FORM -->
+    <form method="post"
+          class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {% csrf_token %}
+      <input type="hidden" name="pay_type" value="dept">
 
-    <input type="number" name="full"
-           placeholder="Full day payment ₹"
-           class="border p-2 rounded">
+      <select name="department"
+              class="border p-3 rounded-lg">
+        {% for d in departments %}
+          <option value="{{ d.id }}">{{ d.name }}</option>
+        {% endfor %}
+      </select>
 
-    <button
-      class="bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold">
-      Save Payment
-    </button>
-  </form>
+      <input type="number"
+             name="full"
+             min="1"
+             required
+             placeholder="Full day ₹"
+             class="border p-3 rounded-lg">
 
-  <table class="w-full text-sm border rounded overflow-hidden">
-    <thead class="bg-gray-800 text-white">
-      <tr>
-        <th class="p-2 text-left">Department</th>
-        <th class="p-2">Full Day ₹</th>
-        <th class="p-2">Half Day ₹</th>
-      </tr>
-    </thead>
-    <tbody>
+      <button
+        class="bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-semibold">
+        Save Payment
+      </button>
+    </form>
+
+    <!-- MOBILE VIEW (CARDS) -->
+    <div class="space-y-3 md:hidden">
       {% for r in rates %}
-      <tr class="border-b hover:bg-gray-50">
-        <td class="p-2">{{ r.department.name }}</td>
-        <td class="p-2 text-center">{{ r.full_day_rate }}</td>
-        <td class="p-2 text-center">{{ r.half_day_rate }}</td>
-      </tr>
+      <div class="border rounded-xl p-4">
+        <p class="font-semibold text-gray-800">
+          {{ r.department.name }}
+        </p>
+        <p class="text-sm text-gray-500 mt-1">
+          Full: ₹{{ r.full_day_rate }} <br>
+          Half: ₹{{ r.half_day_rate }}
+        </p>
+      </div>
+      {% empty %}
+      <p class="text-gray-500 text-sm">No department payments added</p>
       {% endfor %}
-    </tbody>
-  </table>
-</div>
+    </div>
 
-<!-- ================= CIVIL TEAM DEFAULT PAYMENT ================= -->
-<div class="bg-white rounded-xl shadow p-5">
-  <h2 class="text-lg font-bold text-blue-700 mb-4 flex items-center gap-2">
-    👷 Civil Team Default Payment
-  </h2>
+    <!-- DESKTOP VIEW (TABLE) -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="w-full text-sm border rounded-lg overflow-hidden">
+        <thead class="bg-slate-800 text-white">
+          <tr>
+            <th class="p-3 text-left">Department</th>
+            <th class="p-3 text-center">Full Day ₹</th>
+            <th class="p-3 text-center">Half Day ₹</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for r in rates %}
+          <tr class="hover:bg-gray-50">
+            <td class="p-3 font-medium">{{ r.department.name }}</td>
+            <td class="p-3 text-center text-orange-600 font-semibold">
+              ₹{{ r.full_day_rate }}
+            </td>
+            <td class="p-3 text-center text-gray-700">
+              ₹{{ r.half_day_rate }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3"
+                class="p-4 text-center text-gray-500">
+              No department payments configured
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-  <form method="post" class="grid md:grid-cols-4 gap-3 mb-6">
-    {% csrf_token %}
-    <input type="hidden" name="pay_type" value="civil">
+  </div>
 
-    <select name="team" class="border p-2 rounded">
-      {% for t in teams %}
-        <option value="{{ t.id }}">{{ t.name }}</option>
+  <!-- ========================================================= -->
+  <!-- ================= CIVIL TEAM PAYMENT ==================== -->
+  <!-- ========================================================= -->
+  <div class="bg-white rounded-2xl shadow-lg p-6">
+
+    <h2 class="text-xl font-bold text-blue-700 mb-4">
+      👷 Civil Team Default Payment
+    </h2>
+
+    <!-- ADD TEAM PAYMENT -->
+    <form method="post"
+          class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      {% csrf_token %}
+      <input type="hidden" name="pay_type" value="civil">
+
+      <select name="team"
+              class="border p-3 rounded-lg">
+        {% for t in teams %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+
+      <input type="number"
+             name="mason"
+             min="1"
+             required
+             placeholder="Mason ₹"
+             class="border p-3 rounded-lg">
+
+      <input type="number"
+             name="helper"
+             min="1"
+             required
+             placeholder="Helper ₹"
+             class="border p-3 rounded-lg">
+
+      <button
+        class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold">
+        Save Team Payment
+      </button>
+    </form>
+
+    <!-- MOBILE VIEW (CARDS + INLINE EDIT) -->
+    <div class="space-y-4 md:hidden">
+      {% for r in team_rates %}
+      <div class="border rounded-xl p-4">
+        <p class="font-semibold text-gray-800">
+          {{ r.team.name }}
+        </p>
+
+        <p class="text-sm text-gray-500 mt-1">
+          Mason: ₹{{ r.mason_full_rate }} <br>
+          Helper: ₹{{ r.helper_full_rate }}
+        </p>
+
+        <form method="post" class="flex gap-2 mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="pay_type" value="civil">
+          <input type="hidden" name="team" value="{{ r.team.id }}">
+
+          <input type="number"
+                 name="mason"
+                 value="{{ r.mason_full_rate }}"
+                 class="border p-2 rounded-lg w-full">
+
+          <input type="number"
+                 name="helper"
+                 value="{{ r.helper_full_rate }}"
+                 class="border p-2 rounded-lg w-full">
+
+          <button
+            class="bg-green-600 text-white px-4 rounded-lg">
+            Update
+          </button>
+        </form>
+      </div>
+      {% empty %}
+      <p class="text-gray-500 text-sm">No team payments configured</p>
       {% endfor %}
-    </select>
+    </div>
 
-    <input type="number" name="mason"
-           placeholder="Mason full day ₹"
-           class="border p-2 rounded">
+    <!-- DESKTOP VIEW (TABLE) -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="w-full text-sm border rounded-lg overflow-hidden">
+        <thead class="bg-slate-800 text-white">
+          <tr>
+            <th class="p-3 text-left">Team</th>
+            <th class="p-3 text-center">Mason ₹</th>
+            <th class="p-3 text-center">Helper ₹</th>
+            <th class="p-3 text-center">Update</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for r in team_rates %}
+          <tr class="hover:bg-gray-50">
+            <td class="p-3 font-medium">{{ r.team.name }}</td>
+            <td class="p-3 text-center text-blue-600 font-semibold">
+              ₹{{ r.mason_full_rate }}
+            </td>
+            <td class="p-3 text-center text-gray-700">
+              ₹{{ r.helper_full_rate }}
+            </td>
+            <td class="p-3">
+              <form method="post"
+                    class="flex gap-2 justify-center">
+                {% csrf_token %}
+                <input type="hidden" name="pay_type" value="civil">
+                <input type="hidden" name="team" value="{{ r.team.id }}">
 
-    <input type="number" name="helper"
-           placeholder="Helper full day ₹"
-           class="border p-2 rounded">
+                <input type="number"
+                       name="mason"
+                       value="{{ r.mason_full_rate }}"
+                       class="border p-1 w-20 rounded-lg">
 
-    <button
-      class="bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold">
-      Save Team Payment
-    </button>
-  </form>
+                <input type="number"
+                       name="helper"
+                       value="{{ r.helper_full_rate }}"
+                       class="border p-1 w-20 rounded-lg">
 
-  <table class="w-full text-sm border rounded overflow-hidden">
-    <thead class="bg-gray-800 text-white">
-      <tr>
-        <th class="p-2 text-left">Team</th>
-        <th class="p-2">Mason ₹</th>
-        <th class="p-2">Helper ₹</th>
-        <th class="p-2">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-  {% for r in team_rates %}
-  <tr class="border-b hover:bg-gray-50">
-    <td class="p-2">{{ r.team.name }}</td>
-    <td class="p-2 text-center">₹ {{ r.mason_full_rate }}</td>
-    <td class="p-2 text-center">₹ {{ r.helper_full_rate }}</td>
+                <button
+                  class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+                  Update
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4"
+                class="p-4 text-center text-gray-500">
+              No team payments configured
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-    <td class="p-2 text-center">
-      <form method="post" class="flex gap-2 justify-center">
-        {% csrf_token %}
-        <input type="hidden" name="pay_type" value="civil">
-        <input type="hidden" name="team" value="{{ r.team.id }}">
+  </div>
 
-        <input type="number" name="mason"
-               value="{{ r.mason_full_rate }}"
-               class="border p-1 w-20 rounded">
-
-        <input type="number" name="helper"
-               value="{{ r.helper_full_rate }}"
-               class="border p-1 w-20 rounded">
-
-        <button class="bg-green-600 text-white px-3 rounded">
-          Update
-        </button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</tbody>
-
-  </table>
 </div>
 
 {% endblock %}
