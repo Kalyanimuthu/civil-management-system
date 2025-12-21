@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.contrib import messages
@@ -29,25 +29,20 @@ def get_team_rate(team, work_date):
     )
 
 
-def calculate_civil_labour(team, mf, mh, hf, hh, work_date):
+def calculate_civil_labour(team, mf, hf, mh, hh, work_date):
     rate = get_team_rate(team, work_date)
     if not rate:
         return 0
     return (
         mf * rate.mason_full_rate +
-        mh * (rate.mason_full_rate / 2) +
         hf * rate.helper_full_rate +
+        mh * (rate.mason_full_rate / 2) +
         hh * (rate.helper_full_rate / 2)
     )
 
 # =========================================================
 # DASHBOARD
 # =========================================================
-
-from datetime import date, timedelta
-from django.db.models import Sum
-from django.shortcuts import render
-from .models import Site, CivilDailyWork, DepartmentWork
 
 
 def dashboard(request):
@@ -162,7 +157,17 @@ def delete_site(request, id):
 
 def site_detail(request, site_id):
     site = get_object_or_404(Site, id=site_id)
-    work_date = date.today()
+    raw_date = request.POST.get("date") or request.GET.get("date")
+
+    if raw_date:
+        try:
+            work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+        except ValueError:
+            work_date = date.today()
+    else:
+        work_date = date.today()
+
+    
 
     teams = Team.objects.all()
     departments = Department.objects.exclude(name="Civil")
@@ -174,8 +179,8 @@ def site_detail(request, site_id):
         # ---- CIVIL ----
         for team in teams:
             mf = to_int(request.POST.get(f"mason_full_{team.id}"))
-            mh = to_int(request.POST.get(f"mason_half_{team.id}"))
             hf = to_int(request.POST.get(f"helper_full_{team.id}"))
+            mh = to_int(request.POST.get(f"mason_half_{team.id}"))
             hh = to_int(request.POST.get(f"helper_half_{team.id}"))
             material = to_int(request.POST.get(f"material_{team.id}"))
 
@@ -187,8 +192,8 @@ def site_detail(request, site_id):
                 date=work_date,
                 defaults={
                     "mason_full": mf,
-                    "mason_half": mh,
                     "helper_full": hf,
+                    "mason_half": mh,
                     "helper_half": hh,
                     "labour_amount": labour,
                     "material_amount": material,
@@ -226,11 +231,17 @@ def site_detail(request, site_id):
 
     civil_rows = []
     for team in teams:
+        rate = get_team_rate(team, work_date)
+
+        if not rate:
+            continue   # 🔥 IMPORTANT
+
         civil_rows.append({
             "team": team,
-            "rate": get_team_rate(team, work_date),
+            "rate": rate,
             "work": civil_map.get(team.id),
         })
+
 
     return render(request, "site_detail.html", {
         "site": site,
@@ -246,7 +257,16 @@ def site_detail(request, site_id):
 
 def site_edit(request, site_id):
     site = get_object_or_404(Site, id=site_id)
-    work_date = request.GET.get("date") or date.today()
+
+    raw_date = request.POST.get("date") or request.GET.get("date")
+
+    if raw_date:
+        try:
+            work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+        except ValueError:
+            work_date = date.today()
+    else:
+        work_date = date.today()
 
     teams = Team.objects.all()
     departments = Department.objects.exclude(name="Civil")
@@ -257,56 +277,42 @@ def site_edit(request, site_id):
     civil_map = {c.team_id: c for c in civil_qs}
     dept_map = {d.department_id: d for d in dept_qs}
 
+    # ---------- POST (SAVE) ----------
     if request.method == "POST":
-        work_date = request.POST.get("date")
 
         for team in teams:
             mf = to_int(request.POST.get(f"mason_full_{team.id}"))
-            mh = to_int(request.POST.get(f"mason_half_{team.id}"))
             hf = to_int(request.POST.get(f"helper_full_{team.id}"))
+            mh = to_int(request.POST.get(f"mason_half_{team.id}"))
+            
             hh = to_int(request.POST.get(f"helper_half_{team.id}"))
             material = to_int(request.POST.get(f"material_{team.id}"))
 
-            labour = calculate_civil_labour(team, mf, mh, hf, hh, work_date)
+            if mf or mh or hf or hh or material:
+                labour = calculate_civil_labour(team, mf, mh, hf, hh, work_date)
 
-            CivilDailyWork.objects.update_or_create(
-                site=site,
-                team=team,
-                date=work_date,
-                defaults={
-                    "mason_full": mf,
-                    "mason_half": mh,
-                    "helper_full": hf,
-                    "helper_half": hh,
-                    "labour_amount": labour,
-                    "material_amount": material,
-                }
-            )
-
-        for dept in departments:
-            full = to_int(request.POST.get(f"dept_full_{dept.id}"))
-            half = to_int(request.POST.get(f"dept_half_{dept.id}"))
-            material = to_int(request.POST.get(f"dept_material_{dept.id}"))
-
-            rate = DefaultRate.objects.get(department=dept)
-            labour = (full * rate.full_day_rate) + (half * rate.half_day_rate)
-
-            DepartmentWork.objects.update_or_create(
-                site=site,
-                department=dept,
-                date=work_date,
-                defaults={
-                    "full_day_count": full,
-                    "half_day_count": half,
-                    "full_day_rate": rate.full_day_rate,
-                    "half_day_rate": rate.half_day_rate,
-                    "labour_amount": labour,
-                    "material_amount": material,
-                }
-            )
+                CivilDailyWork.objects.update_or_create(
+                    site=site,
+                    team=team,
+                    date=work_date,
+                    defaults={
+                        "mason_full": mf,
+                        
+                        "helper_full": hf,
+                        "mason_half": mh,
+                        "helper_half": hh,
+                        "labour_amount": labour,
+                        "material_amount": material,
+                    }
+                )
+            else:
+                CivilDailyWork.objects.filter(
+                    site=site, team=team, date=work_date
+                ).delete()
 
         return redirect("site_detail", site_id=site.id)
 
+    # ---------- GET (DISPLAY) ----------
     return render(request, "site_edit.html", {
         "site": site,
         "date": work_date,
@@ -481,11 +487,13 @@ def reports(request):
     departments = Department.objects.all()  # ✅ include Civil
 
     civil_qs = CivilDailyWork.objects.filter(
-        date__range=[from_date, to_date]
+        date__range=[from_date, to_date],
+        labour_amount__gt=0
     ).select_related("site", "team")
 
     dept_qs = DepartmentWork.objects.filter(
-        date__range=[from_date, to_date]
+        date__range=[from_date, to_date],
+        labour_amount__gt=0
     ).select_related("site", "department")
 
     # ---------- SITE FILTER ----------
@@ -582,3 +590,10 @@ def delete_department(request, dept_id):
             messages.success(request, "Department deleted successfully.")
 
     return redirect("masters")   # 🔥 ALWAYS back to masters
+
+
+def parse_date(val):
+    try:
+        return datetime.strptime(val, "%Y-%m-%d").date()
+    except:
+        return date.today()

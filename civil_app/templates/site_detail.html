@@ -54,47 +54,6 @@
 
 <h3 class="text-blue-700 font-bold mb-4">👷 Civil Teams</h3>
 
-<!-- ========== MOBILE VIEW (CARDS) ========== -->
-<div class="space-y-4 md:hidden">
-  {% for row in civil_rows %}
-  <div class="bg-white rounded-2xl shadow p-4">
-
-    <h4 class="font-semibold text-gray-800 mb-2">
-      {{ row.team.name }}
-    </h4>
-
-    <div class="grid grid-cols-2 gap-2 text-sm">
-      <input name="mason_full_{{ row.team.id }}" placeholder="Mason Full"
-             type="number" min="0" class="border p-3 rounded-lg"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-      <input name="mason_half_{{ row.team.id }}" placeholder="Mason Half"
-             type="number" min="0" class="border p-3 rounded-lg"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-      <input name="helper_full_{{ row.team.id }}" placeholder="Helper Full"
-             type="number" min="0" class="border p-3 rounded-lg"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-      <input name="helper_half_{{ row.team.id }}" placeholder="Helper Half"
-             type="number" min="0" class="border p-3 rounded-lg"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-    </div>
-
-    <input name="material_{{ row.team.id }}" placeholder="Material ₹"
-           type="number" min="0"
-           class="border p-3 rounded-lg w-full mt-2"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <div class="flex justify-between mt-3 text-sm font-semibold">
-      <span>Labour ₹ <span id="civil_labour_{{ row.team.id }}">0</span></span>
-      <span>Total ₹ <span id="civil_total_{{ row.team.id }}">0</span></span>
-    </div>
-
-  </div>
-  {% endfor %}
-</div>
-
 <!-- ========== DESKTOP VIEW (GRID) ========== -->
 <div class="hidden md:block bg-white rounded-2xl shadow p-4 mb-8">
   <div class="grid grid-cols-10 gap-2 text-xs font-semibold text-gray-600 mb-2">
@@ -202,20 +161,35 @@
 
 
 <!-- ================= JAVASCRIPT ================= -->
+
 <script>
 function calcCivil(id, masonRate, helperRate) {
-  let mf = +document.querySelector(`[name="mason_full_${id}"]`).value || 0;
-  let mh = +document.querySelector(`[name="mason_half_${id}"]`).value || 0;
-  let hf = +document.querySelector(`[name="helper_full_${id}"]`).value || 0;
-  let hh = +document.querySelector(`[name="helper_half_${id}"]`).value || 0;
-  let material = +document.querySelector(`[name="material_${id}"]`).value || 0;
 
-  let labour = (mf*masonRate)+(mh*(masonRate/2))+(hf*helperRate)+(hh*(helperRate/2));
-  let total = (labour > 0) ? labour + material : 0;
+  // 1️⃣ Read input values (MATCHING YOUR UI ORDER)
+  const mf = Number(document.querySelector(`[name="mason_full_${id}"]`)?.value) || 0;
+  const hf = Number(document.querySelector(`[name="helper_full_${id}"]`)?.value) || 0;
+  const mh = Number(document.querySelector(`[name="mason_half_${id}"]`)?.value) || 0;
+  const hh = Number(document.querySelector(`[name="helper_half_${id}"]`)?.value) || 0;
+  const material = Number(document.querySelector(`[name="material_${id}"]`)?.value) || 0;
 
-  document.getElementById(`civil_labour_${id}`).value = labour;
-  document.getElementById(`civil_total_${id}`).value = total;
+  // 2️⃣ Calculate labour & total
+  const labour =
+    (mf * masonRate) +
+    (mh * masonRate / 2) +
+    (hf * helperRate) +
+    (hh * helperRate / 2);
+
+  const total = labour + material;
+
+  // 3️⃣ Update DESKTOP inputs
+  const labourInput = document.getElementById(`civil_labour_${id}`);
+  const totalInput = document.getElementById(`civil_total_${id}`);
+
+  if (labourInput) labourInput.value  = labour;
+  if (totalInput) totalInput.value = total;
+
 }
+
 
 function calcDept(id, rate) {
   let full = +document.querySelector(`[name="dept_full_${id}"]`).value || 0;
