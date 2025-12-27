@@ -10,9 +10,7 @@ urlpatterns = [
     path("sites/", views.site_manage, name="site_manage"),
     path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
-    path("site/<int:site_id>/edit/", views.site_edit, name="site_edit"),
-
-    
+       
 
     # ================= PAYMENTS =================
     
@@ -28,13 +26,13 @@ urlpatterns = [
     path("masters/department/delete/<int:dept_id>/", views.delete_department, name="delete_department"),
 
     # ================= REPORTS =================
-    path("report/", views.date_report, name="date_report"),
-    path("detailed-report/", views.detailed_report, name="detailed_report"),
     path("reports/", views.reports, name="reports"),
-
+    path("reports/pdf/", views.report_pdf, name="report_pdf"),
 
     # ================= RESET ACTIONS =================
     path("site/<int:site_id>/reset/today/", views.reset_site_today, name="reset_site_today"),
     path("site/<int:site_id>/reset/month/", views.reset_site_month, name="reset_site_month"),
     path("site/<int:site_id>/reset/all/", views.reset_site_all, name="reset_site_all"),
+    path("site/<int:site_id>/reset/date/", views.reset_site_date, name="reset_site_date"),
+   
 ]

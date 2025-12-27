@@ -1,24 +1,18 @@
 {% extends "base.html" %}
+{% load civil_extras %}
 {% block content %}
 
 <!-- ================= HEADER ================= -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
   <h2 class="text-2xl font-bold text-slate-800">
     {{ site.name }} – Daily Entry
   </h2>
 
-  <div class="flex gap-2 items-center">
-    <input type="date"
-           id="work_date"
-           value="{{ today|date:'Y-m-d' }}"
+  <div class="flex gap-3 items-center">
+    <input type="date" id="work_date" name="date" value="{{ today|date:'Y-m-d' }}" onchange="goToEdit({{ site.id }})"
            class="border rounded-lg px-3 py-2">
 
-    <button onclick="goToEdit({{ site.id }})"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">
-      ✏ Edit
-    </button>
 
-    <!-- RESET -->
     <div class="relative">
       <button onclick="toggleResetMenu({{ site.id }})"
               class="bg-red-100 text-red-600 px-4 py-2 rounded-lg font-semibold">
@@ -30,10 +24,18 @@
         <a href="{% url 'reset_site_today' site.id %}"
            onclick="return confirm('Reset today entries?')"
            class="block px-4 py-2 hover:bg-gray-100">🔄 Reset Today</a>
+
         <a href="{% url 'reset_site_month' site.id %}"
            onclick="return confirm('Reset this month entries?')"
            class="block px-4 py-2 hover:bg-gray-100">📅 Reset Month</a>
+        <a href="#"
+           onclick="resetByDate({{ site.id }})"
+           class="block px-4 py-2 hover:bg-gray-100 text-orange-600">
+           📆 Reset Selected Date
+        </a>
+
         <div class="border-t"></div>
+        
         <a href="{% url 'reset_site_all' site.id %}"
            onclick="return confirm('Delete ALL entries permanently?')"
            class="block px-4 py-2 text-red-600 hover:bg-red-50 font-semibold">
@@ -48,15 +50,13 @@
 {% csrf_token %}
 <input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
 
-<!-- ================================================= -->
-<!-- ================= CIVIL TEAMS =================== -->
-<!-- ================================================= -->
+<!-- ================= CIVIL TEAMS ================= -->
+<h3 class="text-blue-700 font-bold mb-3 text-lg">👷 Civil Teams</h3>
 
-<h3 class="text-blue-700 font-bold mb-4">👷 Civil Teams</h3>
+<div class="bg-white rounded-2xl shadow p-4 mb-8 overflow-x-auto">
 
-<!-- ========== DESKTOP VIEW (GRID) ========== -->
-<div class="hidden md:block bg-white rounded-2xl shadow p-4 mb-8">
-  <div class="grid grid-cols-10 gap-2 text-xs font-semibold text-gray-600 mb-2">
+  <!-- HEADER -->
+  <div class="grid grid-cols-10 gap-2 text-xs font-semibold text-slate-600 bg-slate-100 p-2 rounded-lg mb-2">
     <div>Team</div>
     <div>M F</div>
     <div>H F</div>
@@ -64,160 +64,350 @@
     <div>H H</div>
     <div>Mason ₹</div>
     <div>Helper ₹</div>
+    <div>Advance ₹</div>
     <div>Labour ₹</div>
-    <div>Material ₹</div>
     <div>Total ₹</div>
   </div>
 
   {% for row in civil_rows %}
-  <div class="grid grid-cols-10 gap-2 mb-3 items-center">
-    <div class="font-medium">{{ row.team.name }}</div>
+  <div class="grid grid-cols-10 gap-2 items-center p-2 rounded-lg hover:bg-slate-50 transition">
 
-    <input name="mason_full_{{ row.team.id }}" value="0" type="number"
-           class="border p-2 rounded"
+    <div class="font-semibold text-slate-800">
+      {{ row.team.name }}
+    </div>
+
+    <input name="mason_full_{{ row.team.id }}"
+           value="{{ row.work.mason_full|default:0 }}"
+           class="input-box"
            oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-    <input name="helper_full_{{ row.team.id }}" value="0" type="number"
-           class="border p-2 rounded"
+    <input name="helper_full_{{ row.team.id }}"
+           value="{{ row.work.helper_full|default:0 }}"
+           class="input-box"
            oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-    <input name="mason_half_{{ row.team.id }}" value="0" type="number"
-           class="border p-2 rounded"
+    <input name="mason_half_{{ row.team.id }}"
+           value="{{ row.work.mason_half|default:0 }}"
+           class="input-box"
            oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-    <input name="helper_half_{{ row.team.id }}" value="0" type="number"
-           class="border p-2 rounded"
+    <input name="helper_half_{{ row.team.id }}"
+           value="{{ row.work.helper_half|default:0 }}"
+           class="input-box"
            oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-    <input value="{{ row.rate.mason_full_rate }}" readonly
-           class="border p-2 bg-gray-100 text-center">
+    <div class="rate-box">₹{{ row.rate.mason_full_rate }}</div>
+    <div class="rate-box">₹{{ row.rate.helper_full_rate }}</div>
 
-    <input value="{{ row.rate.helper_full_rate }}" readonly
-           class="border p-2 bg-gray-100 text-center">
+    <input type="number"
+       name="advance_{{ row.team.id }}"
+       value="{{ row.advance }}"
+       class="advance-box"
+       oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-    <input id="civil_labour_{{ row.team.id }}" value="0" readonly
-           class="border p-2 bg-yellow-100 font-semibold">
 
-    <input name="material_{{ row.team.id }}" value="0" type="number"
-           class="border p-2 rounded"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+    <div id="civil_labour_{{ row.team.id }}" class="labour-box">
+      {{ row.labour }}
+    </div>
 
-    <input id="civil_total_{{ row.team.id }}" value="0" readonly
-           class="border p-2 bg-green-100 font-bold">
+    <div id="civil_total_{{ row.team.id }}" class="total-box">
+      {{ row.total }}
+    </div>
+
   </div>
   {% endfor %}
 </div>
 
+
 <!-- ================================================= -->
 <!-- ================= OTHER DEPARTMENTS ============== -->
 <!-- ================================================= -->
+<h3 class="text-orange-600 font-bold mb-3 text-lg">🏢 Other Departments</h3>
 
-<h3 class="text-orange-600 font-bold mb-4">🏢 Other Departments</h3>
 
 <div class="bg-white rounded-2xl shadow p-4 mb-8">
+  <div class="grid grid-cols-7 gap-2 text-xs font-semibold bg-gray-100 p-2 rounded">
+    <div>Department</div>
+    <div>Full</div>
+    <div>Half</div>
+    <div>Rate</div>
+    <div>Advance</div>
+    <div>Labour</div>
+    <div>Total</div>
+  </div>
+
   {% for dept in other_depts %}
-    {% for rate in default_rates %}
-      {% if rate.department_id == dept.id %}
-      <div class="flex flex-col md:grid md:grid-cols-7 gap-2 mb-4">
+  {% with row=dept_map|get_item:dept.id %}
+  <div class="grid grid-cols-7 gap-2 items-center p-2 border-b">
 
-        <div class="font-medium">{{ dept.name }}</div>
+    <div class="font-semibold">{{ dept.name }}</div>
 
-        <input name="dept_full_{{ dept.id }}" placeholder="Full"
-               type="number" min="0"
-               class="border p-3 rounded-lg"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
+    <input name="dept_full_{{ dept.id }}"
+           value="{{ row.full_day_count|default:0 }}"
+           class="input-box"
+           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id|default:0 }})">
 
-        <input name="dept_half_{{ dept.id }}" placeholder="Half"
-               type="number" min="0"
-               class="border p-3 rounded-lg"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
+    <input name="dept_half_{{ dept.id }}"
+           value="{{ row.half_day_count|default:0 }}"
+           class="input-box"
+           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id }})">
 
-        <input value="{{ rate.full_day_rate }}" readonly
-               class="border p-3 bg-gray-100 rounded-lg text-center">
+    <div class="rate-box">₹{{ default_rates|get_item:dept.id }}</div>
 
-        <input id="dept_labour_{{ dept.id }}" value="0" readonly
-               class="border p-3 bg-yellow-100 rounded-lg font-semibold">
+    <input name="dept_advance_{{ dept.id }}"
+           value="{{ row.advance_amount|default:0 }}"
+           class="advance-box"
+           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id }})">
 
-        <input name="dept_material_{{ dept.id }}" placeholder="Material ₹"
-               type="number" min="0"
-               class="border p-3 rounded-lg"
-               oninput="calcDept({{ dept.id }}, {{ rate.full_day_rate }})">
+    <div id="dept_labour_{{ dept.id }}" class="labour-box">
+      {{ row.labour_amount|default:0 }}
+    </div>
 
-        <input id="dept_total_{{ dept.id }}" value="0" readonly
-               class="border p-3 bg-green-100 rounded-lg font-bold">
-      </div>
-      {% endif %}
-    {% endfor %}
+    <div id="dept_total_{{ dept.id }}" class="total-box">
+      {{ row.total_amount|default:0 }}
+    </div>
+  </div>
+  {% endwith %}
   {% endfor %}
 </div>
 
+
+<!-- ================= MATERIAL SECTION ================= -->
+<h3 class="text-green-700 font-bold mb-3 text-lg">🧱 Materials</h3>
+
+<div class="bg-white rounded-2xl shadow p-4 mb-8">
+
+  <!-- Header -->
+  <div class="grid grid-cols-6 gap-2 text-xs font-semibold text-gray-600 mb-2">
+    <div>Material</div>
+    <div>Qty</div>
+    <div>Unit</div>
+    <div>Rate</div>
+    <div>Total</div>
+    <div>Action</div>
+  </div>
+
+  <div id="materialRows">
+    {% for m in materials %}
+    <div class="grid grid-cols-6 gap-2 items-center mb-2">
+      <input name="material_name_{{ forloop.counter0 }}"
+             value="{{ m.name }}"
+             class="input-box">
+
+      <input name="material_qty_{{ forloop.counter0 }}"
+             value="{{ m.quantity }}"
+             type="number"
+             class="input-box"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <input name="material_unit_{{ forloop.counter0 }}"
+             value="{{ m.unit }}"
+             class="input-box">
+
+      <input name="material_rate_{{ forloop.counter0 }}"
+             value="{{ m.rate }}"
+             type="number"
+             class="input-box"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <input id="material_total_{{ forloop.counter0 }}"
+             value="{{ m.total }}"
+             readonly
+             class="input-box bg-green-100 font-bold">
+
+      <button type="button"
+              onclick="this.parentElement.remove()"
+              class="text-red-600 text-left font-bold border-2 rounded px-3 bg-red-100">
+        Delete
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button type="button"
+          onclick="addMaterialRow()"
+          class="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+    ➕ Add Material
+  </button>
+</div>
+
+
 <!-- ================= SAVE ================= -->
+
 <button type="submit"
         class="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-xl font-bold text-lg">
-  ✅ Save All Entries
+  {% if request.GET.date %} 🔄 Update Entries {% else %} ✅ Save Entries {% endif %}
 </button>
 
 </form>
 
 
-<!-- ================= JAVASCRIPT ================= -->
 
+<!-- ================= STYLES ================= -->
+<style>
+  .input-box {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+  .rate-box {
+    background: #f1f5f9;
+    text-align: center;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .advance-box {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    text-align: center;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .labour-box {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .balance-box {
+    background: #ede9fe;
+    color: #5b21b6;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .total-box {
+    background: #dcfce7;
+    color: #166534;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+</style>
+
+<!-- ================= JAVASCRIPT ================= -->
 <script>
 function calcCivil(id, masonRate, helperRate) {
 
-  // 1️⃣ Read input values (MATCHING YOUR UI ORDER)
-  const mf = Number(document.querySelector(`[name="mason_full_${id}"]`)?.value) || 0;
-  const hf = Number(document.querySelector(`[name="helper_full_${id}"]`)?.value) || 0;
-  const mh = Number(document.querySelector(`[name="mason_half_${id}"]`)?.value) || 0;
-  const hh = Number(document.querySelector(`[name="helper_half_${id}"]`)?.value) || 0;
-  const material = Number(document.querySelector(`[name="material_${id}"]`)?.value) || 0;
+  const mf = +document.querySelector(`[name="mason_full_${id}"]`)?.value || 0;
+  const hf = +document.querySelector(`[name="helper_full_${id}"]`)?.value || 0;
+  const mh = +document.querySelector(`[name="mason_half_${id}"]`)?.value || 0;
+  const hh = +document.querySelector(`[name="helper_half_${id}"]`)?.value || 0;
+  
+  const advance = +document.querySelector(`[name="advance_${id}"]`)?.value || 0;
 
-  // 2️⃣ Calculate labour & total
   const labour =
     (mf * masonRate) +
     (mh * masonRate / 2) +
     (hf * helperRate) +
     (hh * helperRate / 2);
 
-  const total = labour + material;
-
-  // 3️⃣ Update DESKTOP inputs
-  const labourInput = document.getElementById(`civil_labour_${id}`);
-  const totalInput = document.getElementById(`civil_total_${id}`);
-
-  if (labourInput) labourInput.value  = labour;
-  if (totalInput) totalInput.value = total;
-
+  
+  const total = labour - advance;
+  document.getElementById(`civil_labour_${id}`).innerText = labour;
+  document.getElementById(`civil_total_${id}`).innerText = total;
 }
-
 
 function calcDept(id, rate) {
-  let full = +document.querySelector(`[name="dept_full_${id}"]`).value || 0;
-  let half = +document.querySelector(`[name="dept_half_${id}"]`).value || 0;
-  let material = +document.querySelector(`[name="dept_material_${id}"]`).value || 0;
+  let full = +document.querySelector(`[name="dept_full_${id}"]`)?.value || 0;
+  let half = +document.querySelector(`[name="dept_half_${id}"]`)?.value || 0;
+  let advance = +document.querySelector(`[name="dept_advance_${id}"]`)?.value || 0;
 
-  let labour = (full || half) ? (full*rate)+(half*(rate/2)) : 0;
-  let total = (labour > 0) ? labour + material : 0;
+  let labour = (full * rate) + (half * rate / 2);
+  let total = labour - advance;
 
-  document.getElementById(`dept_labour_${id}`).value = labour;
-  document.getElementById(`dept_total_${id}`).value = total;
+  document.getElementById(`dept_labour_${id}`).innerText = labour;
+  document.getElementById(`dept_total_${id}`).innerText = total;
 }
 
+
 function toggleResetMenu(id) {
-  const menu = document.getElementById("resetMenu"+id);
-  document.querySelectorAll("[id^='resetMenu']").forEach(m => m.classList.add("hidden"));
+  const menu = document.getElementById("resetMenu" + id);
+
+  // Close all menus first
+  document.querySelectorAll("[id^='resetMenu']").forEach(m => {
+    if (m !== menu) m.classList.add("hidden");
+  });
+
+  // Toggle selected menu
   menu.classList.toggle("hidden");
 }
 
-function goToEdit(siteId) {
+// Close menu when clicking outside
+document.addEventListener("click", function (e) {
+  const isButton = e.target.closest("[onclick^='toggleResetMenu']");
+  const isMenu = e.target.closest("[id^='resetMenu']");
+
+  if (!isButton && !isMenu) {
+    document.querySelectorAll("[id^='resetMenu']").forEach(m =>
+      m.classList.add("hidden")
+    );
+  }
+});
+function resetByDate(siteId) {
   const date = document.getElementById("work_date").value;
-  if (!date) return alert("Select date");
-  window.location.href = `/site/${siteId}/edit/?date=${date}`;
+
+  if (!date) {
+    alert("Please select a date first");
+    return;
+  }
+
+  if (!confirm("Reset entries for selected date?")) return;
+
+  window.location.href = `/site/${siteId}/reset/date/?date=${date}`;
 }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") e.preventDefault();
-});
+
+function goToEdit(siteId) {
+  const dateInput = document.getElementById("work_date");
+
+  if (!dateInput || !dateInput.value) {
+    alert("Please select a date");
+    return;
+  }
+
+  const date = dateInput.value;
+
+  // Force navigation
+  window.location.href = `/site/${siteId}/?date=${encodeURIComponent(date)}`;
+}
+
+
+
+let materialIndex = {{ materials|length }};
+
+function addMaterialRow() {
+  const container = document.getElementById("materialRows");
+
+  const row = document.createElement("div");
+  row.className = "grid grid-cols-6 gap-2 items-center mb-2";
+
+  row.innerHTML = `
+    <input name="material_name_${materialIndex}" class="input-box">
+    <input name="material_qty_${materialIndex}" type="number" class="input-box" oninput="calcMaterial(${materialIndex})">
+    <input name="material_unit_${materialIndex}" class="input-box">
+    <input name="material_rate_${materialIndex}" type="number" class="input-box" oninput="calcMaterial(${materialIndex})">
+    <input id="material_total_${materialIndex}" class="input-box bg-green-100 font-bold" readonly>
+    <button type="button" onclick="this.parentElement.remove()" class="text-red-600 font-bold">Delete</button>
+  `;
+
+  container.appendChild(row);
+  materialIndex++;
+}
+
+function calcMaterial(index) {
+  const qty = Number(document.querySelector(`[name="material_qty_${index}"]`)?.value || 0);
+  const rate = Number(document.querySelector(`[name="material_rate_${index}"]`)?.value || 0);
+  document.getElementById(`material_total_${index}`).value = qty * rate;
+}
 </script>
 
 {% endblock %}

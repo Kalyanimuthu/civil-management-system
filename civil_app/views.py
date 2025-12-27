@@ -1,3 +1,8 @@
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+from django.utils.timezone import now
 from datetime import date, timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
@@ -6,8 +11,8 @@ from django.contrib import messages
 from .models import (
     Site, Team, Department,
     CivilDailyWork, DepartmentWork,
-    TeamRate, DefaultRate
-)
+    TeamRate, DefaultRate, CivilAdvance, MaterialEntry
+    )
 
 # =========================================================
 # HELPERS
@@ -45,10 +50,13 @@ def calculate_civil_labour(team, mf, hf, mh, hh, work_date):
 # =========================================================
 
 
+from datetime import date, timedelta
+from django.db.models import Sum
+from .models import Site, CivilDailyWork, DepartmentWork, MaterialEntry
+
+
 def dashboard(request):
     today = date.today()
-
-    # Week range (Monday → Today)
     week_start = today - timedelta(days=today.weekday())
 
     sites = Site.objects.all()
@@ -56,80 +64,110 @@ def dashboard(request):
 
     for site in sites:
 
-        # ================= TODAY TOTAL =================
-        civil_today = (
-            CivilDailyWork.objects
-            .filter(site=site, date=today)
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
+        # ================= TODAY =================
+        civil_today = CivilDailyWork.objects.filter(
+            site=site, date=today
+        ).aggregate(labour=Sum("labour_amount"))
+
+        dept_today = DepartmentWork.objects.filter(
+            site=site, date=today
+        ).aggregate(
+            labour=Sum("labour_amount"),
+            advance=Sum("advance_amount")
         )
 
-        dept_today = (
-            DepartmentWork.objects
-            .filter(site=site, date=today)
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
+        civil_advance_today = CivilAdvance.objects.filter(
+            site=site, date=today
+        ).aggregate(total=Sum("amount"))
+
+        material_today = MaterialEntry.objects.filter(
+            site=site, date=today
+        ).aggregate(total=Sum("total"))
+
+        today_labour = (civil_today["labour"] or 0) + (dept_today["labour"] or 0)
+        today_advance = (civil_advance_today["total"] or 0) + (dept_today["advance"] or 0)
+        today_material = material_today["total"] or 0
+
+        today_total = today_labour + today_material - today_advance
+
+
+        # ================= WEEK =================
+        civil_week = CivilDailyWork.objects.filter(
+            site=site,
+            date__range=[week_start, today]
+        ).aggregate(labour=Sum("labour_amount"))
+
+        dept_week = DepartmentWork.objects.filter(
+            site=site,
+            date__range=[week_start, today]
+        ).aggregate(
+            labour=Sum("labour_amount"),
+            advance=Sum("advance_amount")
         )
 
-        today_total = civil_today + dept_today
+        civil_adv_week = CivilAdvance.objects.filter(
+            site=site,
+            date__range=[week_start, today]
+        ).aggregate(total=Sum("amount"))
 
-        # ================= WEEK TOTAL =================
-        civil_week = (
-            CivilDailyWork.objects
-            .filter(site=site, date__gte=week_start, date__lte=today)
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
+        material_week = MaterialEntry.objects.filter(
+            site=site,
+            date__range=[week_start, today]
+        ).aggregate(total=Sum("total"))
+
+        week_labour = (civil_week["labour"] or 0) + (dept_week["labour"] or 0)
+        week_advance = (civil_adv_week["total"] or 0) + (dept_week["advance"] or 0)
+        week_material = material_week["total"] or 0
+
+        weekly_total = week_labour + week_material - week_advance
+
+
+        # ================= MONTH =================
+        civil_month = CivilDailyWork.objects.filter(
+            site=site,
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(labour=Sum("labour_amount"))
+
+        dept_month = DepartmentWork.objects.filter(
+            site=site,
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(
+            labour=Sum("labour_amount"),
+            advance=Sum("advance_amount")
         )
 
-        dept_week = (
-            DepartmentWork.objects
-            .filter(site=site, date__gte=week_start, date__lte=today)
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
-        )
+        civil_adv_month = CivilAdvance.objects.filter(
+            site=site,
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(total=Sum("amount"))
 
-        weekly_total = civil_week + dept_week
+        material_month = MaterialEntry.objects.filter(
+            site=site,
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(total=Sum("total"))
 
-        # ================= MONTH TOTAL =================
-        civil_month = (
-            CivilDailyWork.objects
-            .filter(
-                site=site,
-                date__year=today.year,
-                date__month=today.month
-            )
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
-        )
+        month_labour = (civil_month["labour"] or 0) + (dept_month["labour"] or 0)
+        month_advance = (civil_adv_month["total"] or 0) + (dept_month["advance"] or 0)
+        month_material = material_month["total"] or 0
 
-        dept_month = (
-            DepartmentWork.objects
-            .filter(
-                site=site,
-                date__year=today.year,
-                date__month=today.month
-            )
-            .aggregate(total=Sum("labour_amount") + Sum("material_amount"))
-            ["total"] or 0
-        )
+        month_total = month_labour + month_material - month_advance
 
-        month_total = civil_month + dept_month
-
-        # ================= STATUS =================
-        status = "Done" if today_total > 0 else "Pending"
 
         data.append({
             "site": site,
             "today_total": today_total,
             "weekly_total": weekly_total,
             "month_total": month_total,
-            "status": status,
+            "today_advance": today_advance,
         })
 
     return render(request, "dashboard.html", {
         "sites": data
     })
-
 
 # =========================================================
 # SITE MANAGEMENT
@@ -157,98 +195,186 @@ def delete_site(request, id):
 
 def site_detail(request, site_id):
     site = get_object_or_404(Site, id=site_id)
-    raw_date = request.POST.get("date") or request.GET.get("date")
 
-    if raw_date:
-        try:
-            work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
-        except ValueError:
-            work_date = date.today()
-    else:
+    # ---------------- DATE ----------------
+    raw_date = request.GET.get("date") or request.POST.get("date")
+    try:
+        work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+    except:
         work_date = date.today()
-
-    
 
     teams = Team.objects.all()
     departments = Department.objects.exclude(name="Civil")
 
-    # ---------------- SAVE ----------------
+    # ================= SAVE =================
     if request.method == "POST":
-        work_date = request.POST.get("date") or work_date
 
-        # ---- CIVIL ----
+        # ---------- CIVIL ----------
+
         for team in teams:
             mf = to_int(request.POST.get(f"mason_full_{team.id}"))
             hf = to_int(request.POST.get(f"helper_full_{team.id}"))
             mh = to_int(request.POST.get(f"mason_half_{team.id}"))
             hh = to_int(request.POST.get(f"helper_half_{team.id}"))
-            material = to_int(request.POST.get(f"material_{team.id}"))
 
-            labour = calculate_civil_labour(team, mf, mh, hf, hh, work_date)
+            # Get advance safely
+            adv_raw = request.POST.get(f"advance_{team.id}")
 
-            CivilDailyWork.objects.update_or_create(
+            existing_advance = CivilAdvance.objects.filter(
                 site=site,
                 team=team,
-                date=work_date,
-                defaults={
-                    "mason_full": mf,
-                    "helper_full": hf,
-                    "mason_half": mh,
-                    "helper_half": hh,
-                    "labour_amount": labour,
-                    "material_amount": material,
-                }
-            )
+                date=work_date
+            ).first()
 
-        # ---- DEPARTMENTS ----
+            if adv_raw not in [None, ""]:
+                adv = float(adv_raw)
+
+                CivilAdvance.objects.update_or_create(
+                    site=site,
+                    team=team,
+                    date=work_date,
+                    defaults={"amount": adv}
+                )
+            else:
+                adv = existing_advance.amount if existing_advance else 0
+
+            # Calculate labour
+            labour = calculate_civil_labour(team, mf, hf, mh, hh, work_date)
+
+            # Calculate total
+            total = labour - adv
+
+            if mf or hf or mh or hh or adv:
+                CivilDailyWork.objects.update_or_create(
+                    site=site,
+                    team=team,
+                    date=work_date,
+                    defaults={
+                        "mason_full": mf,
+                        "helper_full": hf,
+                        "mason_half": mh,
+                        "helper_half": hh,
+                        "total_amount": total,
+                        "labour_amount": labour,
+                        
+                    }
+                )
+            else:
+                CivilDailyWork.objects.filter(
+                    site=site, team=team, date=work_date
+                ).delete()
+
+        # ---------- DEPARTMENT ----------
         for dept in departments:
             full = to_int(request.POST.get(f"dept_full_{dept.id}"))
             half = to_int(request.POST.get(f"dept_half_{dept.id}"))
-            material = to_int(request.POST.get(f"dept_material_{dept.id}"))
+            adv_raw = request.POST.get(f"dept_advance_{dept.id}")
 
-            rate = DefaultRate.objects.get(department=dept)
-            labour = (full * rate.full_day_rate) + (half * rate.half_day_rate)
+            advance = float(adv_raw) if adv_raw not in [None, ""] else 0
 
-            DepartmentWork.objects.update_or_create(
+            if full or half or advance:
+                rate = DefaultRate.objects.get(department=dept)
+
+                labour = (full * rate.full_day_rate) + (half * rate.full_day_rate / 2)
+                total = labour - advance
+
+                DepartmentWork.objects.update_or_create(
+                    site=site,
+                    department=dept,
+                    date=work_date,
+                    defaults={
+                        "full_day_count": full,
+                        "half_day_count": half,
+                        "full_day_rate": rate.full_day_rate,
+                        "half_day_rate": rate.half_day_rate,
+                        "labour_amount": labour,
+                        
+                        "total_amount": total,   # ✅ FIX
+                    }
+                )
+            else:
+                DepartmentWork.objects.filter(
+                    site=site,
+                    department=dept,
+                    date=work_date
+                ).delete()
+
+        # ---------- MATERIAL ----------
+
+        MaterialEntry.objects.filter(site=site, date=work_date).delete()
+
+        i = 0
+        while True:
+            name = request.POST.get(f"material_name_{i}")
+            if name is None:
+                break
+
+            qty = float(request.POST.get(f"material_qty_{i}", 0))
+            unit = request.POST.get(f"material_unit_{i}", "")
+            rate = float(request.POST.get(f"material_rate_{i}", 0))
+
+            MaterialEntry.objects.create(
                 site=site,
-                department=dept,
                 date=work_date,
-                defaults={
-                    "full_day_count": full,
-                    "half_day_count": half,
-                    "full_day_rate": rate.full_day_rate,
-                    "half_day_rate": rate.half_day_rate,
-                    "labour_amount": labour,
-                    "material_amount": material,
-                }
+                name=name,
+                quantity=qty,
+                unit=unit,
+                rate=rate,
+                total=qty * rate
             )
+            i += 1
 
-        return redirect("site_detail", site_id=site.id)
 
-    # ---------------- DISPLAY ----------------
+    # ================= DISPLAY =================
     civil_qs = CivilDailyWork.objects.filter(site=site, date=work_date)
     civil_map = {c.team_id: c for c in civil_qs}
 
+    advance_qs = CivilAdvance.objects.filter(site=site, date=work_date)
+    advance_map = {a.team_id: a.amount for a in advance_qs}
+
+    dept_qs = DepartmentWork.objects.filter(site=site, date=work_date)
+    dept_map = {d.department_id: d for d in dept_qs}
+
+
     civil_rows = []
     for team in teams:
-        rate = get_team_rate(team, work_date)
+        rate = get_team_rate(team, work_date) or get_team_rate(team, date.today())
 
         if not rate:
-            continue   # 🔥 IMPORTANT
+            continue
+
+        work = civil_map.get(team.id)
+        labour = work.labour_amount if work else 0
+        advance = advance_map.get(team.id, 0)
+        total = work.total_amount if work else 0
 
         civil_rows.append({
             "team": team,
             "rate": rate,
-            "work": civil_map.get(team.id),
+            "work": work,
+            "labour": labour,
+            "advance": advance,
+            "total": total,
         })
 
+    dept_qs = DepartmentWork.objects.filter(site=site, date=work_date)
+    dept_map = {d.department_id: d for d in dept_qs}
+
+    materials = MaterialEntry.objects.filter(site=site, date=work_date)
+
+    default_rate_map = {
+        r.department_id: r.full_day_rate
+        for r in DefaultRate.objects.all()
+    }
 
     return render(request, "site_detail.html", {
         "site": site,
+        "today": work_date,
         "civil_rows": civil_rows,
+        "dept_map": dept_map,
+        "materials": materials,
         "other_depts": departments,
-        "default_rates": DefaultRate.objects.all(),
-        "today": work_date
+        "default_rates": default_rate_map,
     })
 
 # =========================================================
@@ -258,51 +384,48 @@ def site_detail(request, site_id):
 def site_edit(request, site_id):
     site = get_object_or_404(Site, id=site_id)
 
+    # ---------------- DATE ----------------
     raw_date = request.POST.get("date") or request.GET.get("date")
-
-    if raw_date:
-        try:
-            work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
-        except ValueError:
-            work_date = date.today()
-    else:
+    try:
+        work_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+    except:
         work_date = date.today()
 
     teams = Team.objects.all()
     departments = Department.objects.exclude(name="Civil")
 
-    civil_qs = CivilDailyWork.objects.filter(site=site, date=work_date)
-    dept_qs = DepartmentWork.objects.filter(site=site, date=work_date)
-
-    civil_map = {c.team_id: c for c in civil_qs}
-    dept_map = {d.department_id: d for d in dept_qs}
-
-    # ---------- POST (SAVE) ----------
+    # ================= SAVE =================
     if request.method == "POST":
 
+        # -------- CIVIL --------
         for team in teams:
             mf = to_int(request.POST.get(f"mason_full_{team.id}"))
             hf = to_int(request.POST.get(f"helper_full_{team.id}"))
             mh = to_int(request.POST.get(f"mason_half_{team.id}"))
-            
             hh = to_int(request.POST.get(f"helper_half_{team.id}"))
-            material = to_int(request.POST.get(f"material_{team.id}"))
+            adv = to_int(request.POST.get(f"advance_{team.id}"))
 
-            if mf or mh or hf or hh or material:
-                labour = calculate_civil_labour(team, mf, mh, hf, hh, work_date)
+            # Save advance
+            CivilAdvance.objects.update_or_create(
+                site=site,
+                team=team,
+                date=work_date,
+                defaults={"amount": adv}
+            )
 
+            labour = calculate_civil_labour(team, mf, mh, hf, hh, work_date)
+
+            if mf or hf or mh or hh:
                 CivilDailyWork.objects.update_or_create(
                     site=site,
                     team=team,
                     date=work_date,
                     defaults={
                         "mason_full": mf,
-                        
                         "helper_full": hf,
                         "mason_half": mh,
                         "helper_half": hh,
                         "labour_amount": labour,
-                        "material_amount": material,
                     }
                 )
             else:
@@ -310,9 +433,67 @@ def site_edit(request, site_id):
                     site=site, team=team, date=work_date
                 ).delete()
 
-        return redirect("site_detail", site_id=site.id)
+        # -------- DEPARTMENT --------
+        for dept in departments:
+            full = to_int(request.POST.get(f"dept_full_{dept.id}"))
+            half = to_int(request.POST.get(f"dept_half_{dept.id}"))
 
-    # ---------- GET (DISPLAY) ----------
+            if full or half:
+                rate = DefaultRate.objects.get(department=dept)
+                labour = (full * rate.full_day_rate) + (half * rate.half_day_rate)
+
+                DepartmentWork.objects.update_or_create(
+                    site=site,
+                    department=dept,
+                    date=work_date,
+                    defaults={
+                        "full_day_count": full,
+                        "half_day_count": half,
+                        "labour_amount": labour,
+                    }
+                )
+            else:
+                DepartmentWork.objects.filter(
+                    site=site, department=dept, date=work_date
+                ).delete()
+
+        # -------- MATERIAL --------
+        MaterialEntry.objects.filter(site=site, date=work_date).delete()
+
+        i = 0
+        while True:
+            name = request.POST.get(f"material_name_{i}")
+            if not name:
+                break
+
+            qty = float(request.POST.get(f"material_qty_{i}", 0))
+            rate = float(request.POST.get(f"material_rate_{i}", 0))
+            unit = request.POST.get(f"material_unit_{i}", "")
+
+            MaterialEntry.objects.create(
+                site=site,
+                date=work_date,
+                name=name,
+                quantity=qty,
+                rate=rate,
+                unit=unit,
+                total=qty * rate
+            )
+            i += 1
+
+        # 🔁 stay on same date after save
+        return redirect(f"/site/{site.id}/?date={work_date}")
+
+    # ================= DISPLAY =================
+    civil_qs = CivilDailyWork.objects.filter(site=site, date=work_date)
+    civil_map = {c.team_id: c for c in civil_qs}
+
+    dept_qs = DepartmentWork.objects.filter(site=site, date=work_date)
+    dept_map = {d.department_id: d for d in dept_qs}
+
+    materials = MaterialEntry.objects.filter(site=site, date=work_date)
+    rate_map = {r.department_id: r for r in DefaultRate.objects.all()}
+
     return render(request, "site_edit.html", {
         "site": site,
         "date": work_date,
@@ -320,12 +501,13 @@ def site_edit(request, site_id):
         "departments": departments,
         "civil_map": civil_map,
         "dept_map": dept_map,
+        "rate_map": rate_map, 
+        "materials": materials,
     })
 
 # =========================================================
 # PAYMENTS
 # =========================================================
-
 def default_payment(request):
     if request.method == "POST":
         pay_type = request.POST.get("pay_type")
@@ -370,68 +552,6 @@ def default_payment(request):
     })
 
 # =========================================================
-# REPORTS
-# =========================================================
-
-def date_report(request):
-    today = date.today()
-    from_date = request.GET.get("from") or today
-    to_date = request.GET.get("to") or today
-
-    civil_entries = CivilDailyWork.objects.filter(date__range=[from_date, to_date])
-    dept_entries = DepartmentWork.objects.filter(date__range=[from_date, to_date])
-
-    return render(request, "date_report.html", {
-        "civil_entries": civil_entries,
-        "dept_entries": dept_entries,
-        "total_labour": sum(r.labour_amount for r in civil_entries) + sum(r.labour_amount for r in dept_entries),
-        "total_material": sum(r.material_amount for r in civil_entries) + sum(r.material_amount for r in dept_entries),
-        "grand_total": (
-            sum(r.labour_amount for r in civil_entries) +
-            sum(r.material_amount for r in civil_entries) +
-            sum(r.labour_amount for r in dept_entries) +
-            sum(r.material_amount for r in dept_entries)
-        ),
-        "from": from_date,
-        "to": to_date
-    })
-
-
-def detailed_report(request):
-    today = date.today()
-    from_date = request.GET.get("from") or today
-    to_date = request.GET.get("to") or today
-
-    team_report = (
-        CivilDailyWork.objects
-        .filter(date__range=[from_date, to_date])
-        .values("team__name")
-        .annotate(
-            labour=Sum("labour_amount"),
-            material=Sum("material_amount"),
-            total=Sum("labour_amount") + Sum("material_amount")
-        )
-    )
-
-    dept_report = (
-        DepartmentWork.objects
-        .filter(date__range=[from_date, to_date])
-        .values("department__name")
-        .annotate(
-            labour=Sum("labour_amount"),
-            material=Sum("material_amount"),
-            total=Sum("labour_amount") + Sum("material_amount")
-        )
-    )
-
-    return render(request, "detailed_report.html", {
-        "team_report": team_report,
-        "dept_report": dept_report,
-        "from": from_date,
-        "to": to_date
-    })
-
-# =========================================================
 # RESET
 # =========================================================
 
@@ -441,9 +561,10 @@ def reset_site_today(request, site_id):
 
     CivilDailyWork.objects.filter(site=site, date=today).delete()
     DepartmentWork.objects.filter(site=site, date=today).delete()
+    CivilAdvance.objects.filter(site=site, date=today).delete()
+    MaterialEntry.objects.filter(site=site, date=today).delete()
 
     return redirect("site_detail", site_id=site.id)
-
 
 def reset_site_month(request, site_id):
     site = get_object_or_404(Site, id=site_id)
@@ -461,22 +582,35 @@ def reset_site_month(request, site_id):
         date__month=today.month
     ).delete()
 
-    return redirect("site_detail", site_id=site.id)
+    CivilAdvance.objects.filter(
+        site=site,
+        date__year=today.year,
+        date__month=today.month
+    ).delete()
 
+    MaterialEntry.objects.filter(
+        site=site,
+        date__year=today.year,
+        date__month=today.month
+    ).delete()
+
+    return redirect("site_detail", site_id=site.id)
 
 def reset_site_all(request, site_id):
     site = get_object_or_404(Site, id=site_id)
 
     CivilDailyWork.objects.filter(site=site).delete()
     DepartmentWork.objects.filter(site=site).delete()
+    CivilAdvance.objects.filter(site=site).delete()
+    MaterialEntry.objects.filter(site=site).delete()
 
     return redirect("site_detail", site_id=site.id)
 
 def reports(request):
     today = date.today()
 
-    from_date = request.GET.get("from") or today
-    to_date = request.GET.get("to") or today
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date = parse_date(request.GET.get("to_date"))
 
     site_id = request.GET.get("site")
     team_id = request.GET.get("team")
@@ -484,63 +618,98 @@ def reports(request):
 
     sites = Site.objects.all()
     teams = Team.objects.all()
-    departments = Department.objects.all()  # ✅ include Civil
+    departments = Department.objects.all()
 
+    # ---------------- CIVIL ----------------
     civil_qs = CivilDailyWork.objects.filter(
-        date__range=[from_date, to_date],
-        labour_amount__gt=0
+        date__range=[from_date, to_date]
     ).select_related("site", "team")
 
-    dept_qs = DepartmentWork.objects.filter(
-        date__range=[from_date, to_date],
-        labour_amount__gt=0
-    ).select_related("site", "department")
-
-    # ---------- SITE FILTER ----------
     if site_id:
         civil_qs = civil_qs.filter(site_id=site_id)
-        dept_qs = dept_qs.filter(site_id=site_id)
-
-    # ---------- DEPARTMENT FILTER ----------
-    if dept_id:
-        department = Department.objects.get(id=dept_id)
-
-        if department.name.lower() == "civil":
-            dept_qs = DepartmentWork.objects.none()
-            civil_qs = civil_qs
-        else:
-            dept_qs = dept_qs.filter(department_id=dept_id)
-            civil_qs = CivilDailyWork.objects.none()
-
-    # ---------- TEAM FILTER ----------
     if team_id:
         civil_qs = civil_qs.filter(team_id=team_id)
-        dept_qs = DepartmentWork.objects.none()
 
-    # ---------- TOTALS ----------
-    total_labour = (
-        sum(r.labour_amount for r in civil_qs) +
-        sum(r.labour_amount for r in dept_qs)
+    # Advance map
+    advance_map = {
+        (a.team_id, a.date): a.amount
+        for a in CivilAdvance.objects.filter(date__range=[from_date, to_date])
+    }
+
+    civil_rows = []
+    total_labour = 0
+    total_advance = 0
+
+    for row in civil_qs:
+        adv = advance_map.get((row.team_id, row.date), 0)
+        total = row.labour_amount - adv
+
+        total_labour += row.labour_amount
+        total_advance += adv
+
+        civil_rows.append({
+            "date": row.date,
+            "site": row.site,
+            "team": row.team,
+            "labour": row.labour_amount,
+            "advance": adv,
+            "total": total,
+        })
+
+    # ---------------- DEPARTMENT ----------------
+    dept_qs = DepartmentWork.objects.filter(
+        date__range=[from_date, to_date]
+    ).select_related("site", "department")
+
+    if site_id:
+        dept_qs = dept_qs.filter(site_id=site_id)
+    if dept_id:
+        dept_qs = dept_qs.filter(department_id=dept_id)
+
+    dept_rows = []
+    for d in dept_qs:
+        total_labour += d.labour_amount
+        total_advance += d.advance_amount or 0
+
+        dept_rows.append({
+            "date": d.date,
+            "site": d.site,
+            "department": d.department,
+            "labour": d.labour_amount,
+            "advance": d.advance_amount,
+            "total": d.labour_amount - (d.advance_amount or 0),
+        })
+
+    # ---------------- MATERIAL ----------------
+    material_qs = MaterialEntry.objects.filter(
+        date__range=[from_date, to_date]
     )
-    total_material = (
-        sum(r.material_amount for r in civil_qs) +
-        sum(r.material_amount for r in dept_qs)
-    )
+
+    if site_id:
+        material_qs = material_qs.filter(site_id=site_id)
+
+    material_rows = list(material_qs)
+    total_material = sum(m.total for m in material_rows)
+
+    # ---------------- GRAND TOTAL ----------------
+    grand_total = total_labour + total_material - total_advance
 
     return render(request, "reports.html", {
         "sites": sites,
         "teams": teams,
         "departments": departments,
 
-        "civil_entries": civil_qs,
-        "dept_entries": dept_qs,
+        "civil_entries": civil_rows,
+        "dept_entries": dept_rows,
+        "material_entries": material_rows,
 
         "total_labour": total_labour,
         "total_material": total_material,
-        "grand_total": total_labour + total_material,
+        "total_advance": total_advance,
+        "grand_total": grand_total,
 
-        "from": from_date,
-        "to": to_date,
+        "from_date": from_date,
+        "to_date": to_date,
         "selected_site": site_id,
         "selected_team": team_id,
         "selected_department": dept_id,
@@ -564,7 +733,6 @@ def masters(request):
         "departments": Department.objects.all().order_by("name"),
         "teams": Team.objects.all().order_by("name"),
     })
-
 
 def delete_team(request, team_id):
     if request.method == "POST":
@@ -591,9 +759,132 @@ def delete_department(request, dept_id):
 
     return redirect("masters")   # 🔥 ALWAYS back to masters
 
-
 def parse_date(val):
     try:
         return datetime.strptime(val, "%Y-%m-%d").date()
     except:
         return date.today()
+
+def reset_site_date(request, site_id):
+    site = get_object_or_404(Site, id=site_id)
+
+    date_str = request.GET.get("date")
+    if not date_str:
+        return redirect("site_detail", site_id=site.id)
+
+    try:
+        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except:
+        return redirect("site_detail", site_id=site.id)
+
+    # 🔥 DELETE EVERYTHING FOR THAT DATE
+    CivilDailyWork.objects.filter(site=site, date=selected_date).delete()
+    DepartmentWork.objects.filter(site=site, date=selected_date).delete()
+    MaterialEntry.objects.filter(site=site, date=selected_date).delete()
+    CivilAdvance.objects.filter(site=site, date=selected_date).delete()
+
+    return redirect(f"/site/{site.id}/?date={selected_date}")
+
+
+def report_pdf(request):
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date = parse_date(request.GET.get("to_date"))
+
+    site_id = request.GET.get("site")
+    team_id = request.GET.get("team")
+    dept_id = request.GET.get("department")
+
+    # ================= CIVIL =================
+    civil_qs = CivilDailyWork.objects.filter(
+        date__range=[from_date, to_date]
+    )
+
+    if site_id:
+        civil_qs = civil_qs.filter(site_id=site_id)
+    if team_id:
+        civil_qs = civil_qs.filter(team_id=team_id)
+
+    # ADVANCE
+    advance_map = {
+        (a.team_id, a.date): a.amount
+        for a in CivilAdvance.objects.filter(date__range=[from_date, to_date])
+    }
+
+    civil_rows = []
+    total_labour = 0
+    total_advance = 0
+
+    for row in civil_qs:
+        adv = advance_map.get((row.team_id, row.date), 0)
+        total = row.labour_amount - adv
+
+        total_labour += row.labour_amount
+        total_advance += adv
+
+        civil_rows.append({
+            "date": row.date,
+            "site": row.site,
+            "team": row.team,
+            "labour": row.labour_amount,
+            "advance": adv,
+            "total": total,
+        })
+
+    # ================= DEPARTMENT =================
+    dept_qs = DepartmentWork.objects.filter(
+        date__range=[from_date, to_date]
+    )
+
+    if site_id:
+        dept_qs = dept_qs.filter(site_id=site_id)
+    if dept_id:
+        dept_qs = dept_qs.filter(department_id=dept_id)
+
+    dept_rows = []
+    for d in dept_qs:
+        dept_rows.append({
+            "date": d.date,
+            "site": d.site,
+            "department": d.department,
+            "labour": d.labour_amount,
+            "total": d.labour_amount,
+        })
+
+    # ================= MATERIAL =================
+    material_qs = MaterialEntry.objects.filter(
+        date__range=[from_date, to_date]
+    )
+
+    if site_id:
+        material_qs = material_qs.filter(site_id=site_id)
+
+    total_material = sum(m.total for m in material_qs)
+
+    # ================= TOTAL =================
+    grand_total = total_labour + total_material - total_advance
+
+    return render_to_pdf("reports_pdf.html", {
+        "from_date": from_date,
+        "to_date": to_date,
+
+        "civil_entries": civil_rows,
+        "dept_entries": dept_rows,
+        "material_entries": material_qs,
+
+        "total_labour": total_labour,
+        "total_material": total_material,
+        "total_advance": total_advance,
+        "grand_total": grand_total,
+    })
+
+def render_to_pdf(template_src, context):
+    template = get_template(template_src)
+    html = template.render(context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html, dest=result)
+
+    if pdf.err:
+        return None
+
+    return HttpResponse(result.getvalue(), content_type="application/pdf")

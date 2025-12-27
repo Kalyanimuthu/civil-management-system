@@ -8,7 +8,6 @@ class Site(models.Model):
     def __str__(self):
         return self.name
 
-
 # ---------- DEPARTMENT (DEFAULT PER SITE) ----------
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -16,15 +15,12 @@ class Department(models.Model):
     def __str__(self):
         return self.name
 
-
 # ---------- TEAM (ONLY FOR CIVIL) ----------
 class Team(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
-
-
 
 # ---------- CIVIL TEAM RATE ----------
 class TeamRate(models.Model):
@@ -47,7 +43,6 @@ class TeamRate(models.Model):
     def __str__(self):
         return self.team.name
 
-
 # ---------- CIVIL DAILY WORK ----------
 class CivilDailyWork(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
@@ -60,19 +55,10 @@ class CivilDailyWork(models.Model):
     helper_half = models.IntegerField(default=0)
 
     labour_amount = models.IntegerField(default=0)
-    material_amount = models.IntegerField(default=0)
+    total_amount = models.FloatField(default=0)    
 
     class Meta:
         unique_together = ("site", "team", "date")
-
-
-# ---------- CIVIL MATERIAL ----------
-class CivilMaterial(models.Model):
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    date = models.DateField()
-    description = models.CharField(max_length=200)
-    amount = models.IntegerField()
-
 
 # ---------- OTHER DEPARTMENT WORK ----------
 class DepartmentWork(models.Model):
@@ -87,19 +73,12 @@ class DepartmentWork(models.Model):
     half_day_rate = models.IntegerField()
 
     labour_amount = models.IntegerField(default=0)
-    material_amount = models.IntegerField(default=0)
+    advance_amount = models.FloatField(default=0)
+    total_amount = models.FloatField(default=0)
+
 
     class Meta:
         unique_together = ("site", "department", "date")
-
-
-
-# ---------- OTHER DEPARTMENT MATERIAL ----------
-class DepartmentMaterial(models.Model):
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    date = models.DateField()
-    description = models.CharField(max_length=200)
-    amount = models.IntegerField()
 
 # ---------- DEFAULT RATE (PER SITE + DEPARTMENT) ----------
 class DefaultRate(models.Model):
@@ -112,3 +91,24 @@ class DefaultRate(models.Model):
     def half_day_rate(self):
         return self.full_day_rate // 2
 
+class CivilAdvance(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    date = models.DateField()
+    amount = models.PositiveIntegerField()
+    remarks = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        unique_together = ("site", "team", "date")
+
+    def __str__(self):
+        return f"{self.site} - {self.team} - {self.date}"
+
+class MaterialEntry(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    date = models.DateField()
+    name = models.CharField(max_length=100)
+    quantity = models.FloatField()
+    unit = models.CharField(max_length=20)
+    rate = models.FloatField()
+    total = models.FloatField()

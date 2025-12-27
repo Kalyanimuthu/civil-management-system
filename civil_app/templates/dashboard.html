@@ -23,15 +23,6 @@
 <div class="site-card bg-white rounded-2xl shadow hover:shadow-xl transition p-5 relative"
      data-name="{{ row.site.name|lower }}">
 
-  <!-- STATUS -->
-  <span class="absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full
-    {% if row.status == 'Done' %}
-      bg-green-100 text-green-700
-    {% else %}
-      bg-red-100 text-red-700
-    {% endif %}">
-    {{ row.status }}
-  </span>
 
   <!-- SITE NAME -->
   <h3 class="text-xl font-bold text-slate-800 mb-3">
@@ -55,6 +46,13 @@
       <span class="text-gray-500">This Month</span>
       <span class="font-semibold text-green-600">₹{{ row.month_total }}</span>
     </div>
+
+    <div class="flex justify-between">
+  <span class="text-gray-500">Advance (Civil + Dept)</span>
+  <span class="text-xl font-bold text-red-600">
+    ₹{{ row.today_advance }}
+  </span>
+</div>
 
   </div>
 

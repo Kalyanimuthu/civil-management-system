@@ -1,64 +1,62 @@
 {% extends "base.html" %}
+{% load civil_extras %}
+
 {% block content %}
 
 <h2 class="text-2xl font-bold mb-6">📊 Reports</h2>
+
+<a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
+   class="bg-red-600 text-white px-4 py-2 rounded">
+   📄 Download PDF
+</a>
+
 
 <!-- ================= FILTER BAR ================= -->
 <form method="get"
       class="bg-white p-4 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
 
-  <!-- DATE FROM -->
   <div>
     <label class="text-xs font-semibold text-gray-600">From</label>
-    <input type="date" name="from"
-           value="{{ from|date:'Y-m-d' }}"
+    <input type="date" name="from_date" value="{{ from_date|date:'Y-m-d' }}"
            class="border p-2 rounded w-full">
   </div>
 
-  <!-- DATE TO -->
   <div>
     <label class="text-xs font-semibold text-gray-600">To</label>
-    <input type="date" name="to"
-           value="{{ to|date:'Y-m-d' }}"
+    <input type="date" name="to_date" value="{{ to_date|date:'Y-m-d' }}"
            class="border p-2 rounded w-full">
   </div>
 
-  <!-- SITE -->
   <div>
     <label class="text-xs font-semibold text-gray-600">Site</label>
     <select name="site" class="border p-2 rounded w-full">
       <option value="">All Sites</option>
       {% for s in sites %}
-        <option value="{{ s.id }}"
-          {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
+        <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
           {{ s.name }}
         </option>
       {% endfor %}
     </select>
   </div>
 
-  <!-- TEAM -->
   <div>
     <label class="text-xs font-semibold text-gray-600">Team</label>
     <select name="team" class="border p-2 rounded w-full">
       <option value="">All Teams</option>
       {% for t in teams %}
-        <option value="{{ t.id }}"
-          {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
+        <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
           {{ t.name }}
         </option>
       {% endfor %}
     </select>
   </div>
 
-  <!-- DEPARTMENT -->
   <div>
     <label class="text-xs font-semibold text-gray-600">Department</label>
     <select name="department" class="border p-2 rounded w-full">
       <option value="">All Departments</option>
       {% for d in departments %}
-        <option value="{{ d.id }}"
-          {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
+        <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
           {{ d.name }}
         </option>
       {% endfor %}
@@ -70,8 +68,8 @@
   </button>
 </form>
 
-<!-- ================= TOTALS ================= -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+<!-- ================= TOTAL SUMMARY ================= -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
   <div class="bg-white p-4 rounded shadow">
     <p class="text-sm text-gray-500">Total Labour</p>
     <p class="text-xl font-bold text-orange-600">₹{{ total_labour }}</p>
@@ -80,6 +78,11 @@
   <div class="bg-white p-4 rounded shadow">
     <p class="text-sm text-gray-500">Total Material</p>
     <p class="text-xl font-bold text-blue-600">₹{{ total_material }}</p>
+  </div>
+
+  <div class="bg-white p-4 rounded shadow">
+    <p class="text-sm text-gray-500">Total Advance</p>
+    <p class="text-xl font-bold text-red-600">₹{{ total_advance }}</p>
   </div>
 
   <div class="bg-white p-4 rounded shadow">
@@ -99,46 +102,68 @@
         <th class="p-3 text-left">Team</th>
         <th class="p-3 text-right">Labour ₹</th>
         <th class="p-3 text-right">Material ₹</th>
+        <th class="p-3 text-right">Advance ₹</th>
         <th class="p-3 text-right">Total ₹</th>
       </tr>
     </thead>
 
     <tbody class="divide-y">
 
-      <!-- CIVIL ROWS -->
-      {% for r in civil_entries %}
-      <tr class="hover:bg-gray-50">
-        <td class="p-2">{{ r.date }}</td>
-        <td class="p-2">{{ r.site.name }}</td>
-        <td class="p-2">Civil</td>
-        <td class="p-2">{{ r.team.name }}</td>
-        <td class="p-2 text-right">₹{{ r.labour_amount }}</td>
-        <td class="p-2 text-right">₹{{ r.material_amount }}</td>
-        <td class="p-2 text-right font-semibold">
-          ₹{{ r.labour_amount|add:r.material_amount }}
-        </td>
-      </tr>
-      {% endfor %}
+      <!-- CIVIL -->
+{% for r in civil_entries %}
+<tr class="hover:bg-gray-50">
+  <td class="p-2">{{ r.date|date:"Y-m-d" }}
+</td>
+  <td class="p-2">{{ r.site.name }}</td>
+  <td class="p-2">Civil</td>
+  <td class="p-2">{{ r.team.name }}</td>
+  <td class="p-2 text-right">₹{{ r.labour }}</td>
+  <td class="p-2 text-right">₹0</td>
+  <td class="p-2 text-right">₹{{ r.advance }}</td>
+  <td class="p-2 text-right font-semibold">₹{{ r.total }}</td>
+</tr>
+{% endfor %}
 
-      <!-- DEPARTMENT ROWS -->
+
+
+      <!-- DEPARTMENT -->
       {% for r in dept_entries %}
+<tr class="hover:bg-gray-50">
+  <td class="p-2">{{ r.date|date:"Y-m-d" }}</td>
+  <td class="p-2">{{ r.site.name }}</td>
+  <td class="p-2">{{ r.department.name }}</td>
+  <td class="p-2">—</td>
+
+  <td class="p-2 text-right">₹{{ r.labour }}</td>
+  <td class="p-2 text-right">₹0</td>
+
+  <td class="p-2 text-right">₹{{ r.advance }}</td>
+
+  <td class="p-2 text-right font-semibold">
+    ₹{{ r.total }}
+  </td>
+</tr>
+{% endfor %}
+
+
+      <!-- MATERIAL -->
+      {% for m in material_entries %}
       <tr class="hover:bg-gray-50">
-        <td class="p-2">{{ r.date }}</td>
-        <td class="p-2">{{ r.site.name }}</td>
-        <td class="p-2">{{ r.department.name }}</td>
+        <td class="p-2">{{ m.date|date:"Y-m-d" }}</td>
+        <td class="p-2">{{ m.site.name }}</td>
+        <td class="p-2">Material</td>
         <td class="p-2">—</td>
-        <td class="p-2 text-right">₹{{ r.labour_amount }}</td>
-        <td class="p-2 text-right">₹{{ r.material_amount }}</td>
-        <td class="p-2 text-right font-semibold">
-          ₹{{ r.labour_amount|add:r.material_amount }}
-        </td>
+        <td class="p-2 text-right">₹0</td>
+        <td class="p-2 text-right">₹{{ m.total }}</td>
+        <td class="p-2 text-right">₹0</td>
+        <td class="p-2 text-right font-semibold">₹{{ m.total }}</td>
       </tr>
       {% endfor %}
 
-      {% if not civil_entries and not dept_entries %}
+      {% if not civil_entries and not dept_entries and not material_entries %}
       <tr>
-        <td colspan="7" class="p-6 text-center text-gray-500">
-          No records found for selected filters
+        <td colspan="8" class="p-6 text-center text-gray-500">
+          No records found
         </td>
       </tr>
       {% endif %}
