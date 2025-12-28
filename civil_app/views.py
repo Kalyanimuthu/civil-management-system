@@ -1,3 +1,4 @@
+from collections import defaultdict
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
@@ -603,14 +604,15 @@ def reset_site_all(request, site_id):
     DepartmentWork.objects.filter(site=site).delete()
     CivilAdvance.objects.filter(site=site).delete()
     MaterialEntry.objects.filter(site=site).delete()
-
+    
     return redirect("site_detail", site_id=site.id)
+
 
 def reports(request):
     today = date.today()
 
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
+    from_date = parse_date(request.GET.get("from_date")) or today
+    to_date = parse_date(request.GET.get("to_date")) or today
 
     site_id = request.GET.get("site")
     team_id = request.GET.get("team")
@@ -620,67 +622,85 @@ def reports(request):
     teams = Team.objects.all()
     departments = Department.objects.all()
 
-    # ---------------- CIVIL ----------------
+    # ============================
+    # CIVIL DATA
+    # ============================
     civil_qs = CivilDailyWork.objects.filter(
         date__range=[from_date, to_date]
     ).select_related("site", "team")
 
     if site_id:
         civil_qs = civil_qs.filter(site_id=site_id)
+
     if team_id:
         civil_qs = civil_qs.filter(team_id=team_id)
 
-    # Advance map
+    # If department selected & not Civil → hide civil
+    if dept_id:
+        dept = Department.objects.filter(id=dept_id).first()
+        if dept and dept.name.lower() != "civil":
+            civil_qs = CivilDailyWork.objects.none()
+
+    # Civil advances
     advance_map = {
         (a.team_id, a.date): a.amount
         for a in CivilAdvance.objects.filter(date__range=[from_date, to_date])
     }
 
     civil_rows = []
-    total_labour = 0
-    total_advance = 0
+    total_labour = total_advance = 0
 
-    for row in civil_qs:
-        adv = advance_map.get((row.team_id, row.date), 0)
-        total = row.labour_amount - adv
-
-        total_labour += row.labour_amount
-        total_advance += adv
+    for c in civil_qs:
+        adv = advance_map.get((c.team_id, c.date), 0)
+        total = c.labour_amount - adv
 
         civil_rows.append({
-            "date": row.date,
-            "site": row.site,
-            "team": row.team,
-            "labour": row.labour_amount,
+            "date": c.date,
+            "site": c.site,
+            "department": "Civil",
+            "team": c.team.name,
+            "labour": c.labour_amount,
+            "material": 0,
             "advance": adv,
             "total": total,
         })
 
-    # ---------------- DEPARTMENT ----------------
+        total_labour += c.labour_amount
+        total_advance += adv
+
+    # ============================
+    # DEPARTMENT DATA
+    # ============================
     dept_qs = DepartmentWork.objects.filter(
         date__range=[from_date, to_date]
     ).select_related("site", "department")
 
     if site_id:
         dept_qs = dept_qs.filter(site_id=site_id)
+
     if dept_id:
         dept_qs = dept_qs.filter(department_id=dept_id)
 
     dept_rows = []
-    for d in dept_qs:
-        total_labour += d.labour_amount
-        total_advance += d.advance_amount or 0
 
+    for d in dept_qs:
         dept_rows.append({
             "date": d.date,
             "site": d.site,
-            "department": d.department,
+            "department": d.department.name,
+            "team": "—",
             "labour": d.labour_amount,
-            "advance": d.advance_amount,
+            "material": 0,
+            "advance": d.advance_amount or 0,
             "total": d.labour_amount - (d.advance_amount or 0),
         })
 
-    # ---------------- MATERIAL ----------------
+        total_labour += d.labour_amount
+        total_advance += (d.advance_amount or 0)
+
+    # ============================
+    # MATERIAL DATA
+    # ============================
     material_qs = MaterialEntry.objects.filter(
         date__range=[from_date, to_date]
     )
@@ -688,10 +708,34 @@ def reports(request):
     if site_id:
         material_qs = material_qs.filter(site_id=site_id)
 
-    material_rows = list(material_qs)
-    total_material = sum(m.total for m in material_rows)
+    # Hide material if department selected
+    if dept_id:
+        dept = Department.objects.filter(id=dept_id).first()
+        if dept and dept.name.lower() != "material":
+            material_qs = MaterialEntry.objects.none()
 
-    # ---------------- GRAND TOTAL ----------------
+    material_rows = []
+    total_material = 0
+
+    for m in material_qs:
+        material_rows.append({
+            "date": m.date,
+            "site": m.site,
+            "department": "Material",
+            "team": "—",
+            "labour": 0,
+            "material": m.total,
+            "advance": 0,
+            "total": m.total,
+        })
+        total_material += m.total
+
+    # ============================
+    # FINAL ROWS (MERGED & SORTED)
+    # ============================
+    rows = civil_rows + dept_rows + material_rows
+    rows.sort(key=lambda x: x["date"], reverse=True)
+
     grand_total = total_labour + total_material - total_advance
 
     return render(request, "reports.html", {
@@ -699,9 +743,7 @@ def reports(request):
         "teams": teams,
         "departments": departments,
 
-        "civil_entries": civil_rows,
-        "dept_entries": dept_rows,
-        "material_entries": material_rows,
+        "rows": rows,
 
         "total_labour": total_labour,
         "total_material": total_material,
@@ -794,7 +836,7 @@ def report_pdf(request):
     team_id = request.GET.get("team")
     dept_id = request.GET.get("department")
 
-    # ================= CIVIL =================
+    # ---------------- CIVIL ----------------
     civil_qs = CivilDailyWork.objects.filter(
         date__range=[from_date, to_date]
     )
@@ -804,7 +846,8 @@ def report_pdf(request):
     if team_id:
         civil_qs = civil_qs.filter(team_id=team_id)
 
-    # ADVANCE
+    civil_qs = civil_qs.select_related("site", "team").order_by("-date")
+
     advance_map = {
         (a.team_id, a.date): a.amount
         for a in CivilAdvance.objects.filter(date__range=[from_date, to_date])
@@ -830,27 +873,32 @@ def report_pdf(request):
             "total": total,
         })
 
-    # ================= DEPARTMENT =================
+    # ---------------- DEPARTMENT ----------------
     dept_qs = DepartmentWork.objects.filter(
         date__range=[from_date, to_date]
     )
 
     if site_id:
         dept_qs = dept_qs.filter(site_id=site_id)
+
     if dept_id:
         dept_qs = dept_qs.filter(department_id=dept_id)
 
+    dept_qs = dept_qs.select_related("site", "department").order_by("-date")
+
     dept_rows = []
+    dept_total = 0
+
     for d in dept_qs:
+        dept_total += d.labour_amount
         dept_rows.append({
             "date": d.date,
             "site": d.site,
             "department": d.department,
             "labour": d.labour_amount,
-            "total": d.labour_amount,
         })
 
-    # ================= MATERIAL =================
+    # ---------------- MATERIAL ----------------
     material_qs = MaterialEntry.objects.filter(
         date__range=[from_date, to_date]
     )
@@ -858,24 +906,33 @@ def report_pdf(request):
     if site_id:
         material_qs = material_qs.filter(site_id=site_id)
 
-    total_material = sum(m.total for m in material_qs)
+    material_qs = material_qs.order_by("-date")
 
-    # ================= TOTAL =================
-    grand_total = total_labour + total_material - total_advance
+    material_rows = []
+    total_material = 0
 
-    return render_to_pdf("reports_pdf.html", {
+    for m in material_qs:
+        total_material += m.total
+        material_rows.append(m)
+
+    # ---------------- FINAL TOTAL ----------------
+    grand_total = total_labour + dept_total + total_material - total_advance
+
+    context = {
         "from_date": from_date,
         "to_date": to_date,
 
         "civil_entries": civil_rows,
         "dept_entries": dept_rows,
-        "material_entries": material_qs,
+        "material_entries": material_rows,
 
-        "total_labour": total_labour,
+        "total_labour": total_labour + dept_total,
         "total_material": total_material,
         "total_advance": total_advance,
         "grand_total": grand_total,
-    })
+    }
+
+    return render_to_pdf("reports_pdf.html", context)
 
 def render_to_pdf(template_src, context):
     template = get_template(template_src)

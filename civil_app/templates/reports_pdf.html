@@ -108,7 +108,7 @@
         <!-- CIVIL -->
         {% for r in civil_entries %}
         <tr>
-            <td>{{ r.date }}</td>
+            <td>{{ r.date|date:"d M Y" }}</td>
             <td>{{ r.site.name }}</td>
             <td>Civil</td>
             <td>{{ r.team.name }}</td>
@@ -122,7 +122,7 @@
         <!-- DEPARTMENT -->
         {% for d in dept_entries %}
         <tr>
-            <td>{{ d.date }}</td>
+            <td>{{ d.date|date:"d M Y" }}</td>
             <td>{{ d.site.name }}</td>
             <td>{{ d.department.name }}</td>
             <td>—</td>
@@ -136,7 +136,7 @@
         <!-- MATERIAL -->
         {% for m in material_entries %}
         <tr>
-            <td>{{ m.date }}</td>
+            <td>{{ m.date|date:"d M Y" }}</td>
             <td>{{ m.site.name }}</td>
             <td>Material</td>
             <td>—</td>

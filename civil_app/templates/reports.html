@@ -1,175 +1,157 @@
 {% extends "base.html" %}
-{% load civil_extras %}
-
 {% block content %}
 
-<h2 class="text-2xl font-bold mb-6">📊 Reports</h2>
+<div class="max-w-7xl mx-auto p-6">
 
-<a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
-   class="bg-red-600 text-white px-4 py-2 rounded">
+  <!-- ================= HEADER ================= -->
+  <h2 class="text-2xl font-bold mb-6">📊 Reports</h2>
+
+  <!-- ================= FILTERS ================= -->
+  <form method="get"
+        class="bg-white p-4 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+
+    <div>
+      <label class="text-sm font-semibold">From</label>
+      <input type="date" name="from_date" value="{{ from_date|date:'Y-m-d' }}"
+             class="border rounded w-full p-2">
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">To</label>
+      <input type="date" name="to_date" value="{{ to_date|date:'Y-m-d' }}"
+             class="border rounded w-full p-2">
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">Site</label>
+      <select name="site" class="border rounded w-full p-2">
+        <option value="">All Sites</option>
+        {% for s in sites %}
+        <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
+          {{ s.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">Team</label>
+      <select name="team" class="border rounded w-full p-2">
+        <option value="">All Teams</option>
+        {% for t in teams %}
+        <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
+          {{ t.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">Department</label>
+      <select name="department" class="border rounded w-full p-2">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
+          {{ d.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="col-span-full bg-blue-600 text-white py-2 rounded font-semibold">
+      🔍 Apply Filters
+    </button>
+
+    <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
+   class="bg-red-600 text-white py-2 px-4 rounded">
    📄 Download PDF
 </a>
 
 
-<!-- ================= FILTER BAR ================= -->
-<form method="get"
-      class="bg-white p-4 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+  </form>
 
-  <div>
-    <label class="text-xs font-semibold text-gray-600">From</label>
-    <input type="date" name="from_date" value="{{ from_date|date:'Y-m-d' }}"
-           class="border p-2 rounded w-full">
+  <!-- ================= SUMMARY ================= -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-sm text-gray-500">Total Labour</p>
+      <p class="text-xl font-bold text-orange-600">₹{{ total_labour }}</p>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-sm text-gray-500">Total Material</p>
+      <p class="text-xl font-bold text-blue-600">₹{{ total_material }}</p>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-sm text-gray-500">Total Advance</p>
+      <p class="text-xl font-bold text-red-600">₹{{ total_advance }}</p>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-sm text-gray-500">Grand Total</p>
+      <p class="text-xl font-bold text-green-600">₹{{ grand_total }}</p>
+    </div>
   </div>
 
-  <div>
-    <label class="text-xs font-semibold text-gray-600">To</label>
-    <input type="date" name="to_date" value="{{ to_date|date:'Y-m-d' }}"
-           class="border p-2 rounded w-full">
+  <!-- ================= TABLE ================= -->
+  <div class="bg-white rounded-xl shadow overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-900 text-white">
+        <tr>
+          <th class="p-3 text-left">Date</th>
+          <th class="p-3 text-left">Site</th>
+          <th class="p-3 text-left">Department</th>
+          <th class="p-3 text-left">Team</th>
+          <th class="p-3 text-right">Labour ₹</th>
+          <th class="p-3 text-right">Material ₹</th>
+          <th class="p-3 text-right">Advance ₹</th>
+          <th class="p-3 text-right">Total ₹</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for r in rows %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="p-2">{{ r.date|date:'Y-m-d' }}</td>
+          <td class="p-2">{{ r.site.name }}</td>
+          <td class="p-2">{{ r.department }}</td>
+          <td class="p-2">{{ r.team }}</td>
+          <td class="p-2 text-right">₹{{ r.labour }}</td>
+          <td class="p-2 text-right">₹{{ r.material }}</td>
+          <td class="p-2 text-right">₹{{ r.advance }}</td>
+          <td class="p-2 text-right font-semibold">₹{{ r.total }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center p-6 text-gray-500">
+            No records found
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <div>
-    <label class="text-xs font-semibold text-gray-600">Site</label>
-    <select name="site" class="border p-2 rounded w-full">
-      <option value="">All Sites</option>
-      {% for s in sites %}
-        <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
-          {{ s.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div>
-    <label class="text-xs font-semibold text-gray-600">Team</label>
-    <select name="team" class="border p-2 rounded w-full">
-      <option value="">All Teams</option>
-      {% for t in teams %}
-        <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
-          {{ t.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div>
-    <label class="text-xs font-semibold text-gray-600">Department</label>
-    <select name="department" class="border p-2 rounded w-full">
-      <option value="">All Departments</option>
-      {% for d in departments %}
-        <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
-          {{ d.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-semibold col-span-full">
-    🔍 Apply Filters
-  </button>
-</form>
-
-<!-- ================= TOTAL SUMMARY ================= -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-  <div class="bg-white p-4 rounded shadow">
-    <p class="text-sm text-gray-500">Total Labour</p>
-    <p class="text-xl font-bold text-orange-600">₹{{ total_labour }}</p>
-  </div>
-
-  <div class="bg-white p-4 rounded shadow">
-    <p class="text-sm text-gray-500">Total Material</p>
-    <p class="text-xl font-bold text-blue-600">₹{{ total_material }}</p>
-  </div>
-
-  <div class="bg-white p-4 rounded shadow">
-    <p class="text-sm text-gray-500">Total Advance</p>
-    <p class="text-xl font-bold text-red-600">₹{{ total_advance }}</p>
-  </div>
-
-  <div class="bg-white p-4 rounded shadow">
-    <p class="text-sm text-gray-500">Grand Total</p>
-    <p class="text-xl font-bold text-green-600">₹{{ grand_total }}</p>
-  </div>
 </div>
 
-<!-- ================= REPORT TABLE ================= -->
-<div class="bg-white rounded-xl shadow overflow-x-auto">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-800 text-white">
-      <tr>
-        <th class="p-3 text-left">Date</th>
-        <th class="p-3 text-left">Site</th>
-        <th class="p-3 text-left">Department</th>
-        <th class="p-3 text-left">Team</th>
-        <th class="p-3 text-right">Labour ₹</th>
-        <th class="p-3 text-right">Material ₹</th>
-        <th class="p-3 text-right">Advance ₹</th>
-        <th class="p-3 text-right">Total ₹</th>
-      </tr>
-    </thead>
+<script>
+function downloadPDF() {
+  const params = new URLSearchParams();
 
-    <tbody class="divide-y">
+  const from = document.querySelector('[name="from_date"]')?.value;
+  const to = document.querySelector('[name="to_date"]')?.value;
+  const site = document.querySelector('[name="site"]')?.value;
+  const team = document.querySelector('[name="team"]')?.value;
+  const dept = document.querySelector('[name="department"]')?.value;
 
-      <!-- CIVIL -->
-{% for r in civil_entries %}
-<tr class="hover:bg-gray-50">
-  <td class="p-2">{{ r.date|date:"Y-m-d" }}
-</td>
-  <td class="p-2">{{ r.site.name }}</td>
-  <td class="p-2">Civil</td>
-  <td class="p-2">{{ r.team.name }}</td>
-  <td class="p-2 text-right">₹{{ r.labour }}</td>
-  <td class="p-2 text-right">₹0</td>
-  <td class="p-2 text-right">₹{{ r.advance }}</td>
-  <td class="p-2 text-right font-semibold">₹{{ r.total }}</td>
-</tr>
-{% endfor %}
+  if (from) params.append("from_date", from);
+  if (to) params.append("to_date", to);
+  if (site) params.append("site", site);
+  if (team) params.append("team", team);
+  if (dept) params.append("department", dept);
 
-
-
-      <!-- DEPARTMENT -->
-      {% for r in dept_entries %}
-<tr class="hover:bg-gray-50">
-  <td class="p-2">{{ r.date|date:"Y-m-d" }}</td>
-  <td class="p-2">{{ r.site.name }}</td>
-  <td class="p-2">{{ r.department.name }}</td>
-  <td class="p-2">—</td>
-
-  <td class="p-2 text-right">₹{{ r.labour }}</td>
-  <td class="p-2 text-right">₹0</td>
-
-  <td class="p-2 text-right">₹{{ r.advance }}</td>
-
-  <td class="p-2 text-right font-semibold">
-    ₹{{ r.total }}
-  </td>
-</tr>
-{% endfor %}
-
-
-      <!-- MATERIAL -->
-      {% for m in material_entries %}
-      <tr class="hover:bg-gray-50">
-        <td class="p-2">{{ m.date|date:"Y-m-d" }}</td>
-        <td class="p-2">{{ m.site.name }}</td>
-        <td class="p-2">Material</td>
-        <td class="p-2">—</td>
-        <td class="p-2 text-right">₹0</td>
-        <td class="p-2 text-right">₹{{ m.total }}</td>
-        <td class="p-2 text-right">₹0</td>
-        <td class="p-2 text-right font-semibold">₹{{ m.total }}</td>
-      </tr>
-      {% endfor %}
-
-      {% if not civil_entries and not dept_entries and not material_entries %}
-      <tr>
-        <td colspan="8" class="p-6 text-center text-gray-500">
-          No records found
-        </td>
-      </tr>
-      {% endif %}
-
-    </tbody>
-  </table>
-</div>
+  window.location.href = `/reports/pdf/?${params.toString()}`;
+}
+</script>
 
 {% endblock %}
