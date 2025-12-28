@@ -1,159 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Project Report</title>
-
-    <style>
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
-            color: #000;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .date-range {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-
-        .summary {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-
-        .summary td {
-            padding: 8px;
-            border: 1px solid #ccc;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .summary .labour { background: #fff3cd; }
-        .summary .material { background: #e7f1ff; }
-        .summary .advance { background: #fde2e2; }
-        .summary .total { background: #d1fae5; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th {
-            background: #1f2937;
-            color: white;
-            padding: 8px;
-            font-size: 11px;
-        }
-
-        td {
-            padding: 6px;
-            border: 1px solid #ccc;
-            font-size: 11px;
-        }
-
-        .right {
-            text-align: right;
-        }
-
-        .center {
-            text-align: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<style>
+body {
+    font-family: DejaVu Sans;
+    font-size: 11px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #444;
+    padding: 6px;
+}
+th {
+    background: #333;
+    color: white;
+}
+.right {
+    text-align: right;
+}
+h2 {
+    text-align: center;
+}
+</style>
 </head>
 
 <body>
 
-<h1>📊 Project Report</h1>
+<h2>Project Report</h2>
+<p><b>From:</b> {{ from_date }} &nbsp; <b>To:</b> {{ to_date }}</p>
 
-<div class="date-range">
-    <strong>From:</strong> {{ from_date }} &nbsp;&nbsp;
-    <strong>To:</strong> {{ to_date }}
-</div>
-
-<!-- ================= SUMMARY ================= -->
-<table class="summary">
-    <tr>
-        <td class="labour">Labour<br> {{ total_labour }}</td>
-        <td class="material">Material<br> {{ total_material }}</td>
-        <td class="advance">Advance<br> {{ total_advance }}</td>
-        <td class="total">Grand Total<br> {{ grand_total }}</td>
-    </tr>
-</table>
-
-<!-- ================= DETAILS ================= -->
 <table>
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Site</th>
-            <th>Department</th>
-            <th>Team</th>
-            <th>Labour </th>
-            <th>Material </th>
-            <th>Advance </th>
-            <th>Total </th>
-        </tr>
-    </thead>
+<tr>
+    <th>Date</th>
+    <th>Site</th>
+    <th>Department</th>
+    <th>Team</th>
+    <th>Labour</th>
+    <th>Material</th>
+    <th>Advance</th>
+    <th>Total</th>
+</tr>
 
-    <tbody>
+{% for r in rows %}
+<tr>
+    <td>{{ r.date }}</td>
+    <td>{{ r.site }}</td>
+    <td>{{ r.department }}</td>
+    <td>{{ r.team }}</td>
+    <td class="right">{{ r.labour }}</td>
+    <td class="right">{{ r.material }}</td>
+    <td class="right">{{ r.advance }}</td>
+    <td class="right">{{ r.total }}</td>
+</tr>
+{% endfor %}
 
-        <!-- CIVIL -->
-        {% for r in civil_entries %}
-        <tr>
-            <td>{{ r.date|date:"d M Y" }}</td>
-            <td>{{ r.site.name }}</td>
-            <td>Civil</td>
-            <td>{{ r.team.name }}</td>
-            <td class="right">{{ r.labour }}</td>
-            <td class="right">0</td>
-            <td class="right">{{ r.advance }}</td>
-            <td class="right">{{ r.total }}</td>
-        </tr>
-        {% endfor %}
+<tr>
+    <td colspan="4"><b>Total</b></td>
+    <td class="right"><b>{{ total_labour }}</b></td>
+    <td class="right"><b>{{ total_material }}</b></td>
+    <td class="right"><b>{{ total_advance }}</b></td>
+    <td class="right"><b>{{ grand_total }}</b></td>
+</tr>
 
-        <!-- DEPARTMENT -->
-        {% for d in dept_entries %}
-        <tr>
-            <td>{{ d.date|date:"d M Y" }}</td>
-            <td>{{ d.site.name }}</td>
-            <td>{{ d.department.name }}</td>
-            <td>—</td>
-            <td class="right">{{ d.labour }}</td>
-            <td class="right">0</td>
-            <td class="right">0</td>
-            <td class="right">{{ d.labour }}</td>
-        </tr>
-        {% endfor %}
-
-        <!-- MATERIAL -->
-        {% for m in material_entries %}
-        <tr>
-            <td>{{ m.date|date:"d M Y" }}</td>
-            <td>{{ m.site.name }}</td>
-            <td>Material</td>
-            <td>—</td>
-            <td class="right">0</td>
-            <td class="right">{{ m.total }}</td>
-            <td class="right">0</td>
-            <td class="right">{{ m.total }}</td>
-        </tr>
-        {% endfor %}
-
-        {% if not civil_entries and not dept_entries and not material_entries %}
-        <tr>
-            <td colspan="8" style="text-align:center;">No records found</td>
-        </tr>
-        {% endif %}
-
-    </tbody>
 </table>
 
 </body>

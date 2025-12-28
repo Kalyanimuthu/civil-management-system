@@ -29,6 +29,7 @@ urlpatterns = [
     path("reports/", views.reports, name="reports"),
     path("reports/pdf/", views.report_pdf, name="report_pdf"),
 
+
     # ================= RESET ACTIONS =================
     path("site/<int:site_id>/reset/today/", views.reset_site_today, name="reset_site_today"),
     path("site/<int:site_id>/reset/month/", views.reset_site_month, name="reset_site_month"),

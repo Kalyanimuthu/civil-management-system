@@ -178,8 +178,9 @@
 <div class="bg-white rounded-2xl shadow p-4 mb-8">
 
   <!-- Header -->
-  <div class="grid grid-cols-6 gap-2 text-xs font-semibold text-gray-600 mb-2">
-    <div>Material</div>
+  <div class="grid grid-cols-7 gap-2 text-xs font-semibold text-gray-600 mb-2">
+    <div>Agent Name</div>
+    <div>Material Name</div>
     <div>Qty</div>
     <div>Unit</div>
     <div>Rate</div>
@@ -189,7 +190,11 @@
 
   <div id="materialRows">
     {% for m in materials %}
-    <div class="grid grid-cols-6 gap-2 items-center mb-2">
+    <div class="grid grid-cols-7 gap-2 items-center mb-2">
+      <input name="agent_name_{{ forloop.counter0 }}"
+              value="{{m.agent_name}}"
+              class="input-box">
+
       <input name="material_name_{{ forloop.counter0 }}"
              value="{{ m.name }}"
              class="input-box">
@@ -217,7 +222,7 @@
 
       <button type="button"
               onclick="this.parentElement.remove()"
-              class="text-red-600 text-left font-bold border-2 rounded px-3 bg-red-100">
+              class="text-red-600 text-left font-bold bg-red-100 border-2 rounded px-3">
         Delete
       </button>
     </div>
@@ -388,15 +393,16 @@ function addMaterialRow() {
   const container = document.getElementById("materialRows");
 
   const row = document.createElement("div");
-  row.className = "grid grid-cols-6 gap-2 items-center mb-2";
+  row.className = "grid grid-cols-7 gap-2 items-center mb-2";
 
   row.innerHTML = `
+    <input name="agent_name_${materialIndex}" class="input-box">
     <input name="material_name_${materialIndex}" class="input-box">
     <input name="material_qty_${materialIndex}" type="number" class="input-box" oninput="calcMaterial(${materialIndex})">
     <input name="material_unit_${materialIndex}" class="input-box">
     <input name="material_rate_${materialIndex}" type="number" class="input-box" oninput="calcMaterial(${materialIndex})">
     <input id="material_total_${materialIndex}" class="input-box bg-green-100 font-bold" readonly>
-    <button type="button" onclick="this.parentElement.remove()" class="text-red-600 font-bold">Delete</button>
+    <button type="button" onclick="this.parentElement.remove()" class="text-red-600 bg-red-100 rounded py-1 font-bold">Delete</button>
   `;
 
   container.appendChild(row);

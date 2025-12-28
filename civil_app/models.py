@@ -107,6 +107,7 @@ class CivilAdvance(models.Model):
 class MaterialEntry(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     date = models.DateField()
+    agent_name = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     quantity = models.FloatField()
     unit = models.CharField(max_length=20)
