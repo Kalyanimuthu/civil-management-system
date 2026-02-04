@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-6 py-10 space-y-14 animate-page">
+
+  <!-- ================= HEADER ================= -->
+  <div>
+    <h1 class="text-3xl font-extrabold text-slate-900">
+      🧩 Masters & 💰 Default Payments
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Add, update and delete departments & civil teams with default wages
+    </p>
+  </div>
+
+  <!-- ================================================= -->
+  <!-- ================= DEPARTMENTS =================== -->
+  <!-- ================================================= -->
+  <section class="card">
+
+    <h2 class="section-title">🏢 Departments</h2>
+
+    <!-- ADD DEPARTMENT + PAYMENT -->
+    <form method="post" class="form-box grid grid-cols-1 md:grid-cols-3 gap-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_department">
+
+      <input name="name" required placeholder="Department name"
+             class="input">
+
+      <input type="number" name="full" min="1" required
+             placeholder="Full day wage ₹"
+             class="input">
+
+      <button class="btn-primary">
+        ➕ Add Department
+      </button>
+    </form>
+
+    <!-- LIST -->
+    <div class="overflow-x-auto mt-6">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Full Day ₹</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          {% for r in dept_rates %}
+          <tr>
+  <td class="font-semibold">
+    {{ r.department.name }}
+  </td>
+
+  <!-- FULL DAY RATE -->
+  <td class="text-center">
+    <input type="number"
+           name="full"
+           value="{{ r.full_day_rate }}"
+           form="dept-form-{{ r.id }}"
+           class="rate-input">
+  </td>
+
+  <!-- ACTIONS -->
+  <td class="action-cell">
+    <form method="post" class="action-cell">
+  {% csrf_token %}
+
+  <input type="hidden" name="action" value="update_department">
+  <input type="hidden" name="rate_id" value="{{ r.id }}">
+
+  <input type="number"
+         name="full"
+         value="{{ r.full_day_rate }}"
+         class="rate-input"
+         required>
+
+  <button type="submit" class="btn-update">
+    Update
+  </button>
+
+  <button type="submit"
+          name="action"
+          value="delete_department"
+          onclick="return confirm('Delete {{ r.department.name }}?')"
+          class="btn-red">
+    Delete
+  </button>
+</form>
+
+  </td>
+</tr>
+
+          {% empty %}
+          <tr>
+            <td colspan="3" class="empty">
+              No departments configured
+            </td>
+          </tr>
+          {% endfor %}
+
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ================================================= -->
+  <!-- ================= CIVIL TEAMS =================== -->
+  <!-- ================================================= -->
+  <section class="card">
+
+    <h2 class="section-title">👷 Civil Teams</h2>
+
+    <!-- ADD TEAM + PAYMENT -->
+    <form method="post"
+          class="form-box grid grid-cols-1 md:grid-cols-4 gap-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_team">
+
+      <input name="name" required
+             placeholder="Team name"
+             class="input">
+
+      <input type="number" name="mason" min="1" required
+             placeholder="Mason wage ₹"
+             class="input">
+
+      <input type="number" name="helper" min="1" required
+             placeholder="Helper wage ₹"
+             class="input">
+
+      <button class="btn-primary">
+        ➕ Add Team
+      </button>
+    </form>
+
+    <!-- LIST -->
+    <div class="overflow-x-auto mt-6">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Mason ₹</th>
+            <th>Helper ₹</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          {% for r in team_rates %}
+          <tr>
+  <td class="font-semibold">
+    {{ r.team.name }}
+  </td>
+
+  <!-- MASON -->
+  <td class="text-center">
+    <input name="mason"
+           value="{{ r.mason_full_rate }}"
+           form="team-form-{{ r.id }}"
+           class="mini-input">
+  </td>
+
+  <!-- HELPER -->
+  <td class="text-center">
+    <input name="helper"
+           value="{{ r.helper_full_rate }}"
+           form="team-form-{{ r.id }}"
+           class="mini-input">
+  </td>
+
+  <!-- ACTIONS -->
+  <td class="action-cell">
+    <form method="post" id="team-form-{{ r.id }}" class="action-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_team">
+      <input type="hidden" name="rate_id" value="{{ r.id }}">
+
+      <button class="btn-green">Update</button>
+    </form>
+
+    <form method="post"
+          onsubmit="return confirm('Delete {{ r.team.name }}?')">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete_team">
+      <input type="hidden" name="rate_id" value="{{ r.id }}">
+
+      <button class="btn-red">Delete</button>
+    </form>
+  </td>
+</tr>
+
+          {% empty %}
+          <tr>
+            <td colspan="4" class="empty">
+              No civil teams configured
+            </td>
+          </tr>
+          {% endfor %}
+
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+:root{
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --text:#0f172a;
+  --muted:#64748b;
+
+  --primary:#0f172a;
+  --primary-hover:#020617;
+
+  --success:#15803d;
+  --danger:#dc2626;
+  --warning:#f59e0b;
+  --accent:#2563eb;
+}
+
+/* ========== PAGE ========== */
+body{
+  background:var(--bg);
+}
+
+.animate-page{
+  animation:fadeUp .35s ease-out;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ========== CARDS ========== */
+.card{
+  background:var(--card);
+  border-radius:1.75rem;
+  padding:2rem;
+  border:1px solid var(--border);
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.06),
+    0 1px 0 rgba(255,255,255,.8) inset;
+}
+
+.section-title{
+  font-size:1.35rem;
+  font-weight:900;
+  color:var(--text);
+  margin-bottom:1.25rem;
+}
+
+/* ========== FORMS ========== */
+.form-box{
+  background:#f8fafc;
+  border-radius:1.25rem;
+  padding:1.25rem;
+  border:1px dashed #cbd5e1;
+}
+
+.input{
+  width:100%;
+  border-radius:.85rem;
+  padding:.65rem .8rem;
+  font-size:.9rem;
+  border:1px solid var(--border);
+  background:white;
+  transition:.2s;
+}
+.input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(37,99,235,.15);
+}
+
+/* Small inline inputs */
+.mini-input{
+  width:5.5rem;
+  border-radius:.6rem;
+  padding:.35rem .45rem;
+  border:1px solid var(--border);
+  font-size:.8rem;
+}
+
+/* ========== BUTTONS ========== */
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),#1e293b);
+  color:white;
+  font-weight:800;
+  border-radius:.85rem;
+  padding:.65rem 1.1rem;
+  letter-spacing:.02em;
+  transition:.25s;
+}
+.btn-primary:hover{
+  background:linear-gradient(135deg,var(--primary-hover),#020617);
+  transform:translateY(-1px);
+}
+
+.btn-green{
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  color:white;
+  font-weight:700;
+  border-radius:.6rem;
+  padding:.35rem .8rem;
+}
+.btn-green:hover{filter:brightness(1.05)}
+
+.btn-red{
+  background:linear-gradient(135deg,#dc2626,#b91c1c);
+  color:white;
+  font-weight:700;
+  border-radius:.6rem;
+  padding:.35rem .8rem;
+}
+.btn-red:hover{filter:brightness(1.05)}
+
+/* ========== TABLE ========== */
+/* ================= TABLE ================= */
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 10px;
+  font-size:0.88rem;
+}
+
+/* ================= HEADER ================= */
+.table thead th{
+  background:#f1f5f9;
+  color:#334155;
+  font-size:0.7rem;
+  font-weight:800;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:0.85rem 1.2rem;
+  text-align:left;
+  border-radius:0.75rem 0.75rem 0 0;
+}
+
+.table thead th:nth-child(2){
+  text-align:center;
+}
+.table thead th:last-child{
+  text-align:center;
+}
+
+/* ================= ROW CARD ================= */
+.table tbody tr{
+  background:white;
+  box-shadow:0 6px 18px rgba(0,0,0,0.05);
+  transition:all 0.2s ease;
+}
+
+.table tbody tr:hover{
+  box-shadow:0 12px 28px rgba(0,0,0,0.08);
+  transform:translateY(-1px);
+}
+
+/* ================= CELLS ================= */
+.table td{
+  padding:0.9rem 1.2rem;
+  vertical-align:middle;
+}
+
+.table td:first-child{
+  font-weight:700;
+  color:#0f172a;
+}
+
+.table td:last-child{
+  text-align:center;
+}
+
+/* ================= RATE FORM ================= */
+.rate-form{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.6rem;
+}
+
+/* ================= INPUT ================= */
+.rate-input{
+  width:90px;
+  padding:0.35rem 0.55rem;
+  border-radius:0.6rem;
+  border:1px solid #e5e7eb;
+  background:#f8fafc;
+  font-weight:700;
+  text-align:right;
+  transition:0.2s;
+}
+
+.rate-input:focus{
+  outline:none;
+  border-color:#22c55e;
+  box-shadow:0 0 0 2px rgba(34,197,94,0.25);
+  background:white;
+}
+
+/* ================= BUTTONS ================= */
+.btn-update{
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  color:white;
+  border:none;
+  padding:0.35rem 1rem;
+  border-radius:0.65rem;
+  font-size:0.7rem;
+  font-weight:800;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.btn-update:hover{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+}
+
+/* DELETE */
+.btn-red{
+  background:linear-gradient(135deg,#dc2626,#b91c1c);
+  color:white;
+  border:none;
+  padding:0.35rem 1.1rem;
+  border-radius:0.65rem;
+  font-size:0.7rem;
+  font-weight:800;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.btn-red:hover{
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+}
+
+/* ================= EMPTY STATE ================= */
+.empty{
+  text-align:center;
+  padding:1.8rem;
+  color:#94a3b8;
+  font-style:italic;
+}
+/* ===== ACTION COLUMN ===== */
+.action-cell{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:0.6rem;
+}
+
+/* Forms inline */
+.action-form{
+  margin:0;
+}
+
+/* Buttons equal height */
+.btn-update,
+.btn-green,
+.btn-red{
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Inputs align */
+.rate-input,
+.mini-input{
+  text-align:right;
+}
+
+/* ========== HEADER TEXT ========== */
+h1{
+  letter-spacing:-.02em;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width:768px){
+  .card{padding:1.25rem}
+  .section-title{font-size:1.15rem}
+}
+</style>
+
+
+{% endblock %}

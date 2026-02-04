@@ -1,94 +1,195 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<!-- ================= HEADER ================= -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+<div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
+
   <div>
-    <h2 class="text-2xl font-bold text-slate-800">🏗 Sites Dashboard</h2>
-    <p class="text-sm text-gray-500">Overview of site performance</p>
+    <h2 class="text-3xl font-extrabold text-slate-900">🏗 Sites Dashboard</h2>
+    <p class="text-sm text-gray-500 mt-1">Hover on a site to view details</p>
   </div>
 
-  <!-- SEARCH -->
-  <input
-    id="siteSearch"
-    placeholder="🔍 Search site..."
-    class="border rounded-lg px-4 py-2 mt-3 sm:mt-0 focus:ring-2 focus:ring-orange-500"
-    onkeyup="filterSites()">
-</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
-<!-- ================= SITE GRID ================= -->
-<div id="siteGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for row in sites %}
+    <div class="site-card">
 
-{% for row in sites %}
-<div class="site-card bg-white rounded-2xl shadow hover:shadow-xl transition p-5 relative"
-     data-name="{{ row.site.name|lower }}">
+      <!-- HEADER -->
+      <div class="site-header">
+        <h3>{{ row.site.name }}</h3>
+        <span>Site ID · {{ row.site.id }}</span>
+      </div>
 
+      <!-- HOVER DETAILS -->
+      <div class="site-details">
 
-  <!-- SITE NAME -->
-  <h3 class="text-xl font-bold text-slate-800 mb-3">
-    {{ row.site.name }}
-  </h3>
+        <div class="metric blue">
+          <span>This Week</span>
+          <strong>₹{{ row.weekly_total }}</strong>
+        </div>
 
-  <!-- TOTALS -->
-  <div class="space-y-2 text-sm">
+        <div class="metric green">
+          <span>This Month</span>
+          <strong>₹{{ row.month_total }}</strong>
+        </div>
 
-    <div class="flex justify-between">
-      <span class="text-gray-500">Today</span>
-      <span class="font-semibold text-orange-600">₹{{ row.today_total }}</span>
+        <div class="metric red">
+          <span>Advance</span>
+          <strong>₹{{ row.today_advance }}</strong>
+        </div>
+
+        <div class="actions">
+          <a href="/site/{{ row.site.id }}/">Open →</a>
+          <a href="/delete-site/{{ row.site.id }}/"
+             onclick="return confirm('Delete site?')"
+             class="danger">Delete</a>
+        </div>
+
+      </div>
+
     </div>
-
-    <div class="flex justify-between">
-      <span class="text-gray-500">This Week</span>
-      <span class="font-semibold text-blue-600">₹{{ row.weekly_total }}</span>
-    </div>
-
-    <div class="flex justify-between">
-      <span class="text-gray-500">This Month</span>
-      <span class="font-semibold text-green-600">₹{{ row.month_total }}</span>
-    </div>
-
-    <div class="flex justify-between">
-  <span class="text-gray-500">Advance (Civil + Dept)</span>
-  <span class="text-xl font-bold text-red-600">
-    ₹{{ row.today_advance }}
-  </span>
-</div>
-
-  </div>
-
-  <!-- ACTIONS -->
-  <div class="mt-5 flex justify-between items-center border-t pt-4">
-
-    <a href="/site/{{ row.site.id }}/"
-       class="text-orange-600 font-semibold hover:underline">
-      Open →
-    </a>
-
-    <a href="/delete-site/{{ row.site.id }}/"
-       onclick="return confirm('Delete this site?')"
-       class="text-red-600 text-sm hover:underline">
-      🗑 Delete
-    </a>
+    {% endfor %}
 
   </div>
 </div>
-{% empty %}
-<p class="col-span-full text-center text-gray-500">
-  No sites available
-</p>
-{% endfor %}
 
-</div>
 
-<!-- ================= SEARCH SCRIPT ================= -->
+<!-- ================= STYLES ================= -->
+<style>
+/* ===== Animation ===== */
+.animate-fade{
+  animation:fadeIn .4s ease-out;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ===== CARD ===== */
+.site-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:4px;
+  background:linear-gradient(
+    to right,
+    #facc15,
+    #fde047
+  );
+}
+
+.site-card{
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #fffbeb 100%   /* lemon tint */
+  );
+  border-radius:1.5rem;
+  padding:1.5rem;
+  border:1px solid #fde68a; /* lemon border */
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.06),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:.35s ease;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  min-height:170px;
+  overflow:hidden;
+}
+
+/* ===== HEADER ===== */
+.site-header h3{
+  font-size:1.25rem;
+  font-weight:800;
+  color:#0f172a;
+}
+.site-header span{
+  font-size:.75rem;
+  color:#94a3b8;
+}
+
+/* ===== DETAILS (HIDDEN) ===== */
+.site-details{
+  margin-top:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+
+  max-height:0;
+  opacity:0;
+  overflow:hidden;
+  transition:all .35s ease;
+}
+
+/* ===== HOVER ===== */
+.site-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 40px rgba(0,0,0,.1);
+}
+
+.site-card:hover .site-details{
+  max-height:200px;
+  opacity:1;
+}
+
+.site-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: radial-gradient(
+    circle at top left,
+    rgba(250,204,21,0.25),
+    transparent 60%
+  );
+  opacity:0;
+  transition:.35s ease;
+  pointer-events:none;
+}
+
+.site-card:hover::after{
+  opacity:1;
+}
+
+/* ===== METRICS ===== */
+.metric{
+  display:flex;
+  justify-content:space-between;
+  padding:.55rem .75rem;
+  border-radius:.7rem;
+  font-size:.85rem;
+  font-weight:600;
+}
+.metric strong{font-weight:900;}
+
+.metric.blue{background:#eff6ff;color:#1d4ed8;}
+.metric.green{background:#ecfdf5;color:#047857;}
+.metric.red{background:#fef2f2;color:#b91c1c;}
+
+/* ===== ACTIONS ===== */
+.actions{
+  margin-top:.6rem;
+  padding-top:.6rem;
+  border-top:1px dashed #e5e7eb;
+  display:flex;
+  justify-content:space-between;
+  font-size:.85rem;
+  font-weight:700;
+}
+.actions a{color:#2563eb;}
+.actions a.danger{color:#dc2626;}
+.actions a:hover{text-decoration:underline;}
+
+</style>
+
+<!-- ================= SEARCH ================= -->
 <script>
 function filterSites() {
-  let input = document.getElementById("siteSearch").value.toLowerCase();
-  let cards = document.querySelectorAll(".site-card");
-
-  cards.forEach(card => {
-    card.style.display =
-      card.dataset.name.includes(input) ? "block" : "none";
+  const val = document.getElementById("siteSearch").value.toLowerCase();
+  document.querySelectorAll(".site-card").forEach(card=>{
+    card.style.display = card.dataset.name.includes(val) ? "block" : "none";
   });
 }
 </script>

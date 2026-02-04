@@ -15,76 +15,162 @@
   </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-gradient-to-br from-slate-100 via-slate-100 to-yellow-50
+             min-h-screen flex flex-col">
 
-  <!-- ===== HEADER ===== -->
-  <header class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow">
-    <div class="flex items-center gap-2">
-      <span class="text-xl">🏗</span>
-      <span class="font-bold text-lg">Civil Management</span>
+  <!-- ================= HEADER ================= -->
+  <header class="bg-slate-900 text-white px-6 py-4
+                 flex items-center justify-between
+                 shadow-xl relative overflow-hidden">
+
+    <!-- Lemon glow -->
+    <div class="absolute inset-0 bg-gradient-to-r
+                from-yellow-400/10 via-transparent to-transparent"></div>
+
+    <div class="relative flex items-center gap-3">
+      <div class="bg-yellow-400 text-slate-900 p-2 rounded-xl shadow">
+        🏗
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg leading-tight">
+          Civil Management
+        </h1>
+        <p class="text-xs text-slate-300">
+          Construction Control Panel
+        </p>
+      </div>
     </div>
-    <span class="text-xs text-gray-300">MK</span>
+
+    <div class="relative text-sm font-semibold
+                bg-slate-800 px-4 py-1.5 rounded-full
+                border border-slate-700">
+      MK
+    </div>
   </header>
 
-  <!-- ===== NAVBAR ===== -->
-  <nav class="bg-white shadow sticky top-0 z-20">
-    <div class="max-w-6xl mx-auto px-2">
-      <ul class="flex justify-between md:justify-center md:gap-6 text-sm font-medium">
+  <!-- ================= NAVBAR ================= -->
+  <nav class="sticky top-0 z-30 bg-white/80 backdrop-blur-md
+              border-b shadow-sm">
+
+    <div class="max-w-7xl mx-auto px-4">
+      <ul class="flex justify-between md:justify-center md:gap-8
+                 text-sm font-semibold text-slate-600">
 
         <li>
-          <a href="/" class="nav-link">🏠 Dashboard</a>
+          <a href="/"
+             class="nav-link {% if request.path == '/' %}active{% endif %}">
+            🏠 Dashboard
+          </a>
         </li>
 
         <li>
-          <a href="/sites/" class="nav-link">🏗 Sites</a>
-        </li>
-
-
-        <li>
-          <a href="/default-payment/" class="nav-link">💰 Default Payment</a>
+          <a href="/sites/"
+             class="nav-link {% if '/sites' in request.path %}active{% endif %}">
+            🏗 Sites
+          </a>
         </li>
 
         <li>
+          <a href="/default-payment/"
+             class="nav-link {% if 'payment' in request.path %}active{% endif %}">
+            💰 Payments
+          </a>
+        </li>
+
+        <li>
+          <a href="{% url 'reports' %}"
+             class="nav-link {% if 'reports' in request.path %}active{% endif %}">
+            📊 Reports
+          </a>
+        </li>
+
+        <li>
+          <a href="{% url 'masters_and_payments' %}"
+             class="nav-link {% if 'masters' in request.path %}active{% endif %}">
+            🧩 Masters
+          </a>
+        </li>
         
-        <a href="{% url 'reports' %}" class="nav-link">📊 Reports</a>
-
-
-        </li>
-<li>        <a href="{% url 'masters' %}" class="nav-link">
-  🧩 Masters
-</a>
-</li>
 
 
       </ul>
     </div>
   </nav>
 
-  <!-- ===== CONTENT ===== -->
-  <main class="flex-1 max-w-7xl mx-auto w-full p-4">
-    {% block content %}{% endblock %}
+  <!-- ================= CONTENT ================= -->
+  <main class="flex-1 max-w-7xl mx-auto w-full p-5 animate-page">
+
+    <div class="bg-white rounded-3xl shadow-lg
+                p-6 min-h-[70vh]
+                border border-slate-100">
+      {% block content %}{% endblock %}
+    </div>
+
   </main>
 
-  <!-- ===== FOOTER ===== -->
-  <footer class="bg-slate-900 text-gray-300 text-xs text-center py-2">
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-slate-900 text-gray-400
+                 text-xs text-center py-4">
     © {{ now|date:"Y" }} Civil Management System
   </footer>
 
 </body>
 </html>
 
-<!-- NAV LINK STYLE -->
+<!-- ================= NAV + ANIMATIONS ================= -->
 <style>
   .nav-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    padding: 0.75rem 0.5rem;
-    border-bottom: 3px solid transparent;
-    color: #334155;
+    gap: 6px;
+    padding: 1rem 0.5rem;
+    color: #475569;
+    transition: color 0.2s ease;
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(to right, #facc15, #f59e0b);
+    transition: width 0.25s ease;
+    border-radius: 999px;
   }
 
   .nav-link:hover {
-    color: #ea580c;
-    border-color: #ea580c;
+    color: #92400e;
+  }
+
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .nav-link.active {
+    color: #92400e;
+    font-weight: 700;
+  }
+
+  .nav-link.active::after {
+    width: 100%;
+  }
+
+  /* Page animation */
+  .animate-page {
+    animation: pageIn 0.4s ease-out;
+  }
+
+  @keyframes pageIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

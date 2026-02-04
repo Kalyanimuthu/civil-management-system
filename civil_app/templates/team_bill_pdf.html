@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: DejaVu Sans; font-size: 11px; }
+  h2 { text-align: center; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #333; padding: 6px; }
+  th { background: #333; color: #fff; }
+  .right { text-align: right; }
+  .total { font-weight: bold; }
+</style>
+</head>
+
+<body>
+
+<h2>TEAM BILL</h2>
+
+<p>
+  <b>Team:</b> {{ team.name }}<br>
+  <b>From:</b> {{ from_date }} &nbsp;
+  <b>To:</b> {{ to_date }}
+</p>
+
+<table>
+  <tr>
+    <th>Date</th>
+    <th>Site</th>
+    <th>Labour</th>
+    <th>Advance</th>
+    <th>Total</th>
+  </tr>
+
+  {% for r in rows %}
+  <tr>
+    <td>{{ r.date }}</td>
+    <td>{{ r.site }}</td>
+    <td class="right">{{ r.labour }}</td>
+    <td class="right">{{ r.advance }}</td>
+    <td class="right">{{ r.total }}</td>
+  </tr>
+  {% endfor %}
+
+  <tr class="total">
+    <td colspan="4">GRAND TOTAL</td>
+    <td class="right">{{ total }}</td>
+  </tr>
+</table>
+
+</body>
+</html>

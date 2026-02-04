@@ -2,71 +2,150 @@
 <html>
 <head>
 <meta charset="UTF-8">
+
 <style>
-body {
+  body {
     font-family: DejaVu Sans;
-    font-size: 11px;
-}
-table {
+    font-size: 10.5px;
+    color: #1f2937;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+
+  .subtitle {
+    font-size: 9px;
+    color: #555;
+  }
+
+  /* ===== META ===== */
+  .meta {
+    margin-top: 8px;
+    padding: 6px;
+    border: 1px solid #d1d5db;
+    background: #fffbe6;
+    font-size: 9.5px;
+  }
+
+  /* ===== TABLE ===== */
+  table {
     width: 100%;
     border-collapse: collapse;
-}
-th, td {
-    border: 1px solid #444;
-    padding: 6px;
-}
-th {
-    background: #333;
-    color: white;
-}
-.right {
-    text-align: right;
-}
-h2 {
+    margin-top: 10px;
+  }
+
+  th {
+    background-color: #facc15;
+    color: #422006;
+    font-weight: bold;
     text-align: center;
-}
+    border: 1px solid #b45309;
+    padding: 6px 4px;
+  }
+
+  td {
+    border: 1px solid #9ca3af;
+    padding: 5px 4px;
+    vertical-align: middle;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .right {
+    text-align: right;
+  }
+
+  /* ===== TOTAL ROW ===== */
+  .total-row td {
+    font-weight: bold;
+    background-color: #fff3bf;
+    border-top: 2px solid #000;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    margin-top: 12px;
+    font-size: 9px;
+    text-align: right;
+    color: #6b7280;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>Project Report</h2>
-<p><b>From:</b> {{ from_date }} &nbsp; <b>To:</b> {{ to_date }}</p>
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div class="title">🏗 Project Expense Report</div>
+  <div class="subtitle">Civil Management System</div>
+</div>
 
+<!-- ===== META ===== -->
+<div class="meta">
+  <b>From:</b> {{ from_date }}
+  &nbsp;&nbsp;&nbsp;
+  <b>To:</b> {{ to_date }}
+</div>
+
+<!-- ===== TABLE ===== -->
 <table>
-<tr>
-    <th>Date</th>
-    <th>Site</th>
-    <th>Department</th>
-    <th>Team</th>
-    <th>Labour</th>
-    <th>Material</th>
-    <th>Advance</th>
-    <th>Total</th>
-</tr>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Site</th>
+      <th>Department</th>
+      <th>Team</th>
+      <th>Labour</th>
+      <th>Material</th>
+      <th>Advance</th>
+      <th>Total</th>
+    </tr>
+  </thead>
 
-{% for r in rows %}
-<tr>
-    <td>{{ r.date }}</td>
-    <td>{{ r.site }}</td>
-    <td>{{ r.department }}</td>
-    <td>{{ r.team }}</td>
-    <td class="right">{{ r.labour }}</td>
-    <td class="right">{{ r.material }}</td>
-    <td class="right">{{ r.advance }}</td>
-    <td class="right">{{ r.total }}</td>
-</tr>
-{% endfor %}
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="center">{{ r.date }}</td>
+      <td>{{ r.site }}</td>
+      <td>{{ r.department }}</td>
+      <td>{{ r.team }}</td>
+      <td class="right">{{ r.labour }}</td>
+      <td class="right">{{ r.material }}</td>
+      <td class="right">{{ r.advance }}</td>
+      <td class="right">{{ r.total }}</td>
+    </tr>
+    {% endfor %}
 
-<tr>
-    <td colspan="4"><b>Total</b></td>
-    <td class="right"><b>{{ total_labour }}</b></td>
-    <td class="right"><b>{{ total_material }}</b></td>
-    <td class="right"><b>{{ total_advance }}</b></td>
-    <td class="right"><b>{{ grand_total }}</b></td>
-</tr>
-
+    <!-- TOTAL -->
+    <tr class="total-row">
+      <td colspan="4">TOTAL</td>
+      <td class="right">{{ total_labour }}</td>
+      <td class="right">{{ total_material }}</td>
+      <td class="right">{{ total_advance }}</td>
+      <td class="right">{{ grand_total }}</td>
+    </tr>
+  </tbody>
 </table>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  Generated on {{ now|date:"d-m-Y H:i" }}
+</div>
 
 </body>
 </html>

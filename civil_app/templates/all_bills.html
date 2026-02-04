@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8 space-y-10 animate-fade">
+
+  <!-- ================= HEADER ================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-3xl font-extrabold text-slate-900">
+        🧾 All Bills & Payments
+      </h2>
+      <p class="text-sm text-gray-500">
+        Click a team / department / agent to view detailed breakup
+      </p>
+    </div>
+
+    <!-- FILTER -->
+    <form method="get" class="flex gap-3 items-end bg-white p-4 rounded-xl shadow">
+      <div>
+        <label class="label">From</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="input">
+      </div>
+      <div>
+        <label class="label">To</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="input">
+      </div>
+      <button class="btn-primary">Apply</button>
+    </form>
+  </div>
+
+  <!-- ================= CIVIL ================= -->
+  <section class="bill-card">
+    <h3 class="bill-title text-blue-700">👷 Civil Teams</h3>
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Advance</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in civil_bills %}
+        <tr class="row-click"
+            onclick="openBill('civil', {{ c.team__id }}, '{{ c.team__name }}')">
+          <td class="link">{{ c.team__name }}</td>
+          <td class="amount-red">₹{{ c.total_advance|default:0 }}</td>
+          <td class="amount-green">₹{{ c.total_amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="empty">No civil bills</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= DEPARTMENT ================= -->
+  <section class="bill-card">
+    <h3 class="bill-title text-orange-600">🏢 Departments</h3>
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>Advance</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in dept_bills %}
+        <tr>
+  <td>
+  <span
+    class="link cursor-pointer"
+    onclick="openBill('dept', {{ d.department_id }}, '{{ d.department__name|escapejs }}')">
+    {{ d.department__name }}
+  </span>
+</td>
+
+
+  <td class="amount-red">₹{{ d.total_advance|default:0 }}</td>
+  <td class="amount-green">₹{{ d.total_amount }}</td>
+</tr>
+
+        {% empty %}
+        <tr><td colspan="3" class="empty">No department bills</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= MATERIAL ================= -->
+  <section class="bill-card">
+    <h3 class="bill-title text-green-700">🧱 Material Agents</h3>
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in material_bills %}
+        <tr class="row-click"
+            onclick="openBill('material', '{{ m.agent_name }}', '{{ m.agent_name }}')">
+          <td class="link">{{ m.agent_name }}</td>
+          <td class="amount-green">₹{{ m.total_amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="empty">No material bills</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</div>
+
+<!-- ================= MODAL ================= -->
+<div id="billModal"
+     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+
+  <div class="bg-white rounded-xl w-[90%] max-w-3xl p-4">
+    <div class="flex justify-between items-center mb-4">
+  <h3 id="modalTitle" class="font-bold text-lg"></h3>
+
+  <div class="flex gap-2">
+    <a id="pdfLink"
+       target="_blank"
+       class="bg-red-600 hover:bg-red-700
+              text-white px-3 py-1 rounded-lg
+              font-bold text-sm">
+      📄 Download PDF
+    </a>
+
+    <button onclick="closeModal()"
+            class="text-red-600 font-bold text-xl">
+      ✕
+    </button>
+  </div>
+</div>
+
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Site</th>
+          <th>Advance</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="modalBody"></tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ================= JS ================= -->
+<script>
+function openBill(type, id, title) {
+
+  const modal = document.getElementById("billModal");
+  const body  = document.getElementById("modalBody");
+  const titleEl = document.getElementById("modalTitle");
+  const pdfLink = document.getElementById("pdfLink");
+
+  titleEl.innerText = title;
+  body.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  let apiUrl = "";
+  let pdfUrl = "";
+
+  if (type === "civil") {
+    apiUrl = `/api/bill/civil/${id}/`;
+    pdfUrl = `/bill/team/${id}/`;
+  }
+
+  if (type === "dept") {
+    apiUrl = `/api/bill/department/${id}/`;
+    pdfUrl = `/bill/department/${id}/`;
+  }
+
+  if (type === "material") {
+    apiUrl = `/api/bill/material/${encodeURIComponent(id)}/`;
+    pdfUrl = `/bill/agent/${encodeURIComponent(id)}/`;
+  }
+
+  pdfLink.href = `${pdfUrl}?from_date={{ from_date }}&to_date={{ to_date }}&pdf=1`;
+
+  fetch(`${apiUrl}?from_date={{ from_date }}&to_date={{ to_date }}`)
+    .then(res => res.json())
+    .then(data => {
+
+      if (!data.length) {
+        body.innerHTML = "<tr><td colspan='4'>No records</td></tr>";
+        return;
+      }
+
+      let html = "";
+      data.forEach(r => {
+        html += `
+          <tr>
+            <td>${r.date}</td>
+            <td>${r.site}</td>
+            <td class="text-red-600">₹${r.advance || 0}</td>
+            <td class="font-bold text-green-700">₹${r.total || 0}</td>
+          </tr>
+        `;
+      });
+
+      body.innerHTML = html;
+    })
+    .catch(() => {
+      body.innerHTML = "<tr><td colspan='4'>Error loading data</td></tr>";
+    });
+}
+
+function closeModal(){
+  const modal = document.getElementById("billModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+document.getElementById("billModal").addEventListener("click", function (e) {
+  if (e.target.id === "billModal") {
+    closeModal();
+  }
+});
+</script>
+
+
+<!-- ================= STYLES ================= -->
+<style>
+:root{
+  --primary:#2563eb;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --bg-soft:#f8fafc;
+  --border:#e5e7eb;
+}
+
+/* ===== Page Animation ===== */
+.animate-fade{
+  animation:fadeUp .35s ease-out
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ===== Filter ===== */
+.label{
+  font-size:.7rem;
+  font-weight:700;
+  color:#64748b;
+  margin-bottom:2px;
+  display:block;
+}
+.input{
+  border:1px solid var(--border);
+  border-radius:.6rem;
+  padding:.45rem .6rem;
+  font-size:.85rem;
+}
+.btn-primary{
+  background:var(--primary);
+  color:white;
+  padding:.55rem 1.4rem;
+  border-radius:.6rem;
+  font-weight:800;
+  transition:.2s;
+}
+.btn-primary:hover{
+  background:#1e40af;
+}
+
+/* ===== Cards ===== */
+.bill-card{
+  background:white;
+  border-radius:1rem;
+  padding:1.2rem 1.3rem;
+  border:1px solid var(--border);
+}
+
+/* ===== Section Titles ===== */
+.bill-title{
+  font-size:1.1rem;
+  font-weight:900;
+  margin-bottom:.6rem;
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+}
+
+/* ===== Table ===== */
+.bill-table{
+  width:100%;
+  border-collapse:collapse;
+}
+.bill-table thead{
+  background:var(--bg-soft);
+}
+.bill-table th{
+  font-size:.7rem;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  color:#475569;
+  text-align:left;
+}
+.bill-table th,
+.bill-table td{
+  padding:.65rem .75rem;
+  border-bottom:1px solid var(--border);
+}
+
+/* ===== Clickable Rows ===== */
+.row-click{
+  cursor:pointer;
+  transition:.18s;
+}
+.row-click:hover{
+  background:#f1f5f9;
+}
+
+/* ===== Text Styles ===== */
+.link{
+  color:var(--primary);
+  font-weight:800;
+}
+.amount-red{
+  color:var(--danger);
+  font-weight:800;
+}
+.amount-green{
+  color:var(--success);
+  font-weight:900;
+}
+.empty{
+  text-align:center;
+  color:#94a3b8;
+  padding:1rem;
+}
+
+/* ===== Modal ===== */
+#billModal{
+  backdrop-filter:blur(4px);
+}
+#billModal > div{
+  border-radius:1rem;
+  border:1px solid var(--border);
+  box-shadow:0 30px 60px rgba(0,0,0,.25);
+}
+#modalTitle{
+  font-size:1.1rem;
+  font-weight:900;
+}
+
+/* ===== Modal Table ===== */
+#billModal table thead{
+  background:#f1f5f9;
+}
+#billModal table td{
+  font-size:.9rem;
+}
+</style>
+
+
+{% endblock %}

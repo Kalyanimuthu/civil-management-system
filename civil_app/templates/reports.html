@@ -1,43 +1,70 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-4 py-6">
+<div class="max-w-7xl mx-auto px-6 py-6 space-y-8 animate-fade-in">
 
   <!-- ================= HEADER ================= -->
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">📊 Reports</h2>
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+        📊 Reports
+      </h2>
+      <p class="text-sm text-slate-500 mt-1">
+        Smart analysis of project expenses
+      </p>
+    </div>
+
+    <div class="flex gap-3">
+      <a href="{% url 'all_bills' %}"
+         class="bg-yellow-400 hover:bg-yellow-500
+                text-black px-4 py-2 rounded-lg font-bold shadow">
+        📑 View All Bills
+      </a>
+
+      <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
+         class="bg-red-600 hover:bg-red-700
+                text-white px-4 py-2 rounded-lg font-bold shadow">
+        📄 Download ALL Bills PDF
+      </a>
+    </div>
   </div>
 
   <div class="flex gap-6">
 
-    <!-- ================= SIDEBAR ================= -->
-    <aside class="w-72 bg-white rounded-xl shadow-lg p-5 sticky top-6 h-fit">
+    <!-- ================= FILTER SIDEBAR ================= -->
+    <aside class="w-72 bg-white rounded-2xl border shadow p-6
+                 sticky top-6 h-fit animate-slide-left">
 
-      <h3 class="text-lg font-bold mb-4 text-gray-800">🔍 Filters</h3>
+      <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+        🔍 Filters
+      </h3>
+
+      <!-- PDF -->
+      <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
+         class="block text-center bg-yellow-400 hover:bg-yellow-500
+                text-slate-900 py-2 rounded-lg font-bold mb-5 shadow">
+        📄 Download PDF
+      </a>
 
       <form method="get" class="space-y-4">
-        <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
-   class="bg-red-600 text-white px-4 py-2 rounded">
-   📄 Download PDF
-</a>
 
         <div>
-          <label class="text-sm font-medium">From</label>
+          <label class="label">From Date</label>
           <input type="date" name="from_date"
                  value="{{ from_date|date:'Y-m-d' }}"
-                 class="w-full border rounded px-3 py-2">
+                 class="input">
         </div>
 
         <div>
-          <label class="text-sm font-medium">To</label>
+          <label class="label">To Date</label>
           <input type="date" name="to_date"
                  value="{{ to_date|date:'Y-m-d' }}"
-                 class="w-full border rounded px-3 py-2">
+                 class="input">
         </div>
 
         <div>
-          <label class="text-sm font-medium">Site</label>
-          <select name="site" class="w-full border rounded px-3 py-2">
+          <label class="label">Site</label>
+          <select name="site" class="input">
             <option value="">All Sites</option>
             {% for s in sites %}
               <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
@@ -48,8 +75,8 @@
         </div>
 
         <div>
-          <label class="text-sm font-medium">Team</label>
-          <select name="team" class="w-full border rounded px-3 py-2">
+          <label class="label">Team</label>
+          <select name="team" class="input">
             <option value="">All Teams</option>
             {% for t in teams %}
               <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
@@ -60,8 +87,8 @@
         </div>
 
         <div>
-          <label class="text-sm font-medium">Department</label>
-          <select name="department" class="w-full border rounded px-3 py-2">
+          <label class="label">Department</label>
+          <select name="department" class="input">
             <option value="">All Departments</option>
             {% for d in departments %}
               <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
@@ -72,8 +99,8 @@
         </div>
 
         <div>
-          <label class="text-sm font-medium">Material</label>
-          <select name="material" class="w-full border rounded px-3 py-2">
+          <label class="label">Material</label>
+          <select name="material" class="input">
             <option value="">All</option>
             <option value="yes" {% if selected_material == "yes" %}selected{% endif %}>
               Only Material
@@ -82,85 +109,138 @@
         </div>
 
         <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-semibold">
-          🔍 Apply Filters
+                class="w-full bg-slate-900 hover:bg-black
+                       text-white py-2 rounded-lg font-bold">
+          Apply Filters
         </button>
 
         <a href="{% url 'reports' %}"
-           class="block text-center bg-gray-200 py-2 rounded font-semibold">
-          🔄 Reset
+           class="block text-center bg-slate-100 hover:bg-slate-200
+                  py-2 rounded-lg font-semibold text-sm">
+          Reset
         </a>
 
       </form>
     </aside>
 
-    <!-- ================= CONTENT ================= -->
-    <main class="flex-1 space-y-6">
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="flex-1 space-y-8 animate-slide-up">
 
       <!-- SUMMARY -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div class="bg-orange-100 rounded-xl p-4">
-          <p class="text-sm text-orange-700">Labour</p>
-          <p class="text-2xl font-bold">₹{{ total_labour }}</p>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+        <div class="summary-card">
+          <p class="label">Labour</p>
+          <p class="amount text-orange-600">₹{{ total_labour }}</p>
         </div>
 
-        <div class="bg-blue-100 rounded-xl p-4">
-          <p class="text-sm text-blue-700">Material</p>
-          <p class="text-2xl font-bold">₹{{ total_material }}</p>
+        <div class="summary-card">
+          <p class="label">Material</p>
+          <p class="amount text-blue-600">₹{{ total_material }}</p>
         </div>
 
-        <div class="bg-red-100 rounded-xl p-4">
-          <p class="text-sm text-red-700">Advance</p>
-          <p class="text-2xl font-bold">₹{{ total_advance }}</p>
+        <div class="summary-card">
+          <p class="label">Advance</p>
+          <p class="amount text-red-600">₹{{ total_advance }}</p>
         </div>
 
-        <div class="bg-green-100 rounded-xl p-4">
-          <p class="text-sm text-green-700">Grand Total</p>
-          <p class="text-2xl font-bold">₹{{ grand_total }}</p>
+        <div class="summary-card bg-yellow-50 border-yellow-400">
+          <p class="label">Grand Total</p>
+          <p class="amount text-green-700">₹{{ grand_total }}</p>
         </div>
+
       </div>
 
-      <!-- TABLE -->
-      <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <!-- DATA TABLE -->
+      <div class="bg-white rounded-2xl border shadow overflow-hidden">
+
         <table class="w-full text-sm">
-          <thead class="bg-gray-900 text-white">
+          <thead class="bg-slate-900 text-white">
             <tr>
-              <th class="p-3 text-left">Date</th>
-              <th class="p-3 text-left">Site</th>
-              <th class="p-3 text-left">Department</th>
-              <th class="p-3 text-left">Team</th>
-              <th class="p-3 text-right">Labour</th>
-              <th class="p-3 text-right">Material</th>
-              <th class="p-3 text-right">Advance</th>
-              <th class="p-3 text-right">Total</th>
+              <th class="th">Date</th>
+              <th class="th">Site</th>
+              <th class="th">Department</th>
+              <th class="th">Team</th>
+              <th class="th text-right">Labour</th>
+              <th class="th text-right">Material</th>
+              <th class="th text-right">Advance</th>
+              <th class="th text-right">Total</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody class="divide-y">
             {% for r in rows %}
-            <tr class="border-b hover:bg-gray-50">
-              <td class="p-2">{{ r.date|date:'Y-m-d' }}</td>
-              <td class="p-2">{{ r.site.name }}</td>
-              <td class="p-2">{{ r.department }}</td>
-              <td class="p-2">{{ r.team }}</td>
-              <td class="p-2 text-right">₹{{ r.labour }}</td>
-              <td class="p-2 text-right">₹{{ r.material }}</td>
-              <td class="p-2 text-right">₹{{ r.advance }}</td>
-              <td class="p-2 text-right font-bold">₹{{ r.total }}</td>
+            <tr class="hover:bg-slate-50">
+              <td class="td">{{ r.date|date:'Y-m-d' }}</td>
+              <td class="td font-semibold">{{ r.site.name }}</td>
+              <td class="td">{{ r.department }}</td>
+              <td class="td">{{ r.team }}</td>
+              <td class="td text-right">₹{{ r.labour }}</td>
+              <td class="td text-right">₹{{ r.material }}</td>
+              <td class="td text-right text-red-600">₹{{ r.advance }}</td>
+              <td class="td text-right font-extrabold">₹{{ r.total }}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8" class="text-center py-6 text-gray-500">
+              <td colspan="8" class="py-10 text-center text-slate-400">
                 No records found
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+
       </div>
 
     </main>
   </div>
 </div>
+
+<!-- ================= STYLES ================= -->
+<style>
+.label{
+  font-size:.7rem;
+  font-weight:800;
+  color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.input{
+  width:100%;
+  border-radius:.6rem;
+  padding:.45rem .65rem;
+  font-size:.85rem;
+  border:1px solid #e5e7eb;
+}
+.input:focus{
+  outline:none;
+  border-color:#2563eb;
+}
+.summary-card{
+  background:white;
+  border-radius:1.1rem;
+  padding:1rem;
+  border:1px solid #e5e7eb;
+}
+.amount{
+  font-size:1.6rem;
+  font-weight:900;
+}
+.th{
+  padding:.75rem;
+  font-size:.7rem;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.td{
+  padding:.75rem;
+}
+.animate-fade-in{animation:fade .35s ease}
+.animate-slide-up{animation:up .35s ease}
+.animate-slide-left{animation:left .35s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes left{from{transform:translateX(-16px);opacity:0}to{transform:none;opacity:1}}
+</style>
 
 {% endblock %}

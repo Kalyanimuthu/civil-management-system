@@ -113,3 +113,9 @@ class MaterialEntry(models.Model):
     unit = models.CharField(max_length=20)
     rate = models.FloatField()
     total = models.FloatField()
+
+class BillPayment(models.Model):
+    bill_type = models.CharField(max_length=20)  # team / agent
+    reference = models.CharField(max_length=100)
+    amount = models.FloatField()
+    paid_on = models.DateField(auto_now_add=True)

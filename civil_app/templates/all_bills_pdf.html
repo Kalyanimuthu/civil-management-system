@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+  body{
+    font-family: DejaVu Sans;
+    font-size:11px;
+    color:#1f2937;
+    margin:0;
+  }
+
+  /* ===== HEADER ===== */
+  .header{
+    text-align:center;
+    padding:12px 0;
+    border-bottom:4px solid #064e3b;
+    margin-bottom:10px;
+  }
+
+  .header h2{
+    margin:0;
+    font-size:20px;
+    color:#064e3b;
+    letter-spacing:0.6px;
+  }
+
+  .sub{
+    font-size:10px;
+    color:#374151;
+    margin-top:4px;
+  }
+
+  /* ===== META ===== */
+  .meta{
+    padding:8px 10px;
+    background:#ecfdf5;
+    border:1px solid #047857;
+    font-size:10px;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ===== SECTION TITLE ===== */
+  h3{
+    margin:16px 0 6px;
+    font-size:13px;
+    color:#064e3b;
+    border-left:5px solid #047857;
+    padding-left:8px;
+  }
+
+  /* ===== TABLE ===== */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+  }
+
+  th,td{
+    border:1px solid #9ca3af;
+    padding:6px;
+  }
+
+  th{
+    background:#064e3b;
+    color:#ffffff;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    text-align:center;
+  }
+
+  tbody tr:nth-child(even){
+    background:#ecfdf5;
+  }
+
+  td{
+    font-size:11px;
+  }
+
+  .right{ text-align:right; }
+
+  .advance{
+    color:#991b1b;
+    font-weight:700;
+  }
+
+  .total{
+    color:#047857;
+    font-weight:900;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer{
+    margin-top:16px;
+    padding-top:6px;
+    border-top:2px solid #064e3b;
+    font-size:9px;
+    text-align:right;
+    color:#374151;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>ALL BILLS SUMMARY</h2>
+  <div class="sub">Consolidated Payment Statement</div>
+</div>
+
+<!-- META -->
+<div class="meta">
+  <div><b>From:</b> {{ from_date }}</div>
+  <div><b>To:</b> {{ to_date }}</div>
+</div>
+
+<!-- CIVIL -->
+<h3>👷 Civil Teams</h3>
+<table>
+<tr>
+  <th>Team</th>
+  <th>Advance (₹)</th>
+  <th>Total (₹)</th>
+</tr>
+{% for c in civil_rows %}
+<tr>
+  <td>{{ c.name }}</td>
+  <td class="right advance">{{ c.advance }}</td>
+  <td class="right total">{{ c.total }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<!-- DEPARTMENT -->
+<h3>🏢 Departments</h3>
+<table>
+<tr>
+  <th>Department</th>
+  <th>Advance (₹)</th>
+  <th>Total (₹)</th>
+</tr>
+{% for d in dept_rows %}
+<tr>
+  <td>{{ d.department__name }}</td>
+  <td class="right advance">{{ d.advance }}</td>
+  <td class="right total">{{ d.total }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<!-- MATERIAL -->
+<h3>🧱 Material / Agents</h3>
+<table>
+<tr>
+  <th>Agent</th>
+  <th>Total (₹)</th>
+</tr>
+{% for m in material_rows %}
+<tr>
+  <td>{{ m.agent_name }}</td>
+  <td class="right total">{{ m.total }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+  Generated on {{ now|date:"d-m-Y H:i" }}
+</div>
+
+</body>
+</html>
