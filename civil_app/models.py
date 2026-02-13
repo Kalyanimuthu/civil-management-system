@@ -113,6 +113,7 @@ class MaterialEntry(models.Model):
     unit = models.CharField(max_length=20)
     rate = models.FloatField()
     total = models.FloatField()
+    advance = models.FloatField(default=0)
 
 class BillPayment(models.Model):
     bill_type = models.CharField(max_length=20)  # team / agent

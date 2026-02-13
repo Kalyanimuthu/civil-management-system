@@ -11,9 +11,7 @@ urlpatterns = [
     path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
 
-    # ================= PAYMENTS =================
-    path("default-payment/", views.default_payment, name="default_payment"),
-
+    
     # ================= MASTERS =================
     # path("masters/", views.masters, name="masters"),
     path("masters/team/delete/<int:team_id>/", views.delete_team, name="delete_team"),

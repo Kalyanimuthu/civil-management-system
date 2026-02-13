@@ -93,6 +93,17 @@
     font-weight:900;
   }
 
+  /* ===== GRAND TOTAL ===== */
+  .grand-box{
+    margin-top:14px;
+    border:2px solid #064e3b;
+    background:#ecfdf5;
+    padding:10px;
+    font-size:14px;
+    font-weight:900;
+    text-align:right;
+  }
+
   /* ===== FOOTER ===== */
   .footer{
     margin-top:16px;
@@ -119,54 +130,79 @@
   <div><b>To:</b> {{ to_date }}</div>
 </div>
 
-<!-- CIVIL -->
+<!-- ================= CIVIL ================= -->
 <h3>👷 Civil Teams</h3>
 <table>
+<thead>
 <tr>
   <th>Team</th>
   <th>Advance (₹)</th>
-  <th>Total (₹)</th>
+  <th>Net Total (₹)</th>
 </tr>
+</thead>
+<tbody>
 {% for c in civil_rows %}
 <tr>
   <td>{{ c.name }}</td>
-  <td class="right advance">{{ c.advance }}</td>
-  <td class="right total">{{ c.total }}</td>
+  <td class="right advance">{{ c.advance|default:0 }}</td>
+  <td class="right total">{{ c.total|default:0 }}</td>
 </tr>
+{% empty %}
+<tr><td colspan="3" style="text-align:center;">No civil data</td></tr>
 {% endfor %}
+</tbody>
 </table>
 
-<!-- DEPARTMENT -->
+<!-- ================= DEPARTMENT ================= -->
 <h3>🏢 Departments</h3>
 <table>
+<thead>
 <tr>
   <th>Department</th>
   <th>Advance (₹)</th>
-  <th>Total (₹)</th>
+  <th>Net Total (₹)</th>
 </tr>
+</thead>
+<tbody>
 {% for d in dept_rows %}
 <tr>
   <td>{{ d.department__name }}</td>
-  <td class="right advance">{{ d.advance }}</td>
-  <td class="right total">{{ d.total }}</td>
+  <td class="right advance">{{ d.advance|default:0 }}</td>
+  <td class="right total">{{ d.total|default:0 }}</td>
 </tr>
+{% empty %}
+<tr><td colspan="3" style="text-align:center;">No department data</td></tr>
 {% endfor %}
+</tbody>
 </table>
 
-<!-- MATERIAL -->
+<!-- ================= MATERIAL ================= -->
 <h3>🧱 Material / Agents</h3>
 <table>
+<thead>
 <tr>
   <th>Agent</th>
-  <th>Total (₹)</th>
+  <th>Advance (₹)</th>
+  <th>Net Total (₹)</th>
 </tr>
+</thead>
+<tbody>
 {% for m in material_rows %}
 <tr>
   <td>{{ m.agent_name }}</td>
-  <td class="right total">{{ m.total }}</td>
+  <td class="right advance">{{ m.advance|default:0 }}</td>
+  <td class="right total">{{ m.total|default:0 }}</td>
 </tr>
+{% empty %}
+<tr><td colspan="3" style="text-align:center;">No material data</td></tr>
 {% endfor %}
+</tbody>
 </table>
+
+<!-- ================= GRAND TOTAL ================= -->
+<div class="grand-box">
+  GRAND TOTAL : ₹ {{ grand_total|default:0 }}
+</div>
 
 <!-- FOOTER -->
 <div class="footer">

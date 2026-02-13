@@ -98,6 +98,7 @@
       <thead>
         <tr>
           <th>Agent</th>
+          <th>Advance</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -106,6 +107,7 @@
         <tr class="row-click"
             onclick="openBill('material', '{{ m.agent_name }}', '{{ m.agent_name }}')">
           <td class="link">{{ m.agent_name }}</td>
+          <td class="amount-red">₹{{ m.total_advance|default:0 }}</td>
           <td class="amount-green">₹{{ m.total_amount }}</td>
         </tr>
         {% empty %}

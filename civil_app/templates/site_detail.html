@@ -67,8 +67,8 @@
 <div class="card">
 
   <div class="grid grid-cols-10 header-row">
-    <div>Team</div><div>M F</div><div>H F</div><div>M H</div><div>H H</div>
-    <div>Mason ₹</div><div>Helper ₹</div><div>Advance</div><div>Labour</div><div>Total</div>
+    <div class="text-center">Team</div><div class="text-center">M F</div><div class="text-center">H F</div><div class="text-center">M H</div><div class="text-center">H H</div>
+    <div class="text-center">Mason ₹</div><div class="text-center">Helper ₹</div><div class="text-center">Advance</div><div class="text-center">Labour</div><div class="text-center">Total</div>
   </div>
 
   {% for row in civil_rows %}
@@ -110,8 +110,8 @@
 <div class="card">
 
   <div class="grid grid-cols-7 header-row">
-    <div>Department</div><div>Full</div><div>Half</div>
-    <div>Rate</div><div>Advance</div><div>Labour</div><div>Total</div>
+    <div class="text-center">Department</div><div class="text-center">Full</div><div class="text-center">Half</div>
+    <div class="text-center">Rate</div><div class="text-center">Advance</div><div class="text-center">Labour</div><div class="text-center">Total</div>
   </div>
 
   {% for dept in other_depts %}
@@ -143,31 +143,67 @@
 <!-- ================= MATERIALS ================= -->
 <h3 class="section-title text-green-700">🧱 Materials</h3>
 
-<div class="card p-4">
+<div class="card p-0 overflow-hidden">
 
-  <div class="grid grid-cols-7 header-row mb-2">
-    <div>Agent</div><div>Material</div><div>Qty</div>
-    <div>Unit</div><div>Rate</div><div>Total</div><div>Action</div>
+  <!-- Sticky Header -->
+  <div class="bg-slate-50 border-b sticky top-0 z-10">
+    <div class="grid grid-cols-8 header-row px-4 py-3">
+      <div class="text-center">Agent</div>
+      <div class="text-center">Material</div>
+      <div class="text-center">Qty</div>
+      <div class="text-center">Unit</div>
+      <div class="text-center">Rate</div>
+      <div class="text-center text-orange-600">Advance</div>
+      <div class="text-center text-green-700">Total</div>
+      <div class="text-center">Action</div>
+    </div>
   </div>
 
-  <div id="materialRows">
+  <!-- Scroll Area -->
+  <div id="materialRows" class="max-h-[320px] overflow-y-auto px-4 py-3 space-y-2">
+
     {% for m in materials %}
-    <div class="grid grid-cols-7 gap-2 mb-2">
+    <div class="grid grid-cols-8 gap-2 items-center material-row">
       <input name="agent_name_{{ forloop.counter0 }}" value="{{ m.agent_name }}" class="input-box">
       <input name="material_name_{{ forloop.counter0 }}" value="{{ m.name }}" class="input-box">
       <input name="material_qty_{{ forloop.counter0 }}" value="{{ m.quantity }}" class="input-box" oninput="calcMaterial({{ forloop.counter0 }})">
       <input name="material_unit_{{ forloop.counter0 }}" value="{{ m.unit }}" class="input-box">
       <input name="material_rate_{{ forloop.counter0 }}" value="{{ m.rate }}" class="input-box" oninput="calcMaterial({{ forloop.counter0 }})">
-      <input id="material_total_{{ forloop.counter0 }}" value="{{ m.total }}" class="input-box bg-green-100 font-bold" readonly>
-      <button type="button" onclick="this.parentElement.remove()" class="delete-btn">Delete</button>
+
+      <input name="material_advance_{{ forloop.counter0 }}"
+             value="{{ m.advance|default:0 }}"
+             class="advance-box"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <input id="material_total_{{ forloop.counter0 }}"
+             value="{{ m.total }}"
+             class="input-box bg-green-100 font-extrabold text-green-800"
+             readonly>
+
+      <button type="button"
+              onclick="this.closest('.material-row').remove()"
+              class="delete-btn-modern">
+        ✕
+      </button>
     </div>
+    
     {% endfor %}
+
   </div>
 
-  <button type="button" onclick="addMaterialRow()" class="btn-green mt-3">
-    ➕ Add Material
-  </button>
+  <!-- Footer -->
+  <div class="border-t bg-slate-50 px-4 py-3 flex justify-between items-center">
+    <div class="text-xs text-gray-500">
+      💡 Tip: Advance will reduce material total
+    </div>
+
+    <button type="button" onclick="addMaterialRow()" class="btn-green-modern">
+      ➕ Add Material
+    </button>
+  </div>
+
 </div>
+
 
 <!-- ================= SAVE ================= -->
 <button type="submit" class="save-btn w-full">
@@ -218,6 +254,48 @@
 .date-input{border:1px solid #d1d5db;border-radius:.75rem;padding:.5rem}
 .delete-btn{background:#fee2e2;color:#b91c1c;border-radius:.5rem;padding:.25rem;font-size:.8rem;font-weight:700}
 .btn-green{background:#16a34a;color:white;padding:.5rem 1rem;border-radius:.75rem;font-weight:700}
+
+
+/* Material row hover */
+.material-row{
+  padding: 4px;
+  border-radius: 10px;
+  transition: all .15s ease;
+}
+.material-row:hover{
+  background:#f8fafc;
+  transform:scale(1.01);
+}
+
+/* Modern delete button */
+.delete-btn-modern{
+  background:#fee2e2;
+  color:#b91c1c;
+  border-radius:10px;
+  font-weight:800;
+  padding:6px 10px;
+  transition:.2s;
+}
+.delete-btn-modern:hover{
+  background:#fecaca;
+  transform:scale(1.05);
+}
+
+/* Modern add button */
+.btn-green-modern{
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+  color:white;
+  padding:.55rem 1.2rem;
+  border-radius:.75rem;
+  font-weight:800;
+  box-shadow:0 6px 14px rgba(0,0,0,.15);
+  transition:.25s;
+}
+.btn-green-modern:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 22px rgba(0,0,0,.25);
+}
+
 </style>
 <!-- ================= JS ================= -->
 <script>
@@ -315,17 +393,25 @@ function addMaterialRow() {
   const container = document.getElementById("materialRows");
 
   const row = document.createElement("div");
-  row.className = "grid grid-cols-7 gap-2 items-center mb-2";
+  row.className = "grid grid-cols-8 gap-2 items-center mb-2 material-row";
+
 
   row.innerHTML = `
-    <input name="agent_name_${materialIndex}" class="input-box">
-    <input name="material_name_${materialIndex}" class="input-box">
-    <input name="material_qty_${materialIndex}" type="floatformat" class="input-box" oninput="calcMaterial(${materialIndex})">
-    <input name="material_unit_${materialIndex}" class="input-box">
-    <input name="material_rate_${materialIndex}" type="number" class="input-box" oninput="calcMaterial(${materialIndex})">
-    <input id="material_total_${materialIndex}" class="input-box bg-green-100 font-bold" readonly>
-    <button type="button" onclick="this.parentElement.remove()" class="text-red-600 bg-red-100 rounded py-1 font-bold">Delete</button>
-  `;
+  <input name="agent_name_${materialIndex}" class="input-box">
+  <input name="material_name_${materialIndex}" class="input-box">
+  <input name="material_qty_${materialIndex}" class="input-box" oninput="calcMaterial(${materialIndex})">
+  <input name="material_unit_${materialIndex}" class="input-box">
+  <input name="material_rate_${materialIndex}" class="input-box" oninput="calcMaterial(${materialIndex})">
+
+  <input name="material_advance_${materialIndex}" value="0"
+         class="advance-box"
+         oninput="calcMaterial(${materialIndex})">
+
+  <input id="material_total_${materialIndex}" class="input-box bg-green-100 font-bold" readonly>
+
+  <button type="button" onclick="this.parentElement.remove()" class="text-red-600 bg-red-100 rounded py-1 font-bold">Delete</button>
+`;
+
 
   container.appendChild(row);
   materialIndex++;
@@ -334,8 +420,13 @@ function addMaterialRow() {
 function calcMaterial(index) {
   const qty = Number(document.querySelector(`[name="material_qty_${index}"]`)?.value || 0);
   const rate = Number(document.querySelector(`[name="material_rate_${index}"]`)?.value || 0);
-  document.getElementById(`material_total_${index}`).value = qty * rate;
+  const advance = Number(document.querySelector(`[name="material_advance_${index}"]`)?.value || 0);
+
+  const total = (qty * rate) - advance;
+
+  document.getElementById(`material_total_${index}`).value = total;
 }
+
 </script>
 
 {% endblock %}

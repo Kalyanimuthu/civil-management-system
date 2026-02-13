@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login • Civil Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-yellow-900 flex items-center justify-center">
+
+  <div class="w-full max-w-md px-6">
+
+    <!-- Card -->
+    <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-8 border border-white/40">
+
+      <!-- Logo -->
+      <div class="text-center mb-6">
+        <div class="text-4xl mb-2">🏗</div>
+        <h1 class="text-2xl font-extrabold text-slate-800">Civil Management</h1>
+        <p class="text-sm text-slate-500">Sign in to continue</p>
+      </div>
+
+      <!-- Errors -->
+      {% if form.errors %}
+      <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm">
+        Invalid username or password
+      </div>
+      {% endif %}
+
+      <!-- Form -->
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+          <label class="text-sm font-semibold text-slate-600">Username</label>
+          <input type="text" name="username" required
+                 class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-yellow-400 outline-none" />
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-600">Password</label>
+          <input type="password" name="password" required
+                 class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-yellow-400 outline-none" />
+        </div>
+
+        <button type="submit"
+                class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-2.5 rounded-xl shadow transition">
+          🔐 Sign In
+        </button>
+      </form>
+
+      <p class="text-center text-xs text-slate-400 mt-6">
+        Civil Management System
+      </p>
+
+    </div>
+  </div>
+</html>

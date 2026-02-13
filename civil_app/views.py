@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.dateparse import parse_date
 from .utils import render_to_pdf
@@ -11,6 +12,12 @@ from datetime import date, timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.contrib import messages
+
+def staff_required(view_func):
+    return user_passes_test(lambda u: u.is_staff, login_url="login")(view_func)
+
+def admin_required(view_func):
+    return user_passes_test(lambda u: u.is_superuser, login_url="login")(view_func)
 
 from .models import (
     Site, Team, Department,
@@ -52,7 +59,7 @@ def calculate_civil_labour(team, mf, hf, mh, hh, work_date):
 # =========================================================
 # DASHBOARD
 # =========================================================
-
+@login_required
 def dashboard(request):
     today = date.today()
     week_start = today - timedelta(days=(today.weekday() + 1) % 7)
@@ -81,13 +88,17 @@ def dashboard(request):
 
         material_today = MaterialEntry.objects.filter(
             site=site, date=today
-        ).aggregate(total=Sum("total"))
+        ).aggregate(
+            total=Sum("total"),
+            advance=Sum("advance"),
+        )
 
         today_labour = (civil_today["labour"] or 0) + (dept_today["labour"] or 0)
         today_advance = (civil_advance_today["total"] or 0) + (dept_today["advance"] or 0)
         today_material = material_today["total"] or 0
+        material_adv_today = material_today["advance"] or 0
 
-        today_total = today_labour + today_material - today_advance
+        today_total = today_labour + today_material - (today_advance + material_adv_today)
 
 
         # ================= WEEK =================
@@ -112,13 +123,17 @@ def dashboard(request):
         material_week = MaterialEntry.objects.filter(
             site=site,
             date__range=[week_start, week_end]
-        ).aggregate(total=Sum("total"))
+        ).aggregate(
+            total=Sum("total"),
+            advance=Sum("advance"),
+        )
 
         week_labour = (civil_week["labour"] or 0) + (dept_week["labour"] or 0)
         week_advance = (civil_adv_week["total"] or 0) + (dept_week["advance"] or 0)
         week_material = material_week["total"] or 0
+        material_adv_week = material_week["advance"] or 0
 
-        weekly_total = week_labour + week_material - week_advance
+        weekly_total = week_labour + week_material - (week_advance + material_adv_week)
 
 
         # ================= MONTH =================
@@ -147,13 +162,17 @@ def dashboard(request):
             site=site,
             date__year=today.year,
             date__month=today.month
-        ).aggregate(total=Sum("total"))
+        ).aggregate(
+            total=Sum("total"),
+            advance=Sum("advance"),
+        )
 
         month_labour = (civil_month["labour"] or 0) + (dept_month["labour"] or 0)
         month_advance = (civil_adv_month["total"] or 0) + (dept_month["advance"] or 0)
         month_material = material_month["total"] or 0
+        material_adv_month = material_month["advance"] or 0
 
-        month_total = month_labour + month_material - month_advance
+        month_total = month_labour + month_material - (month_advance + material_adv_month)
 
 
         data.append({
@@ -171,7 +190,8 @@ def dashboard(request):
 # =========================================================
 # SITE MANAGEMENT
 # =========================================================
-
+@login_required
+@admin_required
 def site_manage(request):
     if request.method == "POST":
         name = request.POST.get("name")
@@ -183,7 +203,8 @@ def site_manage(request):
         "sites": Site.objects.all()
     })
 
-
+@login_required
+@staff_required
 def delete_site(request, id):
     Site.objects.filter(id=id).delete()
     return redirect("site_manage")
@@ -191,7 +212,8 @@ def delete_site(request, id):
 # =========================================================
 # DAILY ENTRY (SITE DETAIL)
 # =========================================================
-
+@login_required
+@staff_required
 def site_detail(request, site_id):
     site = get_object_or_404(Site, id=site_id)
 
@@ -303,6 +325,7 @@ def site_detail(request, site_id):
 
             qty = float(request.POST.get(f"material_qty_{i}", 0))
             rate = float(request.POST.get(f"material_rate_{i}", 0))
+            advance = float(request.POST.get(f"material_advance_{i}", 0) or 0)
             unit = request.POST.get(f"material_unit_{i}", "")
             agent = request.POST.get(f"agent_name_{i}", "")
 
@@ -314,6 +337,7 @@ def site_detail(request, site_id):
                 quantity=qty,
                 unit=unit,
                 rate=rate,
+                advance=advance,
                 total=qty * rate,
             )
             i += 1
@@ -375,7 +399,8 @@ def site_detail(request, site_id):
 # =========================================================
 # SITE EDIT
 # =========================================================
-
+@login_required
+@staff_required
 def site_edit(request, site_id):
     site = get_object_or_404(Site, id=site_id)
 
@@ -503,55 +528,10 @@ def site_edit(request, site_id):
     })
 
 # =========================================================
-# PAYMENTS
-# =========================================================
-def default_payment(request):
-    if request.method == "POST":
-        pay_type = request.POST.get("pay_type")
-
-        # ================= DEPARTMENT PAYMENT =================
-        if pay_type == "dept":
-            department_id = request.POST.get("department")
-            full = to_int(request.POST.get("full"))
-
-            if department_id and full > 0:
-                DefaultRate.objects.update_or_create(
-                    department_id=department_id,
-                    defaults={
-                        "full_day_rate": full,   # ✅ ONLY THIS
-                    }
-                )
-
-        # ================= CIVIL TEAM PAYMENT =================
-        if pay_type == "civil":
-            team_id = request.POST.get("team")
-            mason = to_int(request.POST.get("mason"))
-            helper = to_int(request.POST.get("helper"))
-
-            if team_id and mason > 0 and helper > 0:
-                TeamRate.objects.update_or_create(
-                    team_id=team_id,
-                    defaults={
-                        "mason_full_rate": mason,
-                        "helper_full_rate": helper,
-                        "from_date": date.today(),
-                        "is_locked": False,
-                    }
-                )
-
-        return redirect("default_payment")
-
-    return render(request, "default_payment.html", {
-        "departments": Department.objects.exclude(name="Civil"),
-        "rates": DefaultRate.objects.all(),
-        "teams": Team.objects.all(),
-        "team_rates": TeamRate.objects.select_related("team").order_by("team__name"),
-    })
-
-# =========================================================
 # RESET
 # =========================================================
-
+@login_required
+@staff_required
 def reset_site_today(request, site_id):
     site = get_object_or_404(Site, id=site_id)
     today = date.today()
@@ -563,6 +543,8 @@ def reset_site_today(request, site_id):
 
     return redirect("site_detail", site_id=site.id)
 
+@login_required
+@staff_required
 def reset_site_month(request, site_id):
     site = get_object_or_404(Site, id=site_id)
     today = date.today()
@@ -593,6 +575,8 @@ def reset_site_month(request, site_id):
 
     return redirect("site_detail", site_id=site.id)
 
+@login_required
+@staff_required
 def reset_site_all(request, site_id):
     site = get_object_or_404(Site, id=site_id)
 
@@ -603,6 +587,8 @@ def reset_site_all(request, site_id):
     
     return redirect("site_detail", site_id=site.id)
 
+
+@login_required
 def reports(request):
     today = date.today()
 
@@ -700,6 +686,9 @@ def reports(request):
             material_qs = material_qs.filter(site_id=site_id)
 
         for m in material_qs:
+            adv = m.advance or 0
+            net = (m.total or 0) - adv
+
             rows.append({
                 "date": m.date,
                 "site": m.site,
@@ -707,11 +696,12 @@ def reports(request):
                 "team": m.agent_name or "-",
                 "labour": 0,
                 "material": m.total,
-                "advance": 0,
-                "total": m.total,
+                "advance": adv,
+                "total": net,
             })
 
             total_material += m.total
+            total_advance += adv
 
     # ================= SORT =================
     rows = sorted(rows, key=lambda x: x["date"], reverse=True)
@@ -759,7 +749,8 @@ def reports(request):
         "selected_material": request.GET.get("material"),
     })
 
-@staff_member_required(login_url="/admin/login/")
+@login_required
+@admin_required
 def masters(request):
     if request.method == "POST":
         form_type = request.POST.get("form_type")
@@ -901,18 +892,22 @@ def report_pdf(request):
         material_qs = material_qs.filter(site_id=site_id)
 
     for m in material_qs:
+        adv = m.advance or 0
+        net = (m.total or 0) - adv
+
         rows.append({
             "date": m.date,
             "site": m.site.name,
             "department": "Material",
-            "team": "-",
+            "team": m.agent_name or "-",
             "labour": 0,
             "material": m.total,
-            "advance": 0,
-            "total": m.total,
+            "advance": adv,
+            "total": net,
         })
 
-        total_material += m.total
+        total_material += m.total or 0
+        total_advance += adv
 
     grand_total = total_labour + total_material - total_advance
 
@@ -928,6 +923,7 @@ def report_pdf(request):
 
     return render_to_pdf("reports_pdf.html", context)
 
+@login_required
 def team_bill(request, team_id):
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
@@ -980,6 +976,7 @@ def team_bill(request, team_id):
         "total": total,
     })
 
+@login_required
 def agent_bill(request, agent_name):
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
@@ -1021,6 +1018,7 @@ def agent_bill(request, agent_name):
         "total": total,
     })
 
+@login_required
 def department_bill(request, department_id):
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
@@ -1049,6 +1047,7 @@ def department_bill(request, department_id):
     # JSON for modal
     return JsonResponse(rows, safe=False)
 
+@login_required
 def all_bills(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
@@ -1115,7 +1114,10 @@ def all_bills(request):
         MaterialEntry.objects
         .filter(date__range=[from_date, to_date])
         .values("agent_name")
-        .annotate(total_amount=Sum("total"))
+        .annotate(
+            total_amount=Sum("total"),
+            total_advance=Sum("advance"),
+        )
     )
     
     # =================================================
@@ -1125,7 +1127,8 @@ def all_bills(request):
     grand_total = (
         sum(c["total_amount"] for c in civil_bills) +
         sum(d["total_amount"] for d in dept_bills) +
-        sum(m["total_amount"] for m in material_bills)
+        sum((m["total_amount"] or 0) - (m.get("total_advance") or 0) for m in material_bills)
+
     )
 
     return render(request, "all_bills.html", {
@@ -1137,6 +1140,7 @@ def all_bills(request):
         "grand_total": grand_total,
     })
 
+@login_required
 def all_bills_pdf(request):
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
@@ -1192,7 +1196,10 @@ def all_bills_pdf(request):
         MaterialEntry.objects
         .filter(date__range=[from_date, to_date])
         .values("agent_name")
-        .annotate(total=Sum("total"))
+        .annotate(
+            total=Sum("total"),
+            advance=Sum("advance"),
+        )
     )
 
     return render_to_pdf("all_bills_pdf.html", {
@@ -1269,12 +1276,13 @@ def bill_material_detail(request, agent_name):
     data = [{
         "date": r.date,
         "site": r.site.name,
-        "advance": 0,
-        "total": r.total,
+        "advance": r.advance or 0,
+        "total": (r.total or 0) - (r.advance or 0),
     } for r in rows]
 
     return JsonResponse(data, safe=False)
 
+@login_required
 def payment_receipt(request, payment_id):
     payment = get_object_or_404(BillPayment, id=payment_id)
     return render_to_pdf("receipt_pdf.html", {
@@ -1308,7 +1316,8 @@ def api_civil_bill(request, team_id):
     return JsonResponse(data, safe=False)
 
 
-@staff_member_required(login_url="/admin/login/")
+@login_required
+@admin_required
 def masters_and_payments(request):
 
     if request.method == "POST":
