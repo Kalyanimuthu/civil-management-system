@@ -3,7 +3,10 @@ from django import template
 register = template.Library()
 
 @register.filter
-def get_item(dictionary, key):
-    if dictionary:
-        return dictionary.get(key)
-    return None
+def get_item(value, key):
+    try:
+        if isinstance(value, dict):
+            return value.get(key)
+        return None
+    except Exception:
+        return None

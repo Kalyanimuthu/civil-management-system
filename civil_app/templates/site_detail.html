@@ -18,7 +18,7 @@
     <div class="flex items-center gap-3">
       <input type="date"
              id="work_date"
-             value="{{ today|date:'Y-m-d' }}"
+             value="{{ work_date|date:'Y-m-d' }}"
              onchange="goToEdit({{ site.id }})"
              class="date-input">
 
@@ -127,7 +127,11 @@
            class="input-box"
            oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id|default:0 }})">
 
-    <div class="rate-box">₹{{ default_rates|get_item:dept.id }}</div>
+    <input name="dept_rate_{{ dept.id }}"
+       value="{% if row and row.full_day_rate %}{{ row.full_day_rate }}{% else %}{{ default_rates|get_item:dept.id|default:0 }}{% endif %}"
+       class="input-box"
+       oninput="calcDept({{ dept.id }})">
+
 
     <input name="dept_advance_{{ dept.id }}" value="{{ row.advance_amount|default:0 }}"
            class="advance-box"
@@ -223,29 +227,91 @@
 .animate-page{animation:fadeUp .35s ease-out}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1}}
 
-.section-title{font-size:1.15rem;font-weight:800}
-.card{background:white;border:1px solid #e5e7eb;border-radius:1.25rem;overflow:hidden}
+.section-title{
+  font-size:1.18rem;
+  font-weight:900;
+  letter-spacing:.3px;
+  margin-top:1em;
+}
+
+.card{
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
 .header-row{background:#f8fafc;font-size:.75rem;font-weight:700;padding:.6rem}
 .data-row{padding:.5rem;transition:.2s}
-.data-row:hover{background:var(--lemon-soft)}
+.data-row:hover{
+  background:#fffdf5;
+  transform: scale(1.002);
+}
 
-.input-box{border:1px solid #d1d5db;border-radius:.5rem;padding:.35rem;text-align:center}
-.input-box:focus{outline:none;border-color:var(--lemon);box-shadow:0 0 0 3px rgba(250,204,21,.35)}
+
+.input-box{
+  border:1px solid #e5e7eb;
+  border-radius:.6rem;
+  padding:.42rem;
+  text-align:center;
+  background:#ffffff;
+  transition: all .15s ease;
+  font-weight:600;
+}
+
+.input-box:focus{
+  outline:none;
+  border-color:#facc15;
+  box-shadow:0 0 0 3px rgba(250,204,21,.25);
+  transform: scale(1.02);
+}
+
+
 
 .rate-box{background:#f1f5f9;border-radius:.5rem;font-weight:700;text-align:center;padding:.35rem}
-.advance-box{background:#fffbe6;border:1px solid var(--lemon);font-weight:800;border-radius:.5rem;text-align:center;padding:.35rem}
-.labour-box{background:#fef3c7;font-weight:800;text-align:center;border-radius:.5rem;padding:.35rem}
-.total-box{background:#dcfce7;font-weight:900;text-align:center;border-radius:.5rem;padding:.35rem}
+.advance-box{
+  background:#fff7cc;
+  border:1px solid #facc15;
+  font-weight:800;
+  border-radius:.6rem;
+  text-align:center;
+  padding:.4rem;
+}
+
+.labour-box{
+  background:linear-gradient(180deg,#fef3c7,#fde68a);
+  font-weight:800;
+  text-align:center;
+  border-radius:.6rem;
+  padding:.4rem;
+}
+
+.total-box{
+  background:linear-gradient(180deg,#dcfce7,#bbf7d0);
+  font-weight:900;
+  text-align:center;
+  border-radius:.6rem;
+  padding:.4rem;
+}
 
 .save-btn{
-  background:linear-gradient(to right,var(--lemon),#fde047);
+  background: linear-gradient(135deg,#facc15,#f59e0b);
   color:#422006;
   font-weight:900;
-  padding:1rem;
-  border-radius:1.25rem;
+  padding:1.1rem;
+  border-radius:1.3rem;
   transition:.25s;
+  box-shadow:0 10px 25px rgba(245,158,11,.35);
+  letter-spacing:.3px;
 }
-.save-btn:hover{transform:translateY(-2px);box-shadow:0 12px 25px rgba(0,0,0,.2)}
+
+.save-btn:hover{
+  transform: translateY(-3px) scale(1.01);
+  box-shadow:0 18px 40px rgba(245,158,11,.45);
+}
+
 
 .reset-btn{background:#fee2e2;color:#b91c1c;padding:.5rem 1rem;border-radius:.75rem;font-weight:700}
 .reset-link{display:block;padding:.5rem .75rem;font-size:.85rem}

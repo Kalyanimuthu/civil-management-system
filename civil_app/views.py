@@ -286,7 +286,14 @@ def site_detail(request, site_id):
             if not rate:
                 continue  # safety
 
-            labour = (full * rate.full_day_rate) + (half * rate.full_day_rate / 2)
+            rate_input = request.POST.get(f"dept_rate_{dept.id}")
+            if rate_input:
+                rate_val = float(rate_input)
+            else:
+                rate_val = rate.full_day_rate
+
+            # ✅ USE rate_val (not rate.full_day_rate)
+            labour = (full * rate_val) + (half * rate_val / 2)
             total = labour - adv
 
             # 🔥 ALWAYS persist if ANY value exists
@@ -298,7 +305,7 @@ def site_detail(request, site_id):
                     defaults={
                         "full_day_count": full,
                         "half_day_count": half,
-                        "full_day_rate": rate.full_day_rate,
+                        "full_day_rate": rate_val,
                         "half_day_rate": rate.half_day_rate,
                         "labour_amount": labour,
                         "advance_amount": adv,   # ✅ critical
