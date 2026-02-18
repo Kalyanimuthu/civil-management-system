@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +20,7 @@
              min-h-screen flex flex-col">
 
   <!-- ================= HEADER ================= -->
-  <header class="bg-slate-900 text-white px-6 py-4
+  <header class="bg-slate-700 text-white px-6 py-4
                  flex items-center justify-between
                  shadow-xl relative overflow-hidden">
 
@@ -28,15 +29,19 @@
                 from-yellow-400/10 via-transparent to-transparent"></div>
 
     <div class="relative flex items-center gap-3">
-      <div class="bg-yellow-400 text-slate-900 p-2 rounded-xl shadow">
-        🏗
-      </div>
+      <div class="rounded-xl shadow flex items-center justify-center">
+  <img src="{% static 'images/logo.jpeg' %}"
+     alt="SK Builders"
+     class="h-10 w-auto drop-shadow-sm">
+
+</div>
+
       <div>
         <h1 class="font-extrabold text-lg leading-tight">
-          Civil Management
+          SK Builders
         </h1>
         <p class="text-xs text-slate-300">
-          Construction Control Panel
+          
         </p>
       </div>
     </div>
@@ -79,12 +84,7 @@
 
 
   <!-- User Badge -->
-  <div class="text-sm font-semibold
-              bg-slate-800 px-4 py-1.5 rounded-full
-              border border-slate-700">
-    MK
-  </div>
-
+  
 </div>
 
   </header>
