@@ -28,6 +28,11 @@
                 class="reset-btn">
           Reset ▾
         </button>
+        <button type="button"
+        onclick="openDescModal()"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow">
+  📝 Description
+</button>
 
         <div id="resetMenu{{ site.id }}"
              class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border z-50">
@@ -57,9 +62,36 @@
     </div>
   </div>
 
+  <!-- ================= DAILY DESCRIPTION PREVIEW ================= -->
+<div id="descPreviewCard"
+     class="bg-white/80 backdrop-blur border border-slate-200 rounded-2xl shadow-sm p-4">
+
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <p class="text-xs font-bold text-indigo-600 tracking-wide">
+        📝 DAILY NOTE
+      </p>
+
+      <p id="descPreviewText"
+         class="text-sm text-slate-700 font-medium mt-1 whitespace-pre-line">
+        {{ daily_description|default_if_none:""|default:"No description added for this day." }}
+
+      </p>
+    </div>
+
+    <button type="button"
+            onclick="openDescModal()"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
+      Edit
+    </button>
+  </div>
+</div>
+
 <form method="post">
 {% csrf_token %}
 <input type="hidden" name="date" value="{{ today }}">
+<input type="hidden" name="daily_description" id="daily_description_input"
+       value="{{ daily_description|default:'' }}">
 
 <!-- ================= CIVIL ================= -->
 <h3 class="section-title text-blue-700">👷 Civil Teams</h3>
@@ -215,6 +247,43 @@
 </button>
 
 </form>
+</div>
+<!-- ================= DESCRIPTION MODAL ================= -->
+<div id="descModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+
+  <div class="bg-white w-[95%] max-w-lg rounded-2xl shadow-2xl p-6 animate-modal">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-extrabold text-slate-800">
+        📝 Daily Description
+      </h3>
+
+      <button onclick="closeDescModal()"
+              class="text-gray-400 hover:text-red-500 text-xl font-bold">
+        ✕
+      </button>
+    </div>
+
+    <textarea id="daily_description_text"
+              class="w-full border rounded-xl p-3 h-32 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="Enter today's work summary...">{{ daily_description }}</textarea>
+
+    <div class="flex justify-end gap-3 mt-5">
+      <button type="button"
+              onclick="closeDescModal()"
+              class="px-4 py-2 rounded-lg bg-gray-100 font-semibold">
+        Cancel
+      </button>
+
+      <button type="button"
+              onclick="saveDescription()"
+              class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold shadow">
+        Save
+      </button>
+    </div>
+
+  </div>
 </div>
 
 <!-- ================= STYLES ================= -->
@@ -491,6 +560,30 @@ function calcMaterial(index) {
   const total = (qty * rate) - advance;
 
   document.getElementById(`material_total_${index}`).value = total;
+}
+
+function openDescModal(){
+  const hiddenVal = document.getElementById("daily_description_input").value;
+  document.getElementById("daily_description_text").value = hiddenVal;
+
+  document.getElementById("descModal").classList.remove("hidden");
+  document.getElementById("descModal").classList.add("flex");
+}
+
+function closeDescModal(){
+  document.getElementById("descModal").classList.add("hidden");
+  document.getElementById("descModal").classList.remove("flex");
+}
+
+function saveDescription(){
+  const text = document.getElementById("daily_description_text").value.trim();
+
+  document.getElementById("daily_description_input").value = text;
+
+  const preview = document.getElementById("descPreviewText");
+  preview.innerText = text || "No description added for this day.";
+
+  closeDescModal();
 }
 
 </script>

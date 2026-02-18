@@ -22,7 +22,7 @@ def admin_required(view_func):
 from .models import (
     Site, Team, Department,
     CivilDailyWork, DepartmentWork,
-    TeamRate, DefaultRate, CivilAdvance, MaterialEntry, BillPayment
+    TeamRate, DefaultRate, CivilAdvance, MaterialEntry, BillPayment, SiteDailyNote
     )
 
 # =========================================================
@@ -226,6 +226,20 @@ def site_detail(request, site_id):
 
     # ================= SAVE =================
     if request.method == "POST":
+        desc = request.POST.get("daily_description", "").strip()
+
+        note_obj, created = SiteDailyNote.objects.get_or_create(
+            site=site,
+            date=work_date,
+            defaults={"description": desc}
+        )
+
+        # update only when user actually changed text
+        if desc and desc != note_obj.description:
+            note_obj.description = desc
+            note_obj.save(update_fields=["description"])
+
+
 
         # =================================================
         # ================= CIVIL =========================
@@ -287,10 +301,11 @@ def site_detail(request, site_id):
                 continue  # safety
 
             rate_input = request.POST.get(f"dept_rate_{dept.id}")
-            if rate_input:
-                rate_val = float(rate_input)
-            else:
+            try:
+                rate_val = float(rate_input) if rate_input else rate.full_day_rate
+            except ValueError:
                 rate_val = rate.full_day_rate
+
 
             # ✅ USE rate_val (not rate.full_day_rate)
             labour = (full * rate_val) + (half * rate_val / 2)
@@ -393,6 +408,13 @@ def site_detail(request, site_id):
         for r in DefaultRate.objects.all()
     }
 
+    note_obj = SiteDailyNote.objects.filter(
+        site=site,
+        date=work_date
+    ).first()
+
+    existing_description = note_obj.description if note_obj else ""
+
     return render(request, "site_detail.html", {
         "site": site,
         "work_date": work_date,
@@ -401,6 +423,7 @@ def site_detail(request, site_id):
         "materials": materials,
         "other_depts": departments,
         "default_rates": default_rates,
+        "daily_description": existing_description,
     })
 
 # =========================================================

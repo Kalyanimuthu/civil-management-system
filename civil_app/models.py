@@ -8,6 +8,14 @@ class Site(models.Model):
     def __str__(self):
         return self.name
 
+class SiteDailyNote(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    date = models.DateField()
+    description = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ("site", "date")
+
 # ---------- DEPARTMENT (DEFAULT PER SITE) ----------
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -120,3 +128,4 @@ class BillPayment(models.Model):
     reference = models.CharField(max_length=100)
     amount = models.FloatField()
     paid_on = models.DateField(auto_now_add=True)
+
