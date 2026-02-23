@@ -10,6 +10,7 @@ urlpatterns = [
     path("sites/", views.site_manage, name="site_manage"),
     path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
+    path("site/<int:site_id>/copy-previous/", views.copy_previous_day, name="copy_previous_day"),
 
     
     # ================= MASTERS =================

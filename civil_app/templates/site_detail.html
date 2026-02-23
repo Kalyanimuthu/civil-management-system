@@ -7,14 +7,34 @@
   <!-- ================= HEADER ================= -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
-      <h2 class="text-2xl font-extrabold text-slate-900">
-        🏗 {{ site.name }} – Daily Entry
-      </h2>
+<h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2 flex-wrap">
+  🏗
+
+  <!-- FIXED WIDTH WRAPPER -->
+  <div class="min-w-[220px]">
+
+    <select id="siteSwitcher"
+            onchange="switchSite()"
+            class="w-full bg-white text-slate-900 border border-slate-300
+                   rounded-lg px-3 py-1.5 text-lg font-bold
+                   shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+
+      {% for s in sites %}
+        <option value="{{ s.id }}"
+          {% if s.id == site.id %}selected{% endif %}>
+          {{ s.name }}
+        </option>
+      {% endfor %}
+
+    </select>
+  </div>
+
+  <span>– Daily Entry</span>
+</h2>
       <p class="text-sm text-gray-500">
         Enter labour, advances and materials
       </p>
     </div>
-
     <div class="flex items-center gap-3">
       <input type="date"
              id="work_date"
@@ -28,12 +48,12 @@
                 class="reset-btn">
           Reset ▾
         </button>
-        <button type="button"
-        onclick="openDescModal()"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow">
-  📝 Description
+        
+<button type="button"
+        onclick="openCopyModal()"
+        class="btn-green-modern">
+  📋 Smart Copy
 </button>
-
         <div id="resetMenu{{ site.id }}"
              class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border z-50">
           <a href="{% url 'reset_site_today' site.id %}"
@@ -89,7 +109,7 @@
 
 <form method="post">
 {% csrf_token %}
-<input type="hidden" name="date" value="{{ today }}">
+<input type="hidden" name="date" value="{{ work_date|date:'Y-m-d' }}">
 <input type="hidden" name="daily_description" id="daily_description_input"
        value="{{ daily_description|default:'' }}">
 
@@ -286,6 +306,60 @@
   </div>
 </div>
 
+
+<!-- ================= COPY MODAL ================= -->
+<div id="copyModal"
+     class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+
+  <div class="bg-white rounded-2xl shadow-2xl w-[360px] p-6 animate-page">
+
+    <h3 class="text-lg font-extrabold mb-4 text-slate-800">
+      📋 Copy Previous Day
+    </h3>
+
+    <div class="space-y-2 text-sm font-semibold">
+
+      <label class="flex items-center gap-2">
+        <input type="checkbox" id="copyCivil" checked>
+        👷 Civil
+      </label>
+
+      <label class="flex items-center gap-2">
+        <input type="checkbox" id="copyDept" checked>
+        🏢 Departments
+      </label>
+
+      <label class="flex items-center gap-2">
+        <input type="checkbox" id="copyMaterial" checked>
+        🧱 Materials
+      </label>
+
+      <label class="flex items-center gap-2">
+        <input type="checkbox" id="copyDesc" checked>
+        📝 Description
+      </label>
+
+      <label class="flex items-center gap-2 mt-3 border-t pt-3">
+        <input type="checkbox" id="copyReplace">
+        ⚠️ Replace existing data
+      </label>
+
+    </div>
+
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeCopyModal()"
+              class="px-4 py-2 rounded-lg bg-gray-200 font-bold">
+        Cancel
+      </button>
+
+      <button onclick="runSmartCopy({{ site.id }})"
+              class="btn-green-modern">
+        🚀 Copy Now
+      </button>
+    </div>
+
+  </div>
+</div>
 <!-- ================= STYLES ================= -->
 <style>
 :root{
@@ -456,10 +530,11 @@ function calcCivil(id, masonRate, helperRate) {
   document.getElementById(`civil_total_${id}`).innerText = total;
 }
 
-function calcDept(id, rate) {
+function calcDept(id) {
   let full = +document.querySelector(`[name="dept_full_${id}"]`)?.value || 0;
   let half = +document.querySelector(`[name="dept_half_${id}"]`)?.value || 0;
   let advance = +document.querySelector(`[name="dept_advance_${id}"]`)?.value || 0;
+  let rate = +document.querySelector(`[name="dept_rate_${id}"]`)?.value || 0;
 
   let labour = (full * rate) + (half * rate / 2);
   let total = labour - advance;
@@ -584,6 +659,60 @@ function saveDescription(){
   preview.innerText = text || "No description added for this day.";
 
   closeDescModal();
+}
+
+
+function openCopyModal() {
+  document.getElementById("copyModal").classList.remove("hidden");
+  document.getElementById("copyModal").classList.add("flex");
+}
+
+function closeCopyModal() {
+  document.getElementById("copyModal").classList.add("hidden");
+}
+
+function runSmartCopy(siteId) {
+  const date = document.getElementById("work_date").value;
+
+  if (!date) {
+    alert("Select date first");
+    return;
+  }
+
+  let url = `/site/${siteId}/copy-previous/?date=${date}`;
+
+  if (document.getElementById("copyCivil").checked) url += "&civil=1";
+  if (document.getElementById("copyDept").checked) url += "&dept=1";
+  if (document.getElementById("copyMaterial").checked) url += "&material=1";
+  if (document.getElementById("copyDesc").checked) url += "&desc=1";
+  if (document.getElementById("copyReplace").checked) url += "&replace=1";
+
+  window.location.href = url;
+}
+
+
+function confirmCopy() {
+  if (confirm("Replace today's data if exists?")) {
+    // user wants replace
+    const url = new URL(event.target.href);
+    url.searchParams.set("replace", "1");
+    event.target.href = url.toString();
+  }
+  return true;
+}
+
+
+function switchSite() {
+  const siteId = document.getElementById("siteSwitcher").value;
+  const date = document.getElementById("work_date")?.value;
+
+  let url = `/site/${siteId}/`;
+
+  if (date) {
+    url += `?date=${date}`;
+  }
+
+  window.location.href = url;
 }
 
 </script>

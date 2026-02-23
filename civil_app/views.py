@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.dateparse import parse_date
@@ -136,50 +137,14 @@ def dashboard(request):
         weekly_total = week_labour + week_material - (week_advance + material_adv_week)
 
 
-        # ================= MONTH =================
-        civil_month = CivilDailyWork.objects.filter(
-            site=site,
-            date__year=today.year,
-            date__month=today.month
-        ).aggregate(labour=Sum("labour_amount"))
-
-        dept_month = DepartmentWork.objects.filter(
-            site=site,
-            date__year=today.year,
-            date__month=today.month
-        ).aggregate(
-            labour=Sum("labour_amount"),
-            advance=Sum("advance_amount")
-        )
-
-        civil_adv_month = CivilAdvance.objects.filter(
-            site=site,
-            date__year=today.year,
-            date__month=today.month
-        ).aggregate(total=Sum("amount"))
-
-        material_month = MaterialEntry.objects.filter(
-            site=site,
-            date__year=today.year,
-            date__month=today.month
-        ).aggregate(
-            total=Sum("total"),
-            advance=Sum("advance"),
-        )
-
-        month_labour = (civil_month["labour"] or 0) + (dept_month["labour"] or 0)
-        month_advance = (civil_adv_month["total"] or 0) + (dept_month["advance"] or 0)
-        month_material = material_month["total"] or 0
-        material_adv_month = material_month["advance"] or 0
-
-        month_total = month_labour + month_material - (month_advance + material_adv_month)
+        
 
 
         data.append({
             "site": site,
             "today_total": today_total,
             "weekly_total": weekly_total,
-            "month_total": month_total,
+            
             "today_advance": today_advance,
         })
 
@@ -216,10 +181,16 @@ def delete_site(request, id):
 @staff_required
 def site_detail(request, site_id):
     site = get_object_or_404(Site, id=site_id)
+    sites = Site.objects.all().order_by("name")
 
     # ---------------- DATE ----------------
     raw_date = request.GET.get("date") or request.POST.get("date")
-    work_date = parse_date(raw_date) or date.today()
+    if isinstance(raw_date, str) and raw_date:
+        work_date = parse_date(raw_date)
+    else:
+        work_date = None
+
+    work_date = work_date or date.today()
 
     teams = Team.objects.all()
     departments = Department.objects.exclude(name="Civil")
@@ -228,16 +199,19 @@ def site_detail(request, site_id):
     if request.method == "POST":
         desc = request.POST.get("daily_description", "").strip()
 
-        note_obj, created = SiteDailyNote.objects.get_or_create(
-            site=site,
-            date=work_date,
-            defaults={"description": desc}
-        )
-
-        # update only when user actually changed text
-        if desc and desc != note_obj.description:
-            note_obj.description = desc
-            note_obj.save(update_fields=["description"])
+        if desc:
+            # ✅ create or update
+            SiteDailyNote.objects.update_or_create(
+                site=site,
+                date=work_date,
+                defaults={"description": desc}
+            )
+        else:
+            # ✅ delete if user cleared
+            SiteDailyNote.objects.filter(
+                site=site,
+                date=work_date
+            ).delete()
 
 
 
@@ -414,9 +388,12 @@ def site_detail(request, site_id):
     ).first()
 
     existing_description = note_obj.description if note_obj else ""
+    
 
     return render(request, "site_detail.html", {
+        
         "site": site,
+        "sites": sites,
         "work_date": work_date,
         "civil_rows": civil_rows,
         "dept_map": dept_map,
@@ -570,6 +547,7 @@ def reset_site_today(request, site_id):
     DepartmentWork.objects.filter(site=site, date=today).delete()
     CivilAdvance.objects.filter(site=site, date=today).delete()
     MaterialEntry.objects.filter(site=site, date=today).delete()
+    SiteDailyNote.objects.filter(site=site, date=today).delete()
 
     return redirect("site_detail", site_id=site.id)
 
@@ -603,6 +581,12 @@ def reset_site_month(request, site_id):
         date__month=today.month
     ).delete()
 
+    SiteDailyNote.objects.filter(
+        site=site,
+        date__year=today.year,
+        date__month=today.month
+    ).delete()
+
     return redirect("site_detail", site_id=site.id)
 
 @login_required
@@ -614,6 +598,7 @@ def reset_site_all(request, site_id):
     DepartmentWork.objects.filter(site=site).delete()
     CivilAdvance.objects.filter(site=site).delete()
     MaterialEntry.objects.filter(site=site).delete()
+    SiteDailyNote.objects.filter(site=site).delete()
     
     return redirect("site_detail", site_id=site.id)
 
@@ -1423,3 +1408,178 @@ def masters_and_payments(request):
     }
 
     return render(request, "masters_and_payments.html", context)
+
+@login_required
+@staff_required
+def copy_previous_day(request, site_id):
+    site = get_object_or_404(Site, id=site_id)
+
+    # ================= SAFE DATE =================
+    raw_date = request.GET.get("date")
+
+    if not raw_date:
+        messages.error(request, "❌ No date selected")
+        return redirect(f"/site/{site.id}/")
+
+    try:
+        work_date = parse_date(raw_date)
+    except Exception:
+        work_date = None
+
+    if not work_date:
+        messages.error(request, "❌ Invalid date")
+        return redirect(f"/site/{site.id}/")
+
+    prev_date = work_date - timedelta(days=1)
+
+    # ================= FLAGS =================
+    copy_civil = request.GET.get("civil") == "1"
+    copy_dept = request.GET.get("dept") == "1"
+    copy_material = request.GET.get("material") == "1"
+    copy_desc = request.GET.get("desc") == "1"
+    replace_mode = request.GET.get("replace") == "1"
+
+    copied_any = False
+
+    # =================================================
+    # ================= CIVIL COPY =====================
+    # =================================================
+    if copy_civil:
+        prev_civil = CivilDailyWork.objects.filter(
+            site=site,
+            date=prev_date
+        )
+
+        for entry in prev_civil:
+            obj, created = CivilDailyWork.objects.get_or_create(
+                site=site,
+                team=entry.team,
+                date=work_date,
+                defaults={
+                    "mason_full": entry.mason_full,
+                    "mason_half": entry.mason_half,
+                    "helper_full": entry.helper_full,
+                    "helper_half": entry.helper_half,
+                    "labour_amount": entry.labour_amount,
+                    "total_amount": entry.total_amount,
+                }
+            )
+
+            if not created and replace_mode:
+                obj.mason_full = entry.mason_full
+                obj.mason_half = entry.mason_half
+                obj.helper_full = entry.helper_full
+                obj.helper_half = entry.helper_half
+                obj.labour_amount = entry.labour_amount
+                obj.total_amount = entry.total_amount
+                obj.save()
+                copied_any = True
+
+            if created:
+                copied_any = True
+
+    # =================================================
+    # =============== DEPARTMENT COPY ==================
+    # =================================================
+    if copy_dept:
+        prev_dept = DepartmentWork.objects.filter(
+            site=site,
+            date=prev_date
+        )
+
+        for entry in prev_dept:
+            obj, created = DepartmentWork.objects.get_or_create(
+                site=site,
+                department=entry.department,
+                date=work_date,
+                defaults={
+                    "full_day_count": entry.full_day_count,
+                    "half_day_count": entry.half_day_count,
+                    "full_day_rate": entry.full_day_rate,
+                    "half_day_rate": entry.half_day_rate,
+                    "labour_amount": entry.labour_amount,
+                    "advance_amount": entry.advance_amount,
+                    "total_amount": entry.total_amount,
+                }
+            )
+
+            if not created and replace_mode:
+                obj.full_day_count = entry.full_day_count
+                obj.half_day_count = entry.half_day_count
+                obj.full_day_rate = entry.full_day_rate
+                obj.half_day_rate = entry.half_day_rate
+                obj.labour_amount = entry.labour_amount
+                obj.advance_amount = entry.advance_amount
+                obj.total_amount = entry.total_amount
+                obj.save()
+                copied_any = True
+
+            if created:
+                copied_any = True
+
+    # =================================================
+    # ================= MATERIAL COPY ==================
+    # =================================================
+    if copy_material:
+        if replace_mode:
+            MaterialEntry.objects.filter(
+                site=site,
+                date=work_date
+            ).delete()
+
+        existing_materials = MaterialEntry.objects.filter(
+            site=site,
+            date=work_date
+        ).exists()
+
+        if replace_mode or not existing_materials:
+            prev_materials = MaterialEntry.objects.filter(
+                site=site,
+                date=prev_date
+            )
+
+            for entry in prev_materials:
+                MaterialEntry.objects.create(
+                    site=site,
+                    date=work_date,
+                    agent_name=entry.agent_name,
+                    name=entry.name,
+                    quantity=entry.quantity,
+                    unit=entry.unit,
+                    rate=entry.rate,
+                    advance=entry.advance,
+                    total=entry.total,
+                )
+                copied_any = True
+
+    # =================================================
+    # ================= DESCRIPTION COPY ===============
+    # =================================================
+    if copy_desc:
+        prev_note = SiteDailyNote.objects.filter(
+            site=site,
+            date=prev_date
+        ).first()
+
+        if prev_note:
+            obj, created = SiteDailyNote.objects.get_or_create(
+                site=site,
+                date=work_date,
+                defaults={"description": prev_note.description}
+            )
+
+            if not created and replace_mode:
+                obj.description = prev_note.description
+                obj.save()
+                copied_any = True
+
+            if created:
+                copied_any = True
+
+    # ================= RESULT =================
+    if copied_any:
+        messages.success(request, "✅ Previous day copied successfully")
+    else:
+        messages.info(request, "ℹ️ Nothing new to copy")
+
+    return redirect(f"/site/{site.id}/?date={work_date}")
