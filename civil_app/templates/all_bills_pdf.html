@@ -11,45 +11,65 @@
     margin:0;
   }
 
+  /* ===== TOP BRAND BAR ===== */
+  .brand-bar{
+    background:linear-gradient(90deg,#facc15,#f59e0b);
+    height:8px;
+  }
+
   /* ===== HEADER ===== */
   .header{
     text-align:center;
-    padding:12px 0;
-    border-bottom:4px solid #064e3b;
-    margin-bottom:10px;
+    padding:14px 0 10px;
+    border-bottom:2px solid #facc15;
   }
 
-  .header h2{
+  .header h1{
     margin:0;
-    font-size:20px;
-    color:#064e3b;
-    letter-spacing:0.6px;
+    font-size:22px;
+    color:#92400e;
+    font-weight:900;
+    letter-spacing:1px;
   }
 
-  .sub{
+  .header .sub{
     font-size:10px;
-    color:#374151;
+    color:#6b7280;
     margin-top:4px;
   }
 
-  /* ===== META ===== */
+  /* ===== META CARD ===== */
   .meta{
-    padding:8px 10px;
-    background:#ecfdf5;
-    border:1px solid #047857;
-    font-size:10px;
-    margin-bottom:12px;
+    margin:12px 0;
+    padding:10px 14px;
+    background:#fffbea;
+    border:1px solid #facc15;
+    border-radius:8px;
     display:flex;
     justify-content:space-between;
+    font-size:10px;
+  }
+
+  /* ===== SUMMARY STRIP ===== */
+  .summary-strip{
+    margin:10px 0 16px;
+    padding:10px;
+    background:linear-gradient(180deg,#fffbea,#fef3c7);
+    border:1px solid #fde68a;
+    border-radius:8px;
+    font-weight:900;
+    text-align:right;
+    color:#92400e;
   }
 
   /* ===== SECTION TITLE ===== */
   h3{
-    margin:16px 0 6px;
+    margin:18px 0 6px;
     font-size:13px;
-    color:#064e3b;
-    border-left:5px solid #047857;
+    color:#92400e;
+    border-left:6px solid #facc15;
     padding-left:8px;
+    font-weight:900;
   }
 
   /* ===== TABLE ===== */
@@ -57,24 +77,26 @@
     width:100%;
     border-collapse:collapse;
     margin-top:6px;
+    overflow:hidden;
   }
 
   th,td{
-    border:1px solid #9ca3af;
+    border:1px solid #e5e7eb;
     padding:6px;
   }
 
   th{
-    background:#064e3b;
-    color:#ffffff;
+    background:linear-gradient(180deg,#facc15,#f59e0b);
+    color:#422006;
     font-size:10px;
     text-transform:uppercase;
-    letter-spacing:0.05em;
+    letter-spacing:.06em;
     text-align:center;
+    font-weight:900;
   }
 
   tbody tr:nth-child(even){
-    background:#ecfdf5;
+    background:#fffdf5;
   }
 
   td{
@@ -84,44 +106,63 @@
   .right{ text-align:right; }
 
   .advance{
-    color:#991b1b;
-    font-weight:700;
+    color:#b91c1c;
+    font-weight:800;
   }
 
   .total{
-    color:#047857;
+    color:#065f46;
     font-weight:900;
   }
 
   /* ===== GRAND TOTAL ===== */
   .grand-box{
-    margin-top:14px;
-    border:2px solid #064e3b;
-    background:#ecfdf5;
-    padding:10px;
-    font-size:14px;
+    margin-top:18px;
+    border:3px solid #facc15;
+    background:linear-gradient(180deg,#fffbea,#fde68a);
+    padding:14px;
+    font-size:16px;
     font-weight:900;
     text-align:right;
+    border-radius:10px;
+    color:#7c2d12;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
   }
 
   /* ===== FOOTER ===== */
   .footer{
-    margin-top:16px;
-    padding-top:6px;
-    border-top:2px solid #064e3b;
+    margin-top:22px;
+    padding-top:8px;
+    border-top:2px solid #facc15;
     font-size:9px;
     text-align:right;
-    color:#374151;
+    color:#6b7280;
+  }
+
+  /* ===== WATERMARK (optional premium feel) ===== */
+  .watermark{
+    position:fixed;
+    top:40%;
+    left:20%;
+    font-size:60px;
+    color:#fef3c7;
+    transform:rotate(-30deg);
+    opacity:.25;
+    z-index:-1;
   }
 </style>
 </head>
 
 <body>
 
+
+
+<div class="brand-bar"></div>
+
 <!-- HEADER -->
 <div class="header">
-  <h2>ALL BILLS SUMMARY</h2>
-  <div class="sub">Consolidated Payment Statement</div>
+  <h1>SK BUILDERS</h1>
+  <div class="sub">ALL BILLS SUMMARY REPORT</div>
 </div>
 
 <!-- META -->
@@ -131,7 +172,7 @@
 </div>
 
 <!-- ================= CIVIL ================= -->
-<h3>👷 Civil Teams</h3>
+<h3>Civil Teams</h3>
 <table>
 <thead>
 <tr>
@@ -154,7 +195,7 @@
 </table>
 
 <!-- ================= DEPARTMENT ================= -->
-<h3>🏢 Departments</h3>
+<h3>Departments</h3>
 <table>
 <thead>
 <tr>
@@ -177,7 +218,7 @@
 </table>
 
 <!-- ================= MATERIAL ================= -->
-<h3>🧱 Material / Agents</h3>
+<h3>Material / Agents</h3>
 <table>
 <thead>
 <tr>
@@ -201,7 +242,7 @@
 
 <!-- ================= GRAND TOTAL ================= -->
 <div class="grand-box">
-  GRAND TOTAL : {{ grand_total }}
+  GRAND TOTAL : {{ grand_total|default:0 }}
 </div>
 
 <!-- FOOTER -->

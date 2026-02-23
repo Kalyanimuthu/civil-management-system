@@ -1217,12 +1217,19 @@ def all_bills_pdf(request):
         )
     )
 
+    civil_sum = sum(row["total"] or 0 for row in civil_rows)
+    dept_sum = sum((d["total"] or 0) for d in dept_rows)
+    material_sum = sum((m["total"] or 0) for m in material_rows)
+
+    grand_total = civil_sum + dept_sum + material_sum
+
     return render_to_pdf("all_bills_pdf.html", {
         "from_date": from_date,
         "to_date": to_date,
         "civil_rows": civil_rows,
         "dept_rows": dept_rows,
         "material_rows": material_rows,
+        "grand_total": grand_total,
     })
 
 def bill_civil_detail(request, team_id):
