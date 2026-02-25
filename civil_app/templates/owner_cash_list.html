@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-6 py-6 space-y-8 animate-fade-in">
+
+  <!-- ================= HEADER ================= -->
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+
+<div>
+  <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+    💰 Owner Cash
+  </h2>
+  <p class="text-sm text-slate-500 mt-1">
+    Track owner contributions and balances
+  </p>
+</div>
+
+<a href="{% url 'owner_cash_add' %}"
+   class="bg-gradient-to-r from-green-500 to-emerald-600
+          hover:from-green-600 hover:to-emerald-700
+          text-white px-5 py-2.5 rounded-xl font-extrabold
+          shadow-lg transition duration-200 transform hover:-translate-y-0.5">
+   ➕ Add Cash
+</a>
+
+
+  </div>
+
+  <!-- ================= SUMMARY CARDS ================= -->
+
+  <div class="grid md:grid-cols-3 gap-6">
+
+
+{% for s in summary %}
+<div class="summary-card">
+
+  <div class="flex items-center justify-between mb-2">
+    <p class="text-sm font-extrabold text-slate-700">
+      {{ s.owner.name }}
+    </p>
+    <span class="badge">OWNER</span>
+  </div>
+
+  <div class="space-y-1 text-sm">
+
+    <div class="flex justify-between">
+      <span class="text-slate-500 font-semibold">IN</span>
+      <span class="font-bold text-green-600">
+        ₹{{ s.total_in|floatformat:0 }}
+      </span>
+    </div>
+
+    <div class="flex justify-between">
+      <span class="text-slate-500 font-semibold">OUT</span>
+      <span class="font-bold text-red-600">
+        ₹{{ s.total_out|floatformat:0 }}
+      </span>
+    </div>
+
+  </div>
+
+  <div class="mt-4 pt-3 border-t">
+    <p class="text-xs text-slate-500 font-bold">BALANCE</p>
+
+    <p class="text-2xl font-extrabold
+       {% if s.balance < 0 %}
+         text-red-600
+       {% else %}
+         text-blue-700
+       {% endif %}">
+      ₹{{ s.balance|floatformat:0 }}
+    </p>
+  </div>
+
+</div>
+{% endfor %}
+
+
+  </div>
+
+  <!-- ================= TABLE ================= -->
+
+  <div class="bg-white/90 backdrop-blur border border-slate-200
+              rounded-2xl shadow-xl overflow-hidden">
+
+
+<div class="px-5 py-4 border-b bg-slate-50">
+  <h3 class="font-extrabold text-slate-800">
+    📋 Cash Entries
+  </h3>
+</div>
+
+<div class="overflow-x-auto">
+  <table class="w-full text-sm">
+
+    <thead class="bg-slate-900 text-white sticky top-0">
+      <tr>
+        <th class="th">Date</th>
+        <th class="th">Owner</th>
+        <th class="th">Amount</th>
+        <th class="th">Notes</th>
+      </tr>
+    </thead>
+
+    <tbody class="divide-y">
+
+      {% for e in entries %}
+      <tr class="hover:bg-yellow-50 transition">
+
+        <td class="td font-semibold">
+          {{ e.date|date:"Y-m-d" }}
+        </td>
+
+        <td class="td font-bold text-slate-700">
+          {{ e.owner.name }}
+        </td>
+
+        <td class="td font-extrabold text-green-600">
+          ₹{{ e.amount|floatformat:0 }}
+        </td>
+
+        <td class="td text-slate-600">
+          {{ e.notes|default:"—" }}
+        </td>
+
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4"
+            class="text-center py-10 text-slate-400 font-semibold">
+          No cash entries found
+        </td>
+      </tr>
+      {% endfor %}
+
+    </tbody>
+  </table>
+</div>
+
+
+  </div>
+
+</div>
+
+<!-- ================= STYLES ================= -->
+
+<style>
+
+/* animation */
+.animate-fade-in{animation:fadeIn .35s ease}
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(12px);}
+  to{opacity:1; transform:none;}
+}
+
+/* summary card */
+.summary-card{
+  background:linear-gradient(180deg,#ffffff,#f8fafc);
+  border:1px solid #e5e7eb;
+  border-radius:1.4rem;
+  padding:1.2rem;
+  box-shadow:0 12px 30px rgba(0,0,0,.08);
+  transition:.2s;
+}
+.summary-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 40px rgba(0,0,0,.12);
+}
+
+/* badge */
+.badge{
+  font-size:.6rem;
+  font-weight:800;
+  background:#fef3c7;
+  color:#92400e;
+  padding:2px 6px;
+  border-radius:999px;
+  letter-spacing:.05em;
+}
+
+/* table */
+.th{
+  padding:.8rem;
+  font-size:.72rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  text-align:left;
+}
+.td{
+  padding:.75rem;
+}
+
+</style>
+
+{% endblock %}

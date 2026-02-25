@@ -1,71 +1,61 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-6 py-6 space-y-8 animate-fade-in">
+<div class="max-w-7xl mx-auto px-6 py-8 space-y-10">
 
   <!-- ================= HEADER ================= -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
     <div>
-      <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
-        📊 Reports
+      <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
+        📊 Reports Dashboard
       </h2>
-      <p class="text-sm text-slate-500 mt-1">
-        Smart analysis of project expenses
+      <p class="text-slate-500 mt-1 text-sm">
+        Advanced expense & labour analytics
       </p>
     </div>
 
-    <div class="flex gap-3">
+    <div class="flex flex-wrap gap-3">
       <a href="{% url 'all_bills' %}"
-         class="bg-yellow-400 hover:bg-yellow-500
-                text-black px-4 py-2 rounded-lg font-bold shadow">
-        📑 View All Bills
+         class="btn-soft-yellow">
+        📑 View Bills
       </a>
 
       <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
-         class="bg-red-600 hover:bg-red-700
-                text-white px-4 py-2 rounded-lg font-bold shadow">
-        📄 Download ALL Bills PDF
-      </a>
-    </div>
-  </div>
-
-  <div class="flex gap-6">
-
-    <!-- ================= FILTER SIDEBAR ================= -->
-    <aside class="w-72 bg-white rounded-2xl border shadow p-6
-                 sticky top-6 h-fit animate-slide-left">
-
-      <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
-        🔍 Filters
-      </h3>
-
-      <!-- PDF -->
-      <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
-         class="block text-center bg-yellow-400 hover:bg-yellow-500
-                text-slate-900 py-2 rounded-lg font-bold mb-5 shadow">
+         class="btn-soft-red">
         📄 Download PDF
       </a>
+    </div>
 
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+    <!-- ================= FILTER PANEL ================= -->
+    <aside class="glass-card p-6 space-y-5 lg:col-span-1 h-fit sticky top-6">
+
+      <h3 class="font-bold text-slate-800 text-lg">🔍 Filters</h3>
+<a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}" class="block text-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 py-2 rounded-lg font-bold mb-5 shadow"> 📄 Download PDF </a>
       <form method="get" class="space-y-4">
 
         <div>
-          <label class="label">From Date</label>
+          <label class="filter-label">From</label>
           <input type="date" name="from_date"
                  value="{{ from_date|date:'Y-m-d' }}"
-                 class="input">
+                 class="filter-input">
         </div>
 
         <div>
-          <label class="label">To Date</label>
+          <label class="filter-label">To</label>
           <input type="date" name="to_date"
                  value="{{ to_date|date:'Y-m-d' }}"
-                 class="input">
+                 class="filter-input">
         </div>
 
         <div>
-          <label class="label">Site</label>
-          <select name="site" class="input">
-            <option value="">All Sites</option>
+          <label class="filter-label">Site</label>
+          <select name="site" class="filter-input">
+            <option value="">All</option>
             {% for s in sites %}
               <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
                 {{ s.name }}
@@ -75,9 +65,9 @@
         </div>
 
         <div>
-          <label class="label">Team</label>
-          <select name="team" class="input">
-            <option value="">All Teams</option>
+          <label class="filter-label">Team</label>
+          <select name="team" class="filter-input">
+            <option value="">All</option>
             {% for t in teams %}
               <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
                 {{ t.name }}
@@ -87,9 +77,9 @@
         </div>
 
         <div>
-          <label class="label">Department</label>
-          <select name="department" class="input">
-            <option value="">All Departments</option>
+          <label class="filter-label">Department</label>
+          <select name="department" class="filter-input">
+            <option value="">All</option>
             {% for d in departments %}
               <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
                 {{ d.name }}
@@ -98,149 +88,204 @@
           </select>
         </div>
 
-        <div>
-          <label class="label">Material</label>
-          <select name="material" class="input">
-            <option value="">All</option>
-            <option value="yes" {% if selected_material == "yes" %}selected{% endif %}>
-              Only Material
-            </option>
-          </select>
-        </div>
-
-        <button type="submit"
-                class="w-full bg-slate-900 hover:bg-black
-                       text-white py-2 rounded-lg font-bold">
+        <button class="btn-primary w-full">
           Apply Filters
         </button>
-
+        <button class="btn-secondary w-full text-center">
         <a href="{% url 'reports' %}"
-           class="block text-center bg-slate-100 hover:bg-slate-200
-                  py-2 rounded-lg font-semibold text-sm">
+           >
           Reset
         </a>
+        <button>
 
       </form>
     </aside>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main class="flex-1 space-y-8 animate-slide-up">
+    <main class="lg:col-span-4 space-y-8">
 
-      <!-- SUMMARY -->
+      <!-- ================= KPI CARDS ================= -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-        <div class="summary-card">
-          <p class="label">Labour</p>
-          <p class="amount text-orange-600">₹{{ total_labour }}</p>
+        <div class="kpi-card bg-orange-50 border-orange-200">
+          <p class="kpi-label">Labour</p>
+          <p class="kpi-value text-orange-600">₹{{ total_labour }}</p>
         </div>
 
-        <div class="summary-card">
-          <p class="label">Material</p>
-          <p class="amount text-blue-600">₹{{ total_material }}</p>
+        <div class="kpi-card bg-blue-50 border-blue-200">
+          <p class="kpi-label">Material</p>
+          <p class="kpi-value text-blue-600">₹{{ total_material }}</p>
         </div>
 
-        <div class="summary-card">
-          <p class="label">Advance</p>
-          <p class="amount text-red-600">₹{{ total_advance }}</p>
+        <div class="kpi-card bg-red-50 border-red-200">
+          <p class="kpi-label">Advance</p>
+          <p class="kpi-value text-red-600">₹{{ total_advance }}</p>
         </div>
 
-        <div class="summary-card bg-yellow-50 border-yellow-400">
-          <p class="label">Grand Total</p>
-          <p class="amount text-green-700">₹{{ grand_total }}</p>
+        <div class="kpi-card bg-yellow-50 border-yellow-300">
+          <p class="kpi-label">Grand Total</p>
+          <p class="kpi-value text-green-700">₹{{ grand_total }}</p>
         </div>
 
       </div>
 
-      <!-- DATA TABLE -->
-      <div class="bg-white rounded-2xl border shadow overflow-hidden">
+      <!-- ================= TABLE ================= -->
+      <div class="glass-card overflow-hidden">
 
-        <table class="w-full text-sm">
-          <thead class="bg-slate-900 text-white">
-            <tr>
-              <th class="th">Date</th>
-              <th class="th">Site</th>
-              <th class="th">Department</th>
-              <th class="th">Team</th>
-              <th class="th text-right">Labour</th>
-              <th class="th text-right">Material</th>
-              <th class="th text-right">Advance</th>
-              <th class="th text-right">Total</th>
-            </tr>
-          </thead>
+        <div class="table-wrap">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Site</th>
+                <th>Department</th>
+                <th>Team</th>
+                <th class="text-right">Labour</th>
+                <th class="text-right">Material</th>
+                <th class="text-right">Advance</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
 
-          <tbody class="divide-y">
-            {% for r in rows %}
-            <tr class="hover:bg-slate-50">
-              <td class="td">{{ r.date|date:'Y-m-d' }}</td>
-              <td class="td font-semibold">{{ r.site.name }}</td>
-              <td class="td">{{ r.department }}</td>
-              <td class="td">{{ r.team }}</td>
-              <td class="td text-right">₹{{ r.labour }}</td>
-              <td class="td text-right">₹{{ r.material }}</td>
-              <td class="td text-right text-red-600">₹{{ r.advance }}</td>
-              <td class="td text-right font-extrabold">₹{{ r.total }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="8" class="py-10 text-center text-slate-400">
-                No records found
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            <tbody>
+              {% for r in rows %}
+              <tr>
+                <td>{{ r.date|date:'Y-m-d' }}</td>
+                <td class="font-semibold">{{ r.site.name }}</td>
+                <td>{{ r.department }}</td>
+                <td>{{ r.team }}</td>
+                <td class="text-right text-orange-600">₹{{ r.labour }}</td>
+                <td class="text-right text-blue-600">₹{{ r.material }}</td>
+                <td class="text-right text-red-500">₹{{ r.advance }}</td>
+                <td class="text-right font-bold text-green-700">₹{{ r.total }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-12 text-slate-400">
+                  No records found
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
       </div>
 
     </main>
+
   </div>
 </div>
-
 <!-- ================= STYLES ================= -->
 <style>
-.label{
+
+.glass-card{
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(18px);
+  border:1px solid #e5e7eb;
+  border-radius:1.2rem;
+  box-shadow:0 15px 40px rgba(0,0,0,.06);
+}
+
+.filter-label{
   font-size:.7rem;
   font-weight:800;
   color:#64748b;
   text-transform:uppercase;
-  letter-spacing:.04em;
+  margin-bottom:4px;
+  display:block;
 }
-.input{
+
+.filter-input{
   width:100%;
-  border-radius:.6rem;
-  padding:.45rem .65rem;
-  font-size:.85rem;
   border:1px solid #e5e7eb;
+  border-radius:.6rem;
+  padding:.45rem .6rem;
+  font-size:.85rem;
 }
-.input:focus{
+
+.filter-input:focus{
   outline:none;
   border-color:#2563eb;
+  box-shadow:0 0 0 2px rgba(37,99,235,.15);
 }
-.summary-card{
-  background:white;
-  border-radius:1.1rem;
-  padding:1rem;
-  border:1px solid #e5e7eb;
+
+.btn-primary{
+  background:#0f172a;
+  color:white;
+  padding:.55rem;
+  border-radius:.6rem;
+  font-weight:700;
 }
-.amount{
-  font-size:1.6rem;
-  font-weight:900;
+
+.btn-secondary{
+  background:#f1f5f9;
+  padding:.55rem;
+  border-radius:.6rem;
+  font-weight:600;
 }
-.th{
-  padding:.75rem;
+
+.btn-soft-yellow{
+  background:#fef9c3;
+  color:#854d0e;
+  padding:.5rem .9rem;
+  border-radius:.7rem;
+  font-weight:700;
+}
+
+.btn-soft-red{
+  background:#fee2e2;
+  color:#7f1d1d;
+  padding:.5rem .9rem;
+  border-radius:.7rem;
+  font-weight:700;
+}
+
+.kpi-card{
+  border-radius:1rem;
+  padding:1.2rem;
+  border:1px solid;
+}
+
+.kpi-label{
   font-size:.7rem;
   font-weight:800;
+  color:#64748b;
   text-transform:uppercase;
 }
-.td{
-  padding:.75rem;
+
+.kpi-value{
+  font-size:1.8rem;
+  font-weight:900;
 }
-.animate-fade-in{animation:fade .35s ease}
-.animate-slide-up{animation:up .35s ease}
-.animate-slide-left{animation:left .35s ease}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
-@keyframes left{from{transform:translateX(-16px);opacity:0}to{transform:none;opacity:1}}
+
+.table-wrap{
+  overflow:auto;
+}
+
+.modern-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.85rem;
+}
+
+.modern-table th{
+  background:#0f172a;
+  color:white;
+  padding:.8rem;
+  font-size:.7rem;
+  text-transform:uppercase;
+}
+
+.modern-table td{
+  padding:.8rem;
+  border-bottom:1px solid #f1f5f9;
+}
+
+.modern-table tbody tr:hover{
+  background:#f8fafc;
+}
+
 </style>
 
 {% endblock %}

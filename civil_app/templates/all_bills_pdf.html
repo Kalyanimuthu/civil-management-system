@@ -4,158 +4,171 @@
 <meta charset="UTF-8">
 
 <style>
-  body{
-    font-family: DejaVu Sans;
-    font-size:11px;
-    color:#1f2937;
-    margin:0;
-  }
 
-  /* ===== TOP BRAND BAR ===== */
-  .brand-bar{
-    background:linear-gradient(90deg,#facc15,#f59e0b);
-    height:8px;
-  }
+/* ================= PAGE ================= */
+@page {
+  size: A4;
+  margin: 22mm 14mm 18mm 14mm;
+}
 
-  /* ===== HEADER ===== */
-  .header{
-    text-align:center;
-    padding:14px 0 10px;
-    border-bottom:2px solid #facc15;
-  }
+body{
+  font-family: DejaVu Sans;
+  font-size:11px;
+  color:#1f2937;
+  margin:0;
+}
 
-  .header h1{
-    margin:0;
-    font-size:22px;
-    color:#92400e;
-    font-weight:900;
-    letter-spacing:1px;
-  }
+/* ================= CONTAINER ================= */
+.container{
+  width:100%;
+}
 
-  .header .sub{
-    font-size:10px;
-    color:#6b7280;
-    margin-top:4px;
-  }
+/* ================= TOP BRAND BAR ================= */
+.brand-bar{
+  height:10px;
+  background:linear-gradient(90deg,#facc15,#f59e0b,#f97316);
+  border-radius:4px;
+  margin-bottom:6px;
+}
 
-  /* ===== META CARD ===== */
-  .meta{
-    margin:12px 0;
-    padding:10px 14px;
-    background:#fffbea;
-    border:1px solid #facc15;
-    border-radius:8px;
-    display:flex;
-    justify-content:space-between;
-    font-size:10px;
-  }
+/* ================= HEADER ================= */
+.header{
+  text-align:center;
+  padding:10px 0 12px;
+  border-bottom:2px solid #facc15;
+}
 
-  /* ===== SUMMARY STRIP ===== */
-  .summary-strip{
-    margin:10px 0 16px;
-    padding:10px;
-    background:linear-gradient(180deg,#fffbea,#fef3c7);
-    border:1px solid #fde68a;
-    border-radius:8px;
-    font-weight:900;
-    text-align:right;
-    color:#92400e;
-  }
+.header h1{
+  margin:0;
+  font-size:22px;
+  color:#92400e;
+  font-weight:900;
+  letter-spacing:.8px;
+}
 
-  /* ===== SECTION TITLE ===== */
-  h3{
-    margin:18px 0 6px;
-    font-size:13px;
-    color:#92400e;
-    border-left:6px solid #facc15;
-    padding-left:8px;
-    font-weight:900;
-  }
+.header .sub{
+  font-size:10px;
+  color:#6b7280;
+  margin-top:4px;
+}
 
-  /* ===== TABLE ===== */
-  table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:6px;
-    overflow:hidden;
-  }
+/* ================= META ================= */
+.meta{
+  margin:14px 0 10px;
+  padding:8px 12px;
+  background:#fffbea;
+  border:1px solid #fde68a;
+  border-radius:6px;
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+}
 
-  th,td{
-    border:1px solid #e5e7eb;
-    padding:6px;
-  }
+/* ================= SECTION TITLE ================= */
+h3{
+  margin:18px 0 6px;
+  font-size:13px;
+  color:#92400e;
+  border-left:5px solid #facc15;
+  padding-left:8px;
+  font-weight:900;
+}
 
-  th{
-    background:linear-gradient(180deg,#facc15,#f59e0b);
-    color:#422006;
-    font-size:10px;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    text-align:center;
-    font-weight:900;
-  }
+/* ================= TABLE ================= */
+table{
+  width:95%;
+  border-collapse:collapse;
+  margin-top:6px;
+  table-layout:fixed;
+  page-break-inside:auto;
+}
 
-  tbody tr:nth-child(even){
-    background:#fffdf5;
-  }
+thead{
+  display:table-header-group;
+}
 
-  td{
-    font-size:11px;
-  }
+th,td{
+  border:1px solid #e5e7eb;
+  padding:6px 7px;
+}
 
-  .right{ text-align:right; }
+th{
+  background:linear-gradient(180deg,#facc15,#f59e0b);
+  color:#422006;
+  font-size:9.5px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  text-align:center;
+  font-weight:900;
+}
 
-  .advance{
-    color:#b91c1c;
-    font-weight:800;
-  }
+tbody tr:nth-child(even){
+  background:#fffdf5;
+}
 
-  .total{
-    color:#065f46;
-    font-weight:900;
-  }
+/* ================= COLUMN WIDTHS ================= */
 
-  /* ===== GRAND TOTAL ===== */
-  .grand-box{
-    margin-top:18px;
-    border:3px solid #facc15;
-    background:linear-gradient(180deg,#fffbea,#fde68a);
-    padding:14px;
-    font-size:16px;
-    font-weight:900;
-    text-align:right;
-    border-radius:10px;
-    color:#7c2d12;
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
-  }
+/* normal tables */
+.col-name1{ width:60%; }
+.col-amt1{ width:20%; }
+.col-total1{ width:20%; }
 
-  /* ===== FOOTER ===== */
-  .footer{
-    margin-top:22px;
-    padding-top:8px;
-    border-top:2px solid #facc15;
-    font-size:9px;
-    text-align:right;
-    color:#6b7280;
-  }
+/* expense table */
+.col-name{ width:40%; }
+.col-owner{ width:25%; }
+.col-amt{ width:17.5%; }
+.col-total{ width:17.5%; }
 
-  /* ===== WATERMARK (optional premium feel) ===== */
-  .watermark{
-    position:fixed;
-    top:40%;
-    left:20%;
-    font-size:60px;
-    color:#fef3c7;
-    transform:rotate(-30deg);
-    opacity:.25;
-    z-index:-1;
-  }
+/* ================= ALIGNMENT ================= */
+td:first-child{
+  text-align:left;
+}
+
+.money{
+  text-align:right;
+  white-space:nowrap;
+}
+
+/* ================= COLORS ================= */
+.advance{
+  color:#b91c1c;
+  font-weight:800;
+}
+
+.total{
+  color:#065f46;
+  font-weight:900;
+}
+
+/* ================= GRAND TOTAL ================= */
+.grand-box{
+  margin-top:22px;
+  border:3px solid #facc15;
+  background:linear-gradient(180deg,#fffbea,#fde68a);
+  padding:16px;
+  font-size:17px;
+  font-weight:900;
+  text-align:right;
+  border-radius:10px;
+  color:#7c2d12;
+  letter-spacing:.5px;
+}
+
+/* ================= FOOTER ================= */
+.footer{
+  margin-top:26px;
+  padding-top:8px;
+  border-top:2px solid #facc15;
+  font-size:9px;
+  text-align:right;
+  color:#6b7280;
+}
+
 </style>
 </head>
 
 <body>
-
-
+<div class="container">
 
 <div class="brand-bar"></div>
 
@@ -176,17 +189,17 @@
 <table>
 <thead>
 <tr>
-  <th>Team</th>
-  <th>Advance</th>
-  <th>Net Total</th>
+  <th class="col-name1">Team</th>
+  <th class="col-amt1">Advance</th>
+  <th class="col-total1">Net Total</th>
 </tr>
 </thead>
 <tbody>
 {% for c in civil_rows %}
 <tr>
   <td>{{ c.name }}</td>
-  <td class="right advance">{{ c.advance|default:0 }}</td>
-  <td class="right total">{{ c.total|default:0 }}</td>
+  <td class="money advance">₹{{ c.advance|default:0 }}</td>
+  <td class="money total">₹{{ c.total|default:0 }}</td>
 </tr>
 {% empty %}
 <tr><td colspan="3" style="text-align:center;">No civil data</td></tr>
@@ -199,20 +212,18 @@
 <table>
 <thead>
 <tr>
-  <th>Department</th>
-  <th>Advance</th>
-  <th>Net Total</th>
+  <th class="col-name1">Department</th>
+  <th class="col-amt1">Advance</th>
+  <th class="col-total1">Net Total</th>
 </tr>
 </thead>
 <tbody>
 {% for d in dept_rows %}
 <tr>
   <td>{{ d.department__name }}</td>
-  <td class="right advance">{{ d.advance|default:0 }}</td>
-  <td class="right total">{{ d.total|default:0 }}</td>
+  <td class="money advance">₹{{ d.advance|default:0 }}</td>
+  <td class="money total">₹{{ d.total|default:0 }}</td>
 </tr>
-{% empty %}
-<tr><td colspan="3" style="text-align:center;">No department data</td></tr>
 {% endfor %}
 </tbody>
 </table>
@@ -222,27 +233,52 @@
 <table>
 <thead>
 <tr>
-  <th>Agent</th>
-  <th>Advance</th>
-  <th>Net Total</th>
+  <th class="col-name1">Agent</th>
+  <th class="col-amt1">Advance</th>
+  <th class="col-total1">Net Total</th>
 </tr>
 </thead>
 <tbody>
 {% for m in material_rows %}
 <tr>
   <td>{{ m.agent_name }}</td>
-  <td class="right advance">{{ m.advance|default:0 }}</td>
-  <td class="right total">{{ m.total|default:0 }}</td>
+  <td class="money advance">₹{{ m.advance|default:0 }}</td>
+  <td class="money total">₹{{ m.total|default:0 }}</td>
 </tr>
-{% empty %}
-<tr><td colspan="3" style="text-align:center;">No material data</td></tr>
 {% endfor %}
 </tbody>
 </table>
 
-<!-- ================= GRAND TOTAL ================= -->
+<!-- ================= OTHER EXPENSE ================= -->
+<h3>💸 Other Expenses</h3>
+<table>
+<thead>
+<tr>
+  <th class="col-name">Expense</th>
+  <th class="col-owner">Owner</th>
+  <th class="col-amt">Amount</th>
+  <th class="col-total">Net Total</th>
+</tr>
+</thead>
+<tbody>
+{% for e in expense_rows %}
+<tr>
+  <td>{{ e.title }}</td>
+  <td>{{ e.owner_name }}</td>
+  <td class="money advance">₹{{ e.advance|default:0 }}</td>
+  <td class="money total">₹{{ e.total|default:0 }}</td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="4" style="text-align:center;">No expense data</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<!-- GRAND TOTAL -->
 <div class="grand-box">
-  GRAND TOTAL : {{ grand_total|default:0 }}
+  GRAND TOTAL : ₹{{ grand_total|default:0 }}
 </div>
 
 <!-- FOOTER -->
@@ -250,5 +286,6 @@
   Generated on {{ now|date:"d-m-Y H:i" }}
 </div>
 
+</div>
 </body>
 </html>

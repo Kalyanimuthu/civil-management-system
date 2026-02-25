@@ -10,7 +10,9 @@ urlpatterns = [
     path("sites/", views.site_manage, name="site_manage"),
     path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
-    path("site/<int:site_id>/copy-previous/", views.copy_previous_day, name="copy_previous_day"),
+    path("site/<int:site_id>/copy-previous/", views.copy_previous_day, name="copy_previous_day",),
+    path("owners/cash/", views.owner_cash_list, name="owner_cash_list"),
+    path("owners/cash/add/", views.owner_cash_add, name="owner_cash_add"),
 
     
     # ================= MASTERS =================
@@ -38,4 +40,5 @@ urlpatterns = [
     path("api/bill/civil/<int:team_id>/", views.bill_civil_detail, name="bill_civil_detail"),
     path("api/bill/department/<int:department_id>/", views.bill_department_detail, name="bill_department_detail"),
     path("api/bill/material/<str:agent_name>/", views.bill_material_detail, name="bill_material_detail"),
+    path("api/bill/expense/<str:name>/",views.api_bill_expense,name="api_bill_expense"),
 ]

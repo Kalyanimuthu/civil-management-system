@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-lg mx-auto px-3">
+
+  <!-- CARD -->
+
+  <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl border border-slate-200 p-7 animate-fade-in">
+
+
+<!-- HEADER -->
+<div class="flex items-center gap-3 mb-6">
+  <div class="bg-yellow-400 text-slate-900 p-2 rounded-xl shadow">
+    💰
+  </div>
+  <div>
+    <h2 class="text-2xl font-extrabold text-slate-900">
+      Add Owner Cash
+    </h2>
+    <p class="text-xs text-slate-500">
+      Record owner cash contribution
+    </p>
+  </div>
+</div>
+
+<form method="post" class="space-y-4" id="cashForm">
+  {% csrf_token %}
+
+  <!-- OWNER -->
+  <div>
+    <label class="label">Owner</label>
+    <select name="owner"
+            required
+            class="input-modern w-full font-semibold">
+      <option value="">Select owner</option>
+      {% for o in owners %}
+      <option value="{{ o.id }}">{{ o.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- DATE -->
+  <div>
+    <label class="label">Date</label>
+    <input type="date"
+           name="date"
+           value="{{ today|date:'Y-m-d' }}"
+           class="input-modern w-full"
+           required>
+  </div>
+
+  <!-- AMOUNT -->
+  <div>
+    <label class="label">Amount (₹)</label>
+    <input type="number"
+           name="amount"
+           step="0.01"
+           min="0"
+           inputmode="decimal"
+           placeholder="Enter amount"
+           class="input-modern w-full text-right font-bold"
+           required>
+  </div>
+
+  <!-- NOTES -->
+  <div>
+    <label class="label">Notes</label>
+    <textarea name="notes"
+              rows="2"
+              placeholder="Optional remarks..."
+              class="input-modern w-full resize-none"></textarea>
+  </div>
+
+  <!-- BUTTON -->
+  <button id="saveBtn"
+    class="w-full bg-gradient-to-r from-green-500 to-emerald-600
+           hover:from-green-600 hover:to-emerald-700
+           text-white py-3 rounded-xl font-extrabold
+           shadow-lg transition duration-200 transform hover:-translate-y-0.5">
+    ✅ Save Cash Entry
+  </button>
+
+</form>
+
+
+  </div>
+</div>
+
+<!-- ================= STYLES ================= -->
+
+<style>
+
+.label{
+  font-size:.72rem;
+  font-weight:800;
+  color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  margin-bottom:4px;
+  display:block;
+}
+
+/* Modern inputs */
+.input-modern{
+  border:1px solid #e5e7eb;
+  border-radius:.9rem;
+  padding:.65rem .8rem;
+  font-size:.92rem;
+  background:#fff;
+  transition:all .15s ease;
+}
+
+.input-modern:focus{
+  outline:none;
+  border-color:#facc15;
+  box-shadow:0 0 0 3px rgba(250,204,21,.25);
+  transform:scale(1.01);
+}
+
+/* animation */
+.animate-fade-in{
+  animation:fadeIn .35s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:none;}
+}
+
+</style>
+
+<!-- ================= UX SCRIPT ================= -->
+
+<script>
+/* prevent double submit */
+document.getElementById("cashForm")?.addEventListener("submit", function(){
+  const btn = document.getElementById("saveBtn");
+  if (btn){
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+  }
+});
+</script>
+
+{% endblock %}

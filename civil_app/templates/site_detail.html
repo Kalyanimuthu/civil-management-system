@@ -2,303 +2,188 @@
 {% load civil_extras %}
 {% block content %}
 
+<!-- PREMIUM PAGE BACKDROP -->
+
+<div class="fixed inset-0 -z-10 bg-gradient-to-br
+            from-slate-50 via-white to-amber-50"></div>
+
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-8 animate-page">
 
   <!-- ================= HEADER ================= -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-<h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2 flex-wrap">
-  🏗
 
-  <!-- FIXED WIDTH WRAPPER -->
-  <div class="min-w-[220px]">
+  <div class="premium-header">
 
-    <select id="siteSwitcher"
-            onchange="switchSite()"
-            class="w-full bg-white text-slate-900 border border-slate-300
-                   rounded-lg px-3 py-1.5 text-lg font-bold
-                   shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
 
-      {% for s in sites %}
-        <option value="{{ s.id }}"
-          {% if s.id == site.id %}selected{% endif %}>
-          {{ s.name }}
-        </option>
-      {% endfor %}
+<div>
+  <h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2 flex-wrap">
+    🏗
 
-    </select>
-  </div>
+    <div class="min-w-[220px]">
+      <select id="siteSwitcher"
+              onchange="switchSite()"
+              class="site-switcher">
 
-  <span>– Daily Entry</span>
-</h2>
-      <p class="text-sm text-gray-500">
-        Enter labour, advances and materials
-      </p>
-    </div>
-    <div class="flex items-center gap-3">
-      <input type="date"
-             id="work_date"
-             value="{{ work_date|date:'Y-m-d' }}"
-             onchange="goToEdit({{ site.id }})"
-             class="date-input">
+        {% for s in sites %}
+          <option value="{{ s.id }}"
+            {% if s.id == site.id %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+        {% endfor %}
 
-      <!-- RESET -->
-      <div class="relative">
-        <button onclick="toggleResetMenu({{ site.id }})"
-                class="reset-btn">
-          Reset ▾
-        </button>
-        
-<button type="button"
-        onclick="openCopyModal()"
-        class="btn-green-modern">
-  📋 Smart Copy
-</button>
-        <div id="resetMenu{{ site.id }}"
-             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border z-50">
-          <a href="{% url 'reset_site_today' site.id %}"
-             onclick="return confirm('Reset today entries?')"
-             class="reset-link">🔄 Reset Today</a>
-
-          <a href="{% url 'reset_site_month' site.id %}"
-             onclick="return confirm('Reset this month entries?')"
-             class="reset-link">📅 Reset Month</a>
-
-          <a href="#"
-             onclick="resetByDate({{ site.id }})"
-             class="reset-link text-orange-600">
-            📆 Reset Selected Date
-          </a>
-
-          <div class="border-t"></div>
-
-          <a href="{% url 'reset_site_all' site.id %}"
-             onclick="return confirm('Delete ALL entries?')"
-             class="reset-link text-red-600 font-semibold">
-            🗑 Reset All
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= DAILY DESCRIPTION PREVIEW ================= -->
-<div id="descPreviewCard"
-     class="bg-white/80 backdrop-blur border border-slate-200 rounded-2xl shadow-sm p-4">
-
-  <div class="flex items-start justify-between gap-3">
-    <div>
-      <p class="text-xs font-bold text-indigo-600 tracking-wide">
-        📝 DAILY NOTE
-      </p>
-
-      <p id="descPreviewText"
-         class="text-sm text-slate-700 font-medium mt-1 whitespace-pre-line">
-        {{ daily_description|default_if_none:""|default:"No description added for this day." }}
-
-      </p>
+      </select>
     </div>
 
-    <button type="button"
-            onclick="openDescModal()"
-            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
-      Edit
+    <span class="text-slate-500 font-bold">– Daily Entry</span>
+  </h2>
+
+  <p class="text-sm text-gray-500 mt-1">
+    Enter labour, advances and materials
+  </p>
+</div>
+
+<div class="flex items-center gap-3 flex-wrap justify-between">
+  <input type="date"
+         id="work_date"
+         value="{{ work_date|date:'Y-m-d' }}"
+         onchange="goToEdit({{ site.id }})"
+         class="date-input-modern">
+
+  <!-- RESET -->
+  <div class="relative">
+    <button onclick="toggleResetMenu({{ site.id }})"
+            class="reset-btn-modern">
+      Reset ▾
     </button>
-  </div>
-</div>
 
-<form method="post">
-{% csrf_token %}
-<input type="hidden" name="date" value="{{ work_date|date:'Y-m-d' }}">
-<input type="hidden" name="daily_description" id="daily_description_input"
-       value="{{ daily_description|default:'' }}">
+    <div id="resetMenu{{ site.id }}"
+         class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border z-50">
+      <a href="{% url 'reset_site_today' site.id %}"
+         onclick="return confirm('Reset today entries?')"
+         class="reset-link">🔄 Reset Today</a>
 
-<!-- ================= CIVIL ================= -->
-<h3 class="section-title text-blue-700">👷 Civil Teams</h3>
+      <a href="{% url 'reset_site_month' site.id %}"
+         onclick="return confirm('Reset this month entries?')"
+         class="reset-link">📅 Reset Month</a>
 
-<div class="card">
+      <a href="#"
+         onclick="resetByDate({{ site.id }})"
+         class="reset-link text-orange-600">
+        📆 Reset Selected Date
+      </a>
 
-  <div class="grid grid-cols-10 header-row">
-    <div class="text-center">Team</div><div class="text-center">M F</div><div class="text-center">H F</div><div class="text-center">M H</div><div class="text-center">H H</div>
-    <div class="text-center">Mason ₹</div><div class="text-center">Helper ₹</div><div class="text-center">Advance</div><div class="text-center">Labour</div><div class="text-center">Total</div>
-  </div>
+      <div class="border-t"></div>
 
-  {% for row in civil_rows %}
-  <div class="grid grid-cols-10 data-row">
-    <div class="font-semibold">{{ row.team.name }}</div>
-
-    <input name="mason_full_{{ row.team.id }}" value="{{ row.work.mason_full|default:0 }}"
-           class="input-box"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <input name="helper_full_{{ row.team.id }}" value="{{ row.work.helper_full|default:0 }}"
-           class="input-box"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <input name="mason_half_{{ row.team.id }}" value="{{ row.work.mason_half|default:0 }}"
-           class="input-box"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <input name="helper_half_{{ row.team.id }}" value="{{ row.work.helper_half|default:0 }}"
-           class="input-box"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <div class="rate-box">₹{{ row.rate.mason_full_rate }}</div>
-    <div class="rate-box">₹{{ row.rate.helper_full_rate }}</div>
-
-    <input name="advance_{{ row.team.id }}" value="{{ row.advance }}"
-           class="advance-box"
-           oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
-
-    <div id="civil_labour_{{ row.team.id }}" class="labour-box">{{ row.labour }}</div>
-    <div id="civil_total_{{ row.team.id }}" class="total-box">{{ row.total }}</div>
-  </div>
-  {% endfor %}
-</div>
-
-<!-- ================= DEPARTMENTS ================= -->
-<h3 class="section-title text-orange-600">🏢 Other Departments</h3>
-
-<div class="card">
-
-  <div class="grid grid-cols-7 header-row">
-    <div class="text-center">Department</div><div class="text-center">Full</div><div class="text-center">Half</div>
-    <div class="text-center">Rate</div><div class="text-center">Advance</div><div class="text-center">Labour</div><div class="text-center">Total</div>
-  </div>
-
-  {% for dept in other_depts %}
-  {% with row=dept_map|get_item:dept.id %}
-  <div class="grid grid-cols-7 data-row">
-    <div class="font-semibold">{{ dept.name }}</div>
-
-    <input name="dept_full_{{ dept.id }}" value="{{ row.full_day_count|default:0 }}"
-           class="input-box"
-           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id|default:0 }})">
-
-    <input name="dept_half_{{ dept.id }}" value="{{ row.half_day_count|default:0 }}"
-           class="input-box"
-           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id|default:0 }})">
-
-    <input name="dept_rate_{{ dept.id }}"
-       value="{% if row and row.full_day_rate %}{{ row.full_day_rate }}{% else %}{{ default_rates|get_item:dept.id|default:0 }}{% endif %}"
-       class="input-box"
-       oninput="calcDept({{ dept.id }})">
-
-
-    <input name="dept_advance_{{ dept.id }}" value="{{ row.advance_amount|default:0 }}"
-           class="advance-box"
-           oninput="calcDept({{ dept.id }}, {{ default_rates|get_item:dept.id|default:0 }})">
-
-    <div id="dept_labour_{{ dept.id }}" class="labour-box">{{ row.labour_amount|default:0 }}</div>
-    <div id="dept_total_{{ dept.id }}" class="total-box">{{ row.total_amount|default:0 }}</div>
-  </div>
-  {% endwith %}
-  {% endfor %}
-</div>
-
-<!-- ================= MATERIALS ================= -->
-<h3 class="section-title text-green-700">🧱 Materials</h3>
-
-<div class="card p-0 overflow-hidden">
-
-  <!-- Sticky Header -->
-  <div class="bg-slate-50 border-b sticky top-0 z-10">
-    <div class="grid grid-cols-8 header-row px-4 py-3">
-      <div class="text-center">Agent</div>
-      <div class="text-center">Material</div>
-      <div class="text-center">Qty</div>
-      <div class="text-center">Unit</div>
-      <div class="text-center">Rate</div>
-      <div class="text-center text-orange-600">Advance</div>
-      <div class="text-center text-green-700">Total</div>
-      <div class="text-center">Action</div>
+      <a href="{% url 'reset_site_all' site.id %}"
+         onclick="return confirm('Delete ALL entries?')"
+         class="reset-link text-red-600 font-semibold">
+        🗑 Reset All
+      </a>
     </div>
   </div>
 
-  <!-- Scroll Area -->
-  <div id="materialRows" class="max-h-[320px] overflow-y-auto px-4 py-3 space-y-2">
+  <!-- SMART COPY -->
+  <button type="button"
+          onclick="openCopyModal({{ site.id }})"
+          class="btn-green-modern">
+    📋 Smart Copy
+  </button>
+  <!-- ===== INLINE TOTAL ===== -->
+<div id="liveTotalBar" class="inline-total">
 
-    {% for m in materials %}
-    <div class="grid grid-cols-8 gap-2 items-center material-row">
-      <input name="agent_name_{{ forloop.counter0 }}" value="{{ m.agent_name }}" class="input-box">
-      <input name="material_name_{{ forloop.counter0 }}" value="{{ m.name }}" class="input-box">
-      <input name="material_qty_{{ forloop.counter0 }}" value="{{ m.quantity }}" class="input-box" oninput="calcMaterial({{ forloop.counter0 }})">
-      <input name="material_unit_{{ forloop.counter0 }}" value="{{ m.unit }}" class="input-box">
-      <input name="material_rate_{{ forloop.counter0 }}" value="{{ m.rate }}" class="input-box" oninput="calcMaterial({{ forloop.counter0 }})">
+  <span class="inline-total-label">
+    💰 Total
+  </span>
 
-      <input name="material_advance_{{ forloop.counter0 }}"
-             value="{{ m.advance|default:0 }}"
-             class="advance-box"
-             oninput="calcMaterial({{ forloop.counter0 }})">
+  <span id="liveGrandTotal" class="inline-total-amount">
+    ₹0
+  </span>
 
-      <input id="material_total_{{ forloop.counter0 }}"
-             value="{{ m.total }}"
-             class="input-box bg-green-100 font-extrabold text-green-800"
-             readonly>
-
-      <button type="button"
-              onclick="this.closest('.material-row').remove()"
-              class="delete-btn-modern">
-        ✕
-      </button>
-    </div>
-    
-    {% endfor %}
-
-  </div>
-
-  <!-- Footer -->
-  <div class="border-t bg-slate-50 px-4 py-3 flex justify-between items-center">
-    <div class="text-xs text-gray-500">
-      💡 Tip: Advance will reduce material total
-    </div>
-
-    <button type="button" onclick="addMaterialRow()" class="btn-green-modern">
-      ➕ Add Material
-    </button>
-  </div>
-
+</div>
 </div>
 
 
-<!-- ================= SAVE ================= -->
+  </div>
+
+  <!-- ================= DAILY DESCRIPTION ================= -->
+
+  <div id="descPreviewCard" class="glass-card p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <p class="text-xs font-bold text-indigo-600 tracking-wide">
+          📝 DAILY NOTE
+        </p>
+
+
+    <p id="descPreviewText"
+       class="text-sm text-slate-700 font-medium mt-1 whitespace-pre-line">
+      {{ daily_description|default_if_none:""|default:"No description added for this day." }}
+    </p>
+  </div>
+
+  <button type="button"
+          onclick="openDescModal()"
+          class="chip-btn">
+    Edit
+  </button>
+</div>
+
+
+  </div>
+
+  <!-- ===== LIVE TOTAL BAR ===== -->
+
+  
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="date" value="{{ work_date|date:'Y-m-d' }}">
+    <input type="hidden" name="daily_description" id="daily_description_input"
+           value="{{ daily_description|default:'' }}">
+
+
+{% include "site/partials/_civil_section.html" %}
+{% include "site/partials/_dept_section.html" %}
+{% include "site/partials/_material_section.html" %}
+{% include "site/partials/_expense_section.html" %}
+
 <button type="submit" class="save-btn w-full">
   {% if request.GET.date %} 🔄 Update Entries {% else %} ✅ Save Entries {% endif %}
 </button>
 
-</form>
+
+  </form>
 </div>
 <!-- ================= DESCRIPTION MODAL ================= -->
 <div id="descModal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+     class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 backdrop-blur-sm">
 
-  <div class="bg-white w-[95%] max-w-lg rounded-2xl shadow-2xl p-6 animate-modal">
+  <div class="modal-card w-full max-w-lg">
 
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-extrabold text-slate-800">
-        📝 Daily Description
-      </h3>
-
-      <button onclick="closeDescModal()"
-              class="text-gray-400 hover:text-red-500 text-xl font-bold">
-        ✕
-      </button>
+    <!-- header -->
+    <div class="modal-head">
+      <h3>📝 Daily Description</h3>
+      <button type="button" onclick="closeDescModal()" class="modal-close">✕</button>
     </div>
 
-    <textarea id="daily_description_text"
-              class="w-full border rounded-xl p-3 h-32 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              placeholder="Enter today's work summary...">{{ daily_description }}</textarea>
+    <!-- body -->
+    <div class="p-4">
+      <textarea id="daily_description_text"
+                rows="5"
+                class="modal-textarea"
+                placeholder="Enter today work description..."></textarea>
+    </div>
 
-    <div class="flex justify-end gap-3 mt-5">
+    <!-- footer -->
+    <div class="modal-footer">
       <button type="button"
               onclick="closeDescModal()"
-              class="px-4 py-2 rounded-lg bg-gray-100 font-semibold">
+              class="modal-btn cancel">
         Cancel
       </button>
 
       <button type="button"
               onclick="saveDescription()"
-              class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold shadow">
+              class="modal-btn save">
         Save
       </button>
     </div>
@@ -306,216 +191,395 @@
   </div>
 </div>
 
-
-<!-- ================= COPY MODAL ================= -->
+<!-- ================= SMART COPY MODAL ================= -->
 <div id="copyModal"
-     class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
 
-  <div class="bg-white rounded-2xl shadow-2xl w-[360px] p-6 animate-page">
+  <div class="modal-card w-full max-w-md">
 
-    <h3 class="text-lg font-extrabold mb-4 text-slate-800">
-      📋 Copy Previous Day
-    </h3>
+    <!-- header -->
+    <div class="modal-head">
+      <h3>📋 Smart Copy</h3>
+      <button type="button" onclick="closeCopyModal()" class="modal-close">✕</button>
+    </div>
 
-    <div class="space-y-2 text-sm font-semibold">
+    <!-- body -->
+    <div class="p-4 space-y-3 text-sm font-semibold text-slate-700">
 
-      <label class="flex items-center gap-2">
+      <label class="modal-check">
         <input type="checkbox" id="copyCivil" checked>
-        👷 Civil
+        Civil Labour
       </label>
 
-      <label class="flex items-center gap-2">
+      <label class="modal-check">
         <input type="checkbox" id="copyDept" checked>
-        🏢 Departments
+        Department Labour
       </label>
 
-      <label class="flex items-center gap-2">
+      <label class="modal-check">
         <input type="checkbox" id="copyMaterial" checked>
-        🧱 Materials
+        Materials
       </label>
 
-      <label class="flex items-center gap-2">
-        <input type="checkbox" id="copyDesc" checked>
-        📝 Description
+      <label class="modal-check">
+        <input type="checkbox" id="copyDesc">
+        Daily Description
       </label>
 
-      <label class="flex items-center gap-2 mt-3 border-t pt-3">
+      <label class="modal-check text-red-600">
         <input type="checkbox" id="copyReplace">
-        ⚠️ Replace existing data
+        Replace today if exists
       </label>
 
     </div>
 
-    <div class="flex justify-end gap-3 mt-6">
-      <button onclick="closeCopyModal()"
-              class="px-4 py-2 rounded-lg bg-gray-200 font-bold">
+    <!-- footer -->
+    <div class="modal-footer">
+      <button type="button"
+              onclick="closeCopyModal()"
+              class="modal-btn cancel">
         Cancel
       </button>
 
-      <button onclick="runSmartCopy({{ site.id }})"
-              class="btn-green-modern">
-        🚀 Copy Now
+      <button type="button"
+              onclick="runSmartCopy()"
+              class="modal-btn save">
+        Copy Now
       </button>
     </div>
 
   </div>
 </div>
 <!-- ================= STYLES ================= -->
+
 <style>
-:root{
-  --lemon:#facc15;
-  --lemon-soft:#fff7cc;
+  /* ===== INLINE HEADER TOTAL ===== */
+.inline-total{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:.4rem .7rem;
+  border-radius:10px;
+  border:1px solid #fde68a;
+  background:linear-gradient(135deg,#ffffff,#fffdf5);
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+  font-weight:800;
 }
 
-.animate-page{animation:fadeUp .35s ease-out}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1}}
+.inline-total-label{
+  font-size:.75rem;
+  color:#a16207;
+  white-space:nowrap;
+}
 
-.section-title{
-  font-size:1.18rem;
+.inline-total-amount{
+  font-size:.95rem;
+  color:#166534;
   font-weight:900;
   letter-spacing:.3px;
-  margin-top:1em;
 }
 
-.card{
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 1.25rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-  overflow: hidden;
+/* small screens */
+@media (max-width:640px){
+  .inline-total{
+    padding:.35rem .6rem;
+  }
 }
-
-.header-row{background:#f8fafc;font-size:.75rem;font-weight:700;padding:.6rem}
-.data-row{padding:.5rem;transition:.2s}
-.data-row:hover{
-  background:#fffdf5;
-  transform: scale(1.002);
-}
-
-
-.input-box{
-  border:1px solid #e5e7eb;
-  border-radius:.6rem;
-  padding:.42rem;
-  text-align:center;
-  background:#ffffff;
-  transition: all .15s ease;
+/* ===== MODAL CHECK ROW ===== */
+.modal-check{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 4px;
+  border-radius:8px;
+  font-size:.9rem;
   font-weight:600;
+  color:#334155;
+  cursor:pointer;
+  transition:.15s ease;
 }
 
-.input-box:focus{
-  outline:none;
-  border-color:#facc15;
-  box-shadow:0 0 0 3px rgba(250,204,21,.25);
-  transform: scale(1.02);
+.modal-check:hover{
+  background:#f8fafc;
 }
 
-
-
-.rate-box{background:#f1f5f9;border-radius:.5rem;font-weight:700;text-align:center;padding:.35rem}
-.advance-box{
-  background:#fff7cc;
-  border:1px solid #facc15;
+/* checkbox size */
+.modal-check input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  accent-color:#22c55e; /* green tick */
+  cursor:pointer;
+}
+:root{
+  --accent:#facc15;
+  --accent-strong:#f59e0b;
+}
+/* ===== GREEN ACTION BUTTON ===== */
+.btn-green-modern{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:white;
+  font-size:.85rem;
   font-weight:800;
+  padding:.45rem .9rem;
   border-radius:.6rem;
-  text-align:center;
-  padding:.4rem;
+  box-shadow:0 6px 16px rgba(34,197,94,.35);
+  transition:all .2s ease;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
 }
 
-.labour-box{
-  background:linear-gradient(180deg,#fef3c7,#fde68a);
+.btn-green-modern:hover{
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(34,197,94,.45);
+}
+
+.btn-green-modern:active{
+  transform:translateY(0);
+  box-shadow:0 4px 10px rgba(34,197,94,.35);
+}
+.premium-header{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+@media (min-width:768px){
+  .premium-header{
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+  }
+}
+
+.glass-card{
+  background:rgba(255,255,255,.75);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:1.4rem;
+  box-shadow:0 20px 45px rgba(0,0,0,.08);
+}
+
+.site-switcher{
+  width:100%;
+  background:linear-gradient(180deg,#ffffff,#f8fafc);
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:.45rem .6rem;
+  font-size:1.05rem;
   font-weight:800;
-  text-align:center;
-  border-radius:.6rem;
-  padding:.4rem;
 }
 
-.total-box{
-  background:linear-gradient(180deg,#dcfce7,#bbf7d0);
-  font-weight:900;
-  text-align:center;
+.date-input-modern{
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:.5rem .7rem;
+  font-weight:700;
+  background:white;
+  box-shadow:0 4px 10px rgba(0,0,0,.05);
+}
+
+.live-bar{
+  backdrop-filter:blur(20px);
+  background:linear-gradient(135deg,#ffffff,#fffdf5);
+  border:1px solid #fde68a;
+  border-radius:1.4rem;
+  padding:14px 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 18px 40px rgba(0,0,0,.10);
+}
+
+.chip-btn{
+  font-size:.75rem;
+  font-weight:800;
+  padding:.35rem .7rem;
   border-radius:.6rem;
-  padding:.4rem;
+  background:#eef2ff;
+  color:#3730a3;
 }
 
 .save-btn{
-  background: linear-gradient(135deg,#facc15,#f59e0b);
+  background:linear-gradient(135deg,var(--accent),var(--accent-strong));
   color:#422006;
   font-weight:900;
-  padding:1.1rem;
-  border-radius:1.3rem;
+  padding:1.15rem;
+  border-radius:1.4rem;
+  box-shadow:0 18px 45px rgba(245,158,11,.35);
   transition:.25s;
-  box-shadow:0 10px 25px rgba(245,158,11,.35);
-  letter-spacing:.3px;
 }
-
-.save-btn:hover{
-  transform: translateY(-3px) scale(1.01);
-  box-shadow:0 18px 40px rgba(245,158,11,.45);
-}
-
-
-.reset-btn{background:#fee2e2;color:#b91c1c;padding:.5rem 1rem;border-radius:.75rem;font-weight:700}
-.reset-link{display:block;padding:.5rem .75rem;font-size:.85rem}
-.reset-link:hover{background:#f1f5f9}
-
-.date-input{border:1px solid #d1d5db;border-radius:.75rem;padding:.5rem}
-.delete-btn{background:#fee2e2;color:#b91c1c;border-radius:.5rem;padding:.25rem;font-size:.8rem;font-weight:700}
-.btn-green{background:#16a34a;color:white;padding:.5rem 1rem;border-radius:.75rem;font-weight:700}
-
-
-/* Material row hover */
-.material-row{
-  padding: 4px;
-  border-radius: 10px;
-  transition: all .15s ease;
-}
-.material-row:hover{
-  background:#f8fafc;
-  transform:scale(1.01);
-}
-
-/* Modern delete button */
-.delete-btn-modern{
-  background:#fee2e2;
-  color:#b91c1c;
-  border-radius:10px;
+.save-btn:hover{ transform:translateY(-3px); }
+/* ===== RESET BUTTON ===== */
+.reset-btn-modern{
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:white;
+  font-size:.85rem;
   font-weight:800;
-  padding:6px 10px;
-  transition:.2s;
+  padding:.45rem .9rem;
+  border-radius:.6rem;
+  box-shadow:0 6px 16px rgba(220,38,38,.35);
+  transition:all .2s ease;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
 }
-.delete-btn-modern:hover{
-  background:#fecaca;
+
+.reset-btn-modern:hover{
+  background:linear-gradient(135deg,#dc2626,#b91c1c);
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(220,38,38,.45);
+}
+
+.reset-btn-modern:active{
+  transform:translateY(0);
+  box-shadow:0 4px 10px rgba(220,38,38,.35);
+}
+.reset-link{
+  display:block;
+  padding:.55rem .8rem;
+  font-size:.85rem;
+  font-weight:600;
+}
+.reset-link:hover{ background:#f8fafc; }
+
+@media (max-width:640px){
+  .save-btn{ position:sticky; bottom:12px; }
+}
+/* ===== MODAL BASE CARD ===== */
+.modal-card{
+  background:#ffffff;
+  border-radius:16px;
+  box-shadow:0 30px 80px rgba(0,0,0,.25);
+  overflow:hidden;
+  width:100%;
+  animation:modalIn .18s ease;
+}
+
+/* entry animation */
+@keyframes modalIn{
+  from{
+    transform:scale(.96);
+    opacity:0;
+  }
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+/* ===== MODAL HEADER ===== */
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  border-bottom:1px solid #e5e7eb;
+  font-weight:800;
+  font-size:1rem;
+  color:#0f172a;
+  background:#fafafa;
+}
+
+/* ===== CLOSE BUTTON ===== */
+.modal-close{
+  font-size:1.1rem;
+  font-weight:900;
+  color:#64748b;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:.15s ease;
+  line-height:1;
+}
+
+.modal-close:hover{
+  background:#f1f5f9;
+  color:#0f172a;
   transform:scale(1.05);
 }
 
-/* Modern add button */
-.btn-green-modern{
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-  color:white;
-  padding:.55rem 1.2rem;
-  border-radius:.75rem;
-  font-weight:800;
-  box-shadow:0 6px 14px rgba(0,0,0,.15);
-  transition:.25s;
-}
-.btn-green-modern:hover{
-  transform:translateY(-2px);
-  box-shadow:0 12px 22px rgba(0,0,0,.25);
+/* ===== TEXTAREA ===== */
+.modal-textarea{
+  width:100%;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  padding:.65rem .75rem;
+  font-size:.9rem;
+  font-weight:600;
+  resize:vertical;
+  min-height:110px;
+  background:#ffffff;
+  transition:.15s ease;
 }
 
+.modal-textarea:focus{
+  outline:none;
+  border-color:#facc15;
+  box-shadow:0 0 0 2px rgba(250,204,21,.18);
+}
+
+/* ===== FOOTER ===== */
+.modal-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:12px 16px;
+  border-top:1px solid #e5e7eb;
+  background:#fafafa;
+}
+
+/* ===== BUTTON BASE ===== */
+.modal-btn{
+  font-size:.85rem;
+  font-weight:800;
+  padding:.45rem .95rem;
+  border-radius:.6rem;
+  transition:.18s ease;
+}
+
+/* cancel button */
+.modal-btn.cancel{
+  background:#f1f5f9;
+  color:#334155;
+}
+
+.modal-btn.cancel:hover{
+  background:#e2e8f0;
+}
+
+/* save button */
+.modal-btn.save{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:white;
+  box-shadow:0 6px 16px rgba(34,197,94,.35);
+}
+
+.modal-btn.save:hover{
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(34,197,94,.45);
+}
+
+.modal-btn.save:active{
+  transform:translateY(0);
+}
 </style>
+
 <!-- ================= JS ================= -->
+
 <script>
 
+function money(n){
+  return "₹" + Number(n || 0).toLocaleString("en-IN");
+}
+
+/* ================= CIVIL ================= */
 function calcCivil(id, masonRate, helperRate) {
 
   const mf = +document.querySelector(`[name="mason_full_${id}"]`)?.value || 0;
   const hf = +document.querySelector(`[name="helper_full_${id}"]`)?.value || 0;
   const mh = +document.querySelector(`[name="mason_half_${id}"]`)?.value || 0;
   const hh = +document.querySelector(`[name="helper_half_${id}"]`)?.value || 0;
-  
   const advance = +document.querySelector(`[name="advance_${id}"]`)?.value || 0;
 
   const labour =
@@ -524,12 +588,18 @@ function calcCivil(id, masonRate, helperRate) {
     (hf * helperRate) +
     (hh * helperRate / 2);
 
-  
-  const total = labour - advance;
-  document.getElementById(`civil_labour_${id}`).innerText = labour;
-  document.getElementById(`civil_total_${id}`).innerText = total;
+  const total = Math.max(labour - advance);
+
+  document.getElementById(`civil_labour_${id}`).innerText =
+    labour.toLocaleString("en-IN");
+
+  document.getElementById(`civil_total_${id}`).innerText =
+    total.toLocaleString("en-IN");
+
+  updateLiveGrandTotal();
 }
 
+/* ================= DEPT ================= */
 function calcDept(id) {
   let full = +document.querySelector(`[name="dept_full_${id}"]`)?.value || 0;
   let half = +document.querySelector(`[name="dept_half_${id}"]`)?.value || 0;
@@ -537,184 +607,169 @@ function calcDept(id) {
   let rate = +document.querySelector(`[name="dept_rate_${id}"]`)?.value || 0;
 
   let labour = (full * rate) + (half * rate / 2);
-  let total = labour - advance;
+  let total = Math.max(labour - advance, 0);
 
-  document.getElementById(`dept_labour_${id}`).innerText = labour;
-  document.getElementById(`dept_total_${id}`).innerText = total;
+  document.getElementById(`dept_labour_${id}`).innerText =
+    labour.toLocaleString("en-IN");
+
+  document.getElementById(`dept_total_${id}`).innerText =
+    total.toLocaleString("en-IN");
+
+  updateLiveGrandTotal();
 }
 
+/* ================= LIVE GRAND ================= */
 
+function updateLiveGrandTotal(){
+  let total = 0;
+
+  // ===== CIVIL =====
+  document.querySelectorAll('[id^="civil_total_"]').forEach(el=>{
+    total += Number((el.innerText || "0").replace(/,/g,'')) || 0;
+  });
+
+  // ===== DEPT =====
+  document.querySelectorAll('[id^="dept_total_"]').forEach(el=>{
+    total += Number((el.innerText || "0").replace(/,/g,'')) || 0;
+  });
+
+  // ===== MATERIAL =====
+  document.querySelectorAll('[id^="material_total_"]').forEach(el=>{
+    total += Number(el.value || 0);
+  });
+
+  // ✅ ✅ EXPENSE (VERY IMPORTANT)
+  document.querySelectorAll('[name^="expense_amount_"]').forEach(el=>{
+    total += Number(el.value || 0);
+  });
+
+  // ===== UPDATE UI =====
+  const grand = document.getElementById("liveGrandTotal");
+  if (grand){
+    grand.innerText = "₹" + total.toLocaleString("en-IN");
+  }
+}
+
+/* auto triggers */
+document.addEventListener("input", updateLiveGrandTotal);
+document.addEventListener("DOMContentLoaded", updateLiveGrandTotal);
+
+
+/* ================= RESET MENU ================= */
 function toggleResetMenu(id) {
   const menu = document.getElementById("resetMenu" + id);
-
-  // Close all menus first
   document.querySelectorAll("[id^='resetMenu']").forEach(m => {
     if (m !== menu) m.classList.add("hidden");
   });
-
-  // Toggle selected menu
   menu.classList.toggle("hidden");
 }
 
-// Close menu when clicking outside
-document.addEventListener("click", function (e) {
-  const isButton = e.target.closest("[onclick^='toggleResetMenu']");
-  const isMenu = e.target.closest("[id^='resetMenu']");
-
-  if (!isButton && !isMenu) {
-    document.querySelectorAll("[id^='resetMenu']").forEach(m =>
-      m.classList.add("hidden")
-    );
-  }
-});
-function resetByDate(siteId) {
-  const date = document.getElementById("work_date").value;
-
-  if (!date) {
-    alert("Please select a date first");
-    return;
-  }
-
-  if (!confirm("Reset entries for selected date?")) return;
-
-  window.location.href = `/site/${siteId}/reset/date/?date=${date}`;
-}
-
-
+/* ================= NAV ================= */
 function goToEdit(siteId) {
-  const dateInput = document.getElementById("work_date");
-
-  if (!dateInput || !dateInput.value) {
-    alert("Please select a date");
-    return;
-  }
-
-  const date = dateInput.value;
-
-  // Force navigation
+  const date = document.getElementById("work_date").value;
+  if (!date) return alert("Please select a date");
   window.location.href = `/site/${siteId}/?date=${encodeURIComponent(date)}`;
 }
-
-
-
-let materialIndex = {{ materials|length }};
-
-function addMaterialRow() {
-  const container = document.getElementById("materialRows");
-
-  const row = document.createElement("div");
-  row.className = "grid grid-cols-8 gap-2 items-center mb-2 material-row";
-
-
-  row.innerHTML = `
-  <input name="agent_name_${materialIndex}" class="input-box">
-  <input name="material_name_${materialIndex}" class="input-box">
-  <input name="material_qty_${materialIndex}" class="input-box" oninput="calcMaterial(${materialIndex})">
-  <input name="material_unit_${materialIndex}" class="input-box">
-  <input name="material_rate_${materialIndex}" class="input-box" oninput="calcMaterial(${materialIndex})">
-
-  <input name="material_advance_${materialIndex}" value="0"
-         class="advance-box"
-         oninput="calcMaterial(${materialIndex})">
-
-  <input id="material_total_${materialIndex}" class="input-box bg-green-100 font-bold" readonly>
-
-  <button type="button" onclick="this.parentElement.remove()" class="text-red-600 bg-red-100 rounded py-1 font-bold">Delete</button>
-`;
-
-
-  container.appendChild(row);
-  materialIndex++;
-}
-
-function calcMaterial(index) {
-  const qty = Number(document.querySelector(`[name="material_qty_${index}"]`)?.value || 0);
-  const rate = Number(document.querySelector(`[name="material_rate_${index}"]`)?.value || 0);
-  const advance = Number(document.querySelector(`[name="material_advance_${index}"]`)?.value || 0);
-
-  const total = (qty * rate) - advance;
-
-  document.getElementById(`material_total_${index}`).value = total;
-}
-
-function openDescModal(){
-  const hiddenVal = document.getElementById("daily_description_input").value;
-  document.getElementById("daily_description_text").value = hiddenVal;
-
-  document.getElementById("descModal").classList.remove("hidden");
-  document.getElementById("descModal").classList.add("flex");
-}
-
-function closeDescModal(){
-  document.getElementById("descModal").classList.add("hidden");
-  document.getElementById("descModal").classList.remove("flex");
-}
-
-function saveDescription(){
-  const text = document.getElementById("daily_description_text").value.trim();
-
-  document.getElementById("daily_description_input").value = text;
-
-  const preview = document.getElementById("descPreviewText");
-  preview.innerText = text || "No description added for this day.";
-
-  closeDescModal();
-}
-
-
-function openCopyModal() {
-  document.getElementById("copyModal").classList.remove("hidden");
-  document.getElementById("copyModal").classList.add("flex");
-}
-
-function closeCopyModal() {
-  document.getElementById("copyModal").classList.add("hidden");
-}
-
-function runSmartCopy(siteId) {
-  const date = document.getElementById("work_date").value;
-
-  if (!date) {
-    alert("Select date first");
-    return;
-  }
-
-  let url = `/site/${siteId}/copy-previous/?date=${date}`;
-
-  if (document.getElementById("copyCivil").checked) url += "&civil=1";
-  if (document.getElementById("copyDept").checked) url += "&dept=1";
-  if (document.getElementById("copyMaterial").checked) url += "&material=1";
-  if (document.getElementById("copyDesc").checked) url += "&desc=1";
-  if (document.getElementById("copyReplace").checked) url += "&replace=1";
-
-  window.location.href = url;
-}
-
-
-function confirmCopy() {
-  if (confirm("Replace today's data if exists?")) {
-    // user wants replace
-    const url = new URL(event.target.href);
-    url.searchParams.set("replace", "1");
-    event.target.href = url.toString();
-  }
-  return true;
-}
-
 
 function switchSite() {
   const siteId = document.getElementById("siteSwitcher").value;
   const date = document.getElementById("work_date")?.value;
-
   let url = `/site/${siteId}/`;
-
-  if (date) {
-    url += `?date=${date}`;
-  }
-
+  if (date) url += `?date=${date}`;
   window.location.href = url;
 }
 
+/* ================= SMART COPY ================= */
+
+let currentSiteId = null;
+
+function openCopyModal(siteId){
+  currentSiteId = siteId;
+
+  const modal = document.getElementById("copyModal");
+  if (!modal) return;
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+/* ================= SMART COPY SELECTED ================= */
+function runSmartCopy() {
+  const date = document.getElementById("work_date")?.value;
+  if (!date) return alert("⚠️ Select date first");
+
+  const params = new URLSearchParams({
+    date: date,
+    civil: document.getElementById("copyCivil")?.checked ? 1 : 0,
+    dept: document.getElementById("copyDept")?.checked ? 1 : 0,
+    material: document.getElementById("copyMaterial")?.checked ? 1 : 0,
+    desc: document.getElementById("copyDesc")?.checked ? 1 : 0,
+    replace: document.getElementById("copyReplace")?.checked ? 1 : 0,
+  });
+
+  window.location.href =
+    `/site/${currentSiteId}/copy-previous/?${params.toString()}`;
+}
+
+
+function openDescModal(){
+  const modal = document.getElementById("descModal");
+  if (!modal) return;
+
+  // show modal
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  // load existing text
+  const hiddenVal = document.getElementById("daily_description_input")?.value || "";
+  const textarea = document.getElementById("daily_description_text");
+  if (textarea) textarea.value = hiddenVal;
+}
+function closeDescModal(){
+  const modal = document.getElementById("descModal");
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+function saveDescription(){
+  const textarea = document.getElementById("daily_description_text");
+  const hiddenInput = document.getElementById("daily_description_input");
+  const preview = document.getElementById("descPreviewText");
+
+  if (!textarea || !hiddenInput) {
+    console.error("Description elements missing");
+    return;
+  }
+
+  const text = textarea.value.trim();
+
+  // ✅ update hidden input (THIS IS WHAT DJANGO SAVES)
+  hiddenInput.value = text;
+
+  // ✅ update preview UI
+  if (preview){
+    preview.innerText = text || "No description added for this day.";
+  }
+
+  // ✅ close modal
+  closeDescModal();
+}
+function closeCopyModal(){
+  const modal = document.getElementById("copyModal");
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+document.addEventListener("click", function(e){
+  const modal = document.getElementById("copyModal");
+  if (!modal) return;
+
+  if (e.target === modal){
+    closeCopyModal();
+  }
+});
 </script>
 
 {% endblock %}

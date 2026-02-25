@@ -1,30 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-4 py-8 space-y-10 animate-fade">
+<div class="max-w-7xl mx-auto px-4 py-10 space-y-10 animate-fade">
 
   <!-- ================= HEADER ================= -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+
     <div>
       <h2 class="text-3xl font-extrabold text-slate-900">
         🧾 All Bills & Payments
       </h2>
-      <p class="text-sm text-gray-500">
-        Click a team / department / agent to view detailed breakup
+      <p class="text-sm text-gray-500 mt-1">
+        Click a team / department / agent / expense to view details
       </p>
     </div>
 
     <!-- FILTER -->
-    <form method="get" class="flex gap-3 items-end bg-white p-4 rounded-xl shadow">
+    <form method="get"
+          class="flex gap-4 items-end bg-white px-5 py-4 rounded-2xl shadow border">
+
       <div>
         <label class="label">From</label>
-        <input type="date" name="from_date" value="{{ from_date }}" class="input">
+        <input type="date" name="from_date"
+               value="{{ from_date }}"
+               class="input">
       </div>
+
       <div>
         <label class="label">To</label>
-        <input type="date" name="to_date" value="{{ to_date }}" class="input">
+        <input type="date" name="to_date"
+               value="{{ to_date }}"
+               class="input">
       </div>
+
       <button class="btn-primary">Apply</button>
+
     </form>
   </div>
 
@@ -43,7 +53,7 @@
       <tbody>
         {% for c in civil_bills %}
         <tr class="row-click"
-            onclick="openBill('civil', {{ c.team__id }}, '{{ c.team__name }}')">
+            onclick="openBill('civil', {{ c.team__id }}, '{{ c.team__name|escapejs }}')">
           <td class="link">{{ c.team__name }}</td>
           <td class="amount-red">₹{{ c.total_advance|default:0 }}</td>
           <td class="amount-green">₹{{ c.total_amount }}</td>
@@ -69,20 +79,12 @@
       </thead>
       <tbody>
         {% for d in dept_bills %}
-        <tr>
-  <td>
-  <span
-    class="link cursor-pointer"
-    onclick="openBill('dept', {{ d.department_id }}, '{{ d.department__name|escapejs }}')">
-    {{ d.department__name }}
-  </span>
-</td>
-
-
-  <td class="amount-red">₹{{ d.total_advance|default:0 }}</td>
-  <td class="amount-green">₹{{ d.total_amount }}</td>
-</tr>
-
+        <tr class="row-click"
+            onclick="openBill('dept', {{ d.department_id }}, '{{ d.department__name|escapejs }}')">
+          <td class="link">{{ d.department__name }}</td>
+          <td class="amount-red">₹{{ d.total_advance|default:0 }}</td>
+          <td class="amount-green">₹{{ d.total_amount }}</td>
+        </tr>
         {% empty %}
         <tr><td colspan="3" class="empty">No department bills</td></tr>
         {% endfor %}
@@ -105,13 +107,40 @@
       <tbody>
         {% for m in material_bills %}
         <tr class="row-click"
-            onclick="openBill('material', '{{ m.agent_name }}', '{{ m.agent_name }}')">
+            onclick="openBill('material', '{{ m.agent_name|escapejs }}', '{{ m.agent_name|escapejs }}')">
           <td class="link">{{ m.agent_name }}</td>
           <td class="amount-red">₹{{ m.total_advance|default:0 }}</td>
           <td class="amount-green">₹{{ m.total_amount }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="2" class="empty">No material bills</td></tr>
+        <tr><td colspan="3" class="empty">No material bills</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= OTHER EXPENSE ================= -->
+  <section class="bill-card bill-card-expense">
+    <h3 class="bill-title text-purple-700">💸 Other Expenses</h3>
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Expense</th>
+          <th>Advance</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expense_bills %}
+        <tr class="row-click"
+            onclick="openBill('expense', '{{ e.title|escapejs }}', '{{ e.title|escapejs }}')">
+          <td class="link">{{ e.title }}</td>
+          <td class="amount-red">₹{{ e.total_advance|default:0 }}</td>
+          <td class="amount-green">₹{{ e.total_amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="empty">No other expenses</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -121,43 +150,42 @@
 
 <!-- ================= MODAL ================= -->
 <div id="billModal"
-     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+     class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-sm">
 
-  <div class="bg-white rounded-xl w-[90%] max-w-3xl p-4">
+  <div class="bg-white rounded-2xl w-[92%] max-w-3xl p-6 shadow-2xl">
+
     <div class="flex justify-between items-center mb-4">
-  <h3 id="modalTitle" class="font-bold text-lg"></h3>
+      <h3 id="modalTitle" class="font-bold text-lg"></h3>
 
-  <div class="flex gap-2">
-    <a id="pdfLink"
-       target="_blank"
-       class="bg-red-600 hover:bg-red-700
-              text-white px-3 py-1 rounded-lg
-              font-bold text-sm">
-      📄 Download PDF
-    </a>
+      <div class="flex gap-3">
+        <a id="pdfLink"
+           target="_blank"
+           class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg font-bold text-sm shadow">
+          📄 Download PDF
+        </a>
 
-    <button onclick="closeModal()"
-            class="text-red-600 font-bold text-xl">
-      ✕
-    </button>
-  </div>
-</div>
-
+        <button onclick="closeModal()"
+                class="text-red-600 font-bold text-xl">
+          ✕
+        </button>
+      </div>
+    </div>
 
     <table class="bill-table">
       <thead>
         <tr>
           <th>Date</th>
           <th>Site</th>
+          <th>Owner</th>
           <th>Advance</th>
           <th>Total</th>
         </tr>
       </thead>
       <tbody id="modalBody"></tbody>
     </table>
+
   </div>
 </div>
-
 
 <!-- ================= JS ================= -->
 <script>
@@ -169,7 +197,7 @@ function openBill(type, id, title) {
   const pdfLink = document.getElementById("pdfLink");
 
   titleEl.innerText = title;
-  body.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
+  body.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -192,6 +220,11 @@ function openBill(type, id, title) {
     pdfUrl = `/bill/agent/${encodeURIComponent(id)}/`;
   }
 
+  if (type === "expense") {
+    apiUrl = `/api/bill/expense/${encodeURIComponent(id)}/`;
+    pdfUrl = `/bill/expense/${encodeURIComponent(id)}/`;
+  }
+
   pdfLink.href = `${pdfUrl}?from_date={{ from_date }}&to_date={{ to_date }}&pdf=1`;
 
   fetch(`${apiUrl}?from_date={{ from_date }}&to_date={{ to_date }}`)
@@ -199,7 +232,7 @@ function openBill(type, id, title) {
     .then(data => {
 
       if (!data.length) {
-        body.innerHTML = "<tr><td colspan='4'>No records</td></tr>";
+        body.innerHTML = "<tr><td colspan='5'>No records</td></tr>";
         return;
       }
 
@@ -208,7 +241,8 @@ function openBill(type, id, title) {
         html += `
           <tr>
             <td>${r.date}</td>
-            <td>${r.site}</td>
+            <td>${r.site || '-'}</td>
+            <td>${r.owner || '-'}</td>
             <td class="text-red-600">₹${r.advance || 0}</td>
             <td class="font-bold text-green-700">₹${r.total || 0}</td>
           </tr>
@@ -218,7 +252,7 @@ function openBill(type, id, title) {
       body.innerHTML = html;
     })
     .catch(() => {
-      body.innerHTML = "<tr><td colspan='4'>Error loading data</td></tr>";
+      body.innerHTML = "<tr><td colspan='5'>Error loading data</td></tr>";
     });
 }
 
@@ -235,141 +269,24 @@ document.getElementById("billModal").addEventListener("click", function (e) {
 });
 </script>
 
-
 <!-- ================= STYLES ================= -->
 <style>
-:root{
-  --primary:#2563eb;
-  --success:#16a34a;
-  --danger:#dc2626;
-  --bg-soft:#f8fafc;
-  --border:#e5e7eb;
-}
-
-/* ===== Page Animation ===== */
-.animate-fade{
-  animation:fadeUp .35s ease-out
-}
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* ===== Filter ===== */
-.label{
-  font-size:.7rem;
-  font-weight:700;
-  color:#64748b;
-  margin-bottom:2px;
-  display:block;
-}
-.input{
-  border:1px solid var(--border);
-  border-radius:.6rem;
-  padding:.45rem .6rem;
-  font-size:.85rem;
-}
-.btn-primary{
-  background:var(--primary);
-  color:white;
-  padding:.55rem 1.4rem;
-  border-radius:.6rem;
-  font-weight:800;
-  transition:.2s;
-}
-.btn-primary:hover{
-  background:#1e40af;
-}
-
-/* ===== Cards ===== */
-.bill-card{
-  background:white;
-  border-radius:1rem;
-  padding:1.2rem 1.3rem;
-  border:1px solid var(--border);
-}
-
-/* ===== Section Titles ===== */
-.bill-title{
-  font-size:1.1rem;
-  font-weight:900;
-  margin-bottom:.6rem;
-  display:flex;
-  align-items:center;
-  gap:.4rem;
-}
-
-/* ===== Table ===== */
-.bill-table{
-  width:100%;
-  border-collapse:collapse;
-}
-.bill-table thead{
-  background:var(--bg-soft);
-}
-.bill-table th{
-  font-size:.7rem;
-  text-transform:uppercase;
-  letter-spacing:.03em;
-  color:#475569;
-  text-align:left;
-}
-.bill-table th,
-.bill-table td{
-  padding:.65rem .75rem;
-  border-bottom:1px solid var(--border);
-}
-
-/* ===== Clickable Rows ===== */
-.row-click{
-  cursor:pointer;
-  transition:.18s;
-}
-.row-click:hover{
-  background:#f1f5f9;
-}
-
-/* ===== Text Styles ===== */
-.link{
-  color:var(--primary);
-  font-weight:800;
-}
-.amount-red{
-  color:var(--danger);
-  font-weight:800;
-}
-.amount-green{
-  color:var(--success);
-  font-weight:900;
-}
-.empty{
-  text-align:center;
-  color:#94a3b8;
-  padding:1rem;
-}
-
-/* ===== Modal ===== */
-#billModal{
-  backdrop-filter:blur(4px);
-}
-#billModal > div{
-  border-radius:1rem;
-  border:1px solid var(--border);
-  box-shadow:0 30px 60px rgba(0,0,0,.25);
-}
-#modalTitle{
-  font-size:1.1rem;
-  font-weight:900;
-}
-
-/* ===== Modal Table ===== */
-#billModal table thead{
-  background:#f1f5f9;
-}
-#billModal table td{
-  font-size:.9rem;
-}
+.label{font-size:.7rem;font-weight:700;color:#64748b}
+.input{border:1px solid #e5e7eb;border-radius:.6rem;padding:.45rem .6rem;font-size:.85rem}
+.btn-primary{background:#2563eb;color:white;padding:.55rem 1.4rem;border-radius:.6rem;font-weight:800}
+.bill-card{background:white;border-radius:18px;padding:1.5rem;border:1px solid #e5e7eb;box-shadow:0 10px 25px rgba(0,0,0,.05);transition:.25s}
+.bill-card:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,.08)}
+.bill-card-expense{background:linear-gradient(180deg,#faf5ff,#ffffff)}
+.bill-title{font-size:1.1rem;font-weight:900;margin-bottom:1rem}
+.bill-table{width:100%;border-collapse:collapse}
+.bill-table th{font-size:.7rem;text-transform:uppercase;color:#475569;text-align:left;padding:.7rem;border-bottom:1px solid #e5e7eb}
+.bill-table td{padding:.75rem;border-bottom:1px solid #e5e7eb}
+.row-click{cursor:pointer;transition:.18s}
+.row-click:hover{background:#f8fafc}
+.link{color:#2563eb;font-weight:800}
+.amount-red{color:#dc2626;font-weight:800}
+.amount-green{color:#16a34a;font-weight:900}
+.empty{text-align:center;color:#94a3b8;padding:1rem}
 </style>
-
 
 {% endblock %}

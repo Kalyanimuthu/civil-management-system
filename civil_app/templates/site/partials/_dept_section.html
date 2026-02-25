@@ -1,0 +1,182 @@
+{% load civil_extras %}
+
+<!-- ================= DEPARTMENTS ================= -->
+<h3 onclick="toggleSection(this)" class="section-title-modern">
+  <span class="flex items-center gap-2">
+    🏢 <span>Other Departments</span>
+  </span>
+  <span class="section-arrow-modern">▾</span>
+</h3>
+
+<div class="table-card-modern dept-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div class="table-head-modern"
+       style="grid-template-columns:
+       minmax(200px,1.6fr)
+       repeat(2,minmax(70px,.8fr))
+       minmax(90px,.9fr)
+       minmax(100px,1fr)
+       minmax(110px,1fr)
+       minmax(110px,1fr);">
+
+    <div>Department</div>
+    <div class="text-center">Full</div>
+    <div class="text-center">Half</div>
+    <div class="text-center">Rate</div>
+    <div class="text-center">Advance</div>
+    <div class="text-center">Labour</div>
+    <div class="text-center">Total</div>
+  </div>
+
+  <!-- ===== BODY ===== -->
+  <div class="table-body-modern">
+
+    {% for dept in other_depts %}
+    {% with row=dept_map|get_item:dept.id %}
+    <div class="table-row-modern dept-row"
+         style="grid-template-columns:
+         minmax(200px,1.6fr)
+         repeat(2,minmax(70px,.8fr))
+         minmax(90px,.9fr)
+         minmax(100px,1fr)
+         minmax(110px,1fr)
+         minmax(110px,1fr);">
+
+      <!-- Department -->
+      <div class="font-semibold truncate">
+        {{ dept.name }}
+      </div>
+
+      <!-- Full -->
+      <input name="dept_full_{{ dept.id }}"
+             value="{{ row.full_day_count|default:0 }}"
+             class="table-input-modern money"
+             oninput="calcDept({{ dept.id }})">
+
+      <!-- Half -->
+      <input name="dept_half_{{ dept.id }}"
+             value="{{ row.half_day_count|default:0 }}"
+             class="table-input-modern money"
+             oninput="calcDept({{ dept.id }})">
+
+      <!-- Rate -->
+      <input name="dept_rate_{{ dept.id }}"
+             value="{% if row and row.full_day_rate %}{{ row.full_day_rate }}{% else %}{{ default_rates|get_item:dept.id|default:0 }}{% endif %}"
+             class="table-input-modern money rate-highlight"
+             oninput="calcDept({{ dept.id }})">
+
+      <!-- Advance -->
+      <input name="dept_advance_{{ dept.id }}"
+             value="{{ row.advance_amount|default:0 }}"
+             class="table-input-modern money advance-modern"
+             oninput="calcDept({{ dept.id }})">
+
+      <!-- Labour -->
+      <div id="dept_labour_{{ dept.id }}"
+           class="table-box-modern labour-modern">
+        {{ row.labour_amount|default:0 }}
+      </div>
+
+      <!-- Total -->
+      <div id="dept_total_{{ dept.id }}"
+           class="table-box-modern total-modern">
+        {{ row.total_amount|default:0 }}
+      </div>
+
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+  </div>
+</div>
+<!-- ===== DEPT PREMIUM POLISH ===== -->
+<style>
+/* ===== DEPT HEADER GLASS ===== */
+.dept-header{
+  background:linear-gradient(180deg,#fff7ed,#ffffff);
+  backdrop-filter:blur(6px);
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+/* ===== ROW FEEL ===== */
+.dept-row{
+  transition:all .18s ease;
+}
+
+.dept-row:hover{
+  background:linear-gradient(to right,#fff7ed,#ffffff);
+  transform:scale(1.003);
+}
+
+/* ===== RATE FIELD EMPHASIS ===== */
+.dept-row input[name^="dept_rate_"]{
+  background:linear-gradient(180deg,#fff,#fef3c7);
+}
+/* ===== DEPT WORK GRID ===== */
+.dept-work-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:6px;
+}
+
+/* reuse from civil if already exists */
+.work-field{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.work-field label{
+  font-size:.65rem;
+  font-weight:800;
+  color:#64748b;
+  text-align:center;
+}
+
+.work-field input{
+  height:28px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  text-align:center;
+  font-weight:700;
+  font-size:.8rem;
+}
+
+/* ===== RATE HIGHLIGHT ===== */
+.rate-highlight{
+  background:linear-gradient(180deg,#fff,#fef3c7);
+}
+
+/* ===== ROW HOVER PREMIUM ===== */
+.dept-row:hover{
+  background:linear-gradient(to right,#fff7ed,#ffffff);
+  transform:scale(1.002);
+  transition:.15s ease;
+}
+/* ===== MOBILE ===== */
+@media (max-width:768px){
+  .dept-row{
+    min-width:760px;
+  }
+}
+</style>
+
+<!-- ===== SAFE TOGGLE HELPER ===== -->
+<script>
+if (typeof toggleSection === "undefined") {
+  function toggleSection(el){
+    const card = el.nextElementSibling;
+    const arrow = el.querySelector(".section-arrow");
+
+    if (!card) return;
+
+    card.classList.toggle("hidden");
+
+    if (arrow) {
+      arrow.style.transform =
+        card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
+    }
+  }
+}
+</script>

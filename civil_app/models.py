@@ -129,3 +129,36 @@ class BillPayment(models.Model):
     amount = models.FloatField()
     paid_on = models.DateField(auto_now_add=True)
 
+
+class Owner(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class OwnerCashEntry(models.Model):
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
+    date = models.DateField()
+    amount = models.FloatField()
+    notes = models.CharField(max_length=200, blank=True)
+
+    def __str__(self):
+        return f"{self.owner} - {self.amount}"
+    
+class OtherExpense(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    date = models.DateField()
+
+    owner = models.ForeignKey(
+        Owner,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    title = models.CharField(max_length=150)
+    amount = models.FloatField()
+    notes = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.site} - {self.title} - {self.amount}"

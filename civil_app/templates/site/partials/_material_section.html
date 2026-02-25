@@ -1,0 +1,301 @@
+{% load civil_extras %}
+
+<!-- ================= MATERIALS ================= -->
+<h3 onclick="toggleSection(this)" class="section-title-modern">
+  <span class="flex items-center gap-2">
+    🧱 <span>Materials</span>
+  </span>
+  <span class="section-arrow-modern">▾</span>
+</h3>
+
+<div class="table-card-modern material-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div class="table-head-modern"
+       style="grid-template-columns:
+       minmax(160px,1.3fr)
+       minmax(160px,1.3fr)
+       minmax(80px,.7fr)
+       minmax(70px,.6fr)
+       minmax(100px,.9fr)
+       minmax(110px,1fr)
+       minmax(120px,1fr)
+       minmax(70px,.5fr);">
+
+    <div>Agent</div>
+    <div>Material</div>
+    <div class="text-center">Qty</div>
+    <div class="text-center">Unit</div>
+    <div class="text-center">Rate</div>
+    <div class="text-center">Advance</div>
+    <div class="text-center">Total</div>
+    <div class="text-center">Action</div>
+  </div>
+
+  <!-- ===== BODY ===== -->
+  <div id="materialRows" class="table-body-modern">
+
+    {% for m in materials %}
+    <div class="table-row-modern material-row"
+         style="grid-template-columns:
+         minmax(160px,1.3fr)
+         minmax(160px,1.3fr)
+         minmax(80px,.7fr)
+         minmax(70px,.6fr)
+         minmax(100px,.9fr)
+         minmax(110px,1fr)
+         minmax(120px,1fr)
+         minmax(70px,.5fr);">
+
+      <!-- Agent -->
+      <input name="agent_name_{{ forloop.counter0 }}"
+             value="{{ m.agent_name }}"
+             class="table-input-modern">
+
+      <!-- Material -->
+      <input name="material_name_{{ forloop.counter0 }}"
+             value="{{ m.name }}"
+             class="table-input-modern">
+
+      <!-- Qty -->
+      <input name="material_qty_{{ forloop.counter0 }}"
+             value="{{ m.quantity }}"
+             class="table-input-modern money"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <!-- Unit -->
+      <input name="material_unit_{{ forloop.counter0 }}"
+             value="{{ m.unit }}"
+             class="table-input-modern">
+
+      <!-- Rate -->
+      <input name="material_rate_{{ forloop.counter0 }}"
+             value="{{ m.rate }}"
+             class="table-input-modern money rate-highlight"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <!-- Advance -->
+      <input name="material_advance_{{ forloop.counter0 }}"
+             value="{{ m.advance|default:0 }}"
+             class="table-input-modern money advance-modern"
+             oninput="calcMaterial({{ forloop.counter0 }})">
+
+      <!-- Total -->
+      <input id="material_total_{{ forloop.counter0 }}"
+             value="{{ m.total }}"
+             class="table-input-modern money total-green"
+             readonly>
+
+      <!-- Delete -->
+      <div class="flex justify-center">
+        <button type="button"
+                onclick="this.closest('.material-row').remove(); updateLiveGrandTotal?.();"
+                class="delete-btn-modern premium-delete">
+          ✕
+        </button>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="table-footer-modern">
+    <span>💡 Advance will reduce material total</span>
+    <button type="button" onclick="addMaterialRow()" class="btn-green-modern">
+      ➕ Add Material
+    </button>
+  </div>
+
+</div>
+<!-- ===== MATERIAL PREMIUM POLISH ===== -->
+<style>
+/* ===== MATERIAL HEADER GLASS ===== */
+.material-header{
+  background:linear-gradient(180deg,#f0fdf4,#ffffff);
+  backdrop-filter:blur(6px);
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+/* ===== ROW FEEL ===== */
+.material-row{
+  transition:all .18s ease;
+}
+
+
+/* ===== RATE EMPHASIS ===== */
+.rate-focus{
+  background:linear-gradient(180deg,#ffffff,#ecfdf5);
+}
+
+/* ===== MATERIAL ROW ===== */
+.material-row:hover{
+  background:linear-gradient(to right,#f0fdf4,#ffffff);
+  transform:scale(1.002);
+  transition:.15s ease;
+}
+
+/* ===== TOTAL GREEN ===== */
+.total-green{
+  background:linear-gradient(180deg,#dcfce7,#bbf7d0);
+  font-weight:900;
+}
+
+/* ===== MODERN DELETE ===== */
+.delete-btn-modern{
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  background:#fee2e2;
+  color:#dc2626;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.15s ease;
+}
+
+.delete-btn-modern:hover{
+  background:#fecaca;
+  transform:scale(1.12);
+}
+
+/* ===== FOOTER ===== */
+.table-footer-modern{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 16px;
+  background:#f8fafc;
+  border-top:1px solid #e5e7eb;
+  font-size:.8rem;
+  color:#64748b;
+  font-weight:600;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:768px){
+  .material-row{
+    min-width:940px;
+  }
+}
+</style>
+
+<!-- ===== SAFE TOGGLE HELPER ===== -->
+<script>
+if (typeof toggleSection === "undefined") {
+  function toggleSection(el){
+    const card = el.nextElementSibling;
+    const arrow = el.querySelector(".section-arrow");
+
+    if (!card) return;
+
+    card.classList.toggle("hidden");
+
+    if (arrow) {
+      arrow.style.transform =
+        card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
+    }
+  }
+}
+
+
+/* ================= MATERIAL INDEX ================= */
+let materialIndex = {{ materials|length|default:0 }};
+
+/* ================= MATERIAL CALC ================= */
+function calcMaterial(index) {
+  const qtyEl = document.querySelector(`[name="material_qty_${index}"]`);
+  const rateEl = document.querySelector(`[name="material_rate_${index}"]`);
+  const advEl = document.querySelector(`[name="material_advance_${index}"]`);
+  const totalEl = document.getElementById(`material_total_${index}`);
+
+  if (!totalEl) return;
+
+  const qty = Number(qtyEl?.value || 0);
+  const rate = Number(rateEl?.value || 0);
+  const advance = Number(advEl?.value || 0);
+
+  const total = Math.max((qty * rate) - advance);
+
+  totalEl.value = total;
+
+  // update grand total if exists
+  if (typeof updateLiveGrandTotal === "function") {
+    updateLiveGrandTotal();
+  }
+}
+
+/* ================= ADD MATERIAL ROW ================= */
+function addMaterialRow() {
+  const container = document.getElementById("materialRows");
+  if (!container) return;
+
+  const row = document.createElement("div");
+  row.className = "table-row-modern material-row";
+
+  row.style.gridTemplateColumns = `
+    minmax(160px,1.3fr)
+    minmax(160px,1.3fr)
+    minmax(80px,.7fr)
+    minmax(70px,.6fr)
+    minmax(100px,.9fr)
+    minmax(110px,1fr)
+    minmax(120px,1fr)
+    minmax(70px,.5fr)
+  `;
+
+  row.innerHTML = `
+    <input name="agent_name_${materialIndex}" class="table-input-modern">
+
+    <input name="material_name_${materialIndex}" class="table-input-modern">
+
+    <input name="material_qty_${materialIndex}"
+           class="table-input-modern money"
+           oninput="calcMaterial(${materialIndex})">
+
+    <input name="material_unit_${materialIndex}"
+           class="table-input-modern">
+
+    <input name="material_rate_${materialIndex}"
+           class="table-input-modern money rate-highlight"
+           oninput="calcMaterial(${materialIndex})">
+
+    <input name="material_advance_${materialIndex}"
+           value="0"
+           class="table-input-modern money advance-modern"
+           oninput="calcMaterial(${materialIndex})">
+
+    <input id="material_total_${materialIndex}"
+           value="0"
+           class="table-input-modern money total-green"
+           readonly>
+
+    <div class="flex justify-center">
+      <button type="button"
+        onclick="this.closest('.material-row').remove(); updateLiveGrandTotal?.();"
+        class="delete-btn-modern">
+        ✕
+      </button>
+    </div>
+  `;
+
+  container.appendChild(row);
+
+  // focus first field (pro UX)
+  const firstInput = row.querySelector("input");
+  firstInput?.focus();
+
+  materialIndex++;
+}
+
+/* ================= AUTO RECALC ON LOAD ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('[id^="material_total_"]').forEach(el => {
+    const index = el.id.replace("material_total_", "");
+    calcMaterial(index);
+  });
+});
+
+</script>

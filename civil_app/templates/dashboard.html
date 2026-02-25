@@ -1,58 +1,75 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
+<div class="max-w-7xl mx-auto px-6 py-10 space-y-8 animate-fade">
+
+  <!-- HEADER -->
 
   <div>
     <h2 class="text-3xl font-extrabold text-slate-900">🏗 Sites Dashboard</h2>
     <p class="text-sm text-gray-500 mt-1">Hover on a site to view details</p>
   </div>
 
+  <!-- EMPTY STATE -->
+
+{% if not sites %}
+
+  <div class="text-center py-20">
+    <p class="text-gray-400 font-semibold">No sites added yet.</p>
+  </div>
+  {% endif %}
+
+  <!-- GRID -->
+
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
-    {% for row in sites %}
-    <div class="site-card">
 
-      <!-- HEADER -->
-      <div class="site-header">
-        <h3>{{ row.site.name }}</h3>
-        
-      </div>
+{% for row in sites %}
+<div class="site-card" data-name="{{ row.site.name|lower }}">
 
-      <!-- HOVER DETAILS -->
-      <div class="site-details">
+  <!-- HEADER -->
+  <div class="site-header">
+    <h3>{{ row.site.name }}</h3>
+  </div>
 
-        <div class="metric blue">
-          <span>This Week</span>
-          <strong>₹{{ row.weekly_total }}</strong>
-        </div>
+  <!-- HOVER DETAILS -->
+  <div class="site-details">
 
-        
-
-        <div class="metric red">
-          <span>Advance</span>
-          <strong>₹{{ row.today_advance }}</strong>
-        </div>
-
-        <div class="actions">
-          <a href="/site/{{ row.site.id }}/">Open →</a>
-          <a href="/delete-site/{{ row.site.id }}/"
-             onclick="return confirm('Delete site?')"
-             class="danger">Delete</a>
-        </div>
-
-      </div>
-
+    <div class="metric blue">
+      <span>This Week</span>
+      <strong>₹{{ row.weekly_total|default:0 }}</strong>
     </div>
-    {% endfor %}
+
+    <div class="metric red">
+      <span>Advance</span>
+      <strong>₹{{ row.today_advance|default:0 }}</strong>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+      <a href="/site/{{ row.site.id }}/">Open →</a>
+
+      <!-- ✅ SAFE DELETE (POST) -->
+      <form method="post"
+            action="/delete-site/{{ row.site.id }}/"
+            onsubmit="return confirm('Delete site?')">
+        {% csrf_token %}
+        <button type="submit" class="danger">Delete</button>
+      </form>
+    </div>
+
+  </div>
+
+</div>
+{% endfor %}
+
 
   </div>
 </div>
 
-
 <!-- ================= STYLES ================= -->
+
 <style>
-/* ===== Animation ===== */
 .animate-fade{
   animation:fadeIn .4s ease-out;
 }
@@ -61,7 +78,6 @@
   to{opacity:1;transform:translateY(0)}
 }
 
-/* ===== CARD ===== */
 .site-card::before{
   content:"";
   position:absolute;
@@ -69,23 +85,15 @@
   left:0;
   width:100%;
   height:4px;
-  background:linear-gradient(
-    to right,
-    #facc15,
-    #fde047
-  );
+  background:linear-gradient(to right,#facc15,#fde047);
 }
 
 .site-card{
   position: relative;
-  background: linear-gradient(
-    145deg,
-    #ffffff 0%,
-    #fffbeb 100%   /* lemon tint */
-  );
+  background: linear-gradient(145deg,#ffffff 0%,#fffbeb 100%);
   border-radius:1.5rem;
   padding:1.5rem;
-  border:1px solid #fde68a; /* lemon border */
+  border:1px solid #fde68a;
   box-shadow:
     0 10px 25px rgba(0,0,0,.06),
     inset 0 1px 0 rgba(255,255,255,.9);
@@ -97,31 +105,23 @@
   overflow:hidden;
 }
 
-/* ===== HEADER ===== */
 .site-header h3{
   font-size:1.25rem;
   font-weight:800;
   color:#0f172a;
 }
-.site-header span{
-  font-size:.75rem;
-  color:#94a3b8;
-}
 
-/* ===== DETAILS (HIDDEN) ===== */
 .site-details{
   margin-top:1rem;
   display:flex;
   flex-direction:column;
   gap:.5rem;
-
   max-height:0;
   opacity:0;
   overflow:hidden;
   transition:all .35s ease;
 }
 
-/* ===== HOVER ===== */
 .site-card:hover{
   transform:translateY(-4px);
   box-shadow:0 18px 40px rgba(0,0,0,.1);
@@ -136,11 +136,9 @@
   content:"";
   position:absolute;
   inset:0;
-  background: radial-gradient(
-    circle at top left,
+  background: radial-gradient(circle at top left,
     rgba(250,204,21,0.25),
-    transparent 60%
-  );
+    transparent 60%);
   opacity:0;
   transition:.35s ease;
   pointer-events:none;
@@ -150,7 +148,6 @@
   opacity:1;
 }
 
-/* ===== METRICS ===== */
 .metric{
   display:flex;
   justify-content:space-between;
@@ -165,28 +162,40 @@
 .metric.green{background:#ecfdf5;color:#047857;}
 .metric.red{background:#fef2f2;color:#b91c1c;}
 
-/* ===== ACTIONS ===== */
 .actions{
   margin-top:.6rem;
   padding-top:.6rem;
   border-top:1px dashed #e5e7eb;
   display:flex;
   justify-content:space-between;
+  align-items:center;
   font-size:.85rem;
   font-weight:700;
 }
-.actions a{color:#2563eb;}
-.actions a.danger{color:#dc2626;}
-.actions a:hover{text-decoration:underline;}
 
+.actions a{color:#2563eb;}
+.actions .danger{
+  color:#dc2626;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+}
+.actions a:hover,
+.actions .danger:hover{text-decoration:underline;}
 </style>
 
 <!-- ================= SEARCH ================= -->
+
 <script>
 function filterSites() {
-  const val = document.getElementById("siteSearch").value.toLowerCase();
+  const input = document.getElementById("siteSearch");
+  if (!input) return;
+
+  const val = input.value.toLowerCase();
   document.querySelectorAll(".site-card").forEach(card=>{
-    card.style.display = card.dataset.name.includes(val) ? "block" : "none";
+    card.style.display =
+      card.dataset.name.includes(val) ? "block" : "none";
   });
 }
 </script>

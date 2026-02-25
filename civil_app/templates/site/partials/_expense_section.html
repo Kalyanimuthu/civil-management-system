@@ -1,0 +1,256 @@
+{% load civil_extras %}
+
+<!-- ================= OTHER EXPENSES ================= -->
+<h3 onclick="toggleSection(this)" class="section-title-modern">
+  <span class="flex items-center gap-2">
+    💸 <span>Other Expenses</span>
+  </span>
+  <span class="section-arrow-modern">▾</span>
+</h3>
+
+<div class="table-card-modern expense-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div class="table-head-modern"
+       style="grid-template-columns:
+       minmax(180px,1.5fr)
+       minmax(180px,1.5fr)
+       minmax(110px,.9fr)
+       minmax(200px,1.6fr)
+       minmax(70px,.5fr);">
+
+    <div>Expense</div>
+    <div>Received From</div>
+    <div class="text-center">Amount</div>
+    <div>Notes</div>
+    <div class="text-center">Action</div>
+  </div>
+
+  <!-- ===== BODY ===== -->
+  <div id="expenseRows" class="table-body-modern">
+
+    {% for e in other_expenses %}
+    <div class="table-row-modern expense-row"
+         style="grid-template-columns:
+         minmax(180px,1.5fr)
+         minmax(180px,1.5fr)
+         minmax(110px,.9fr)
+         minmax(200px,1.6fr)
+         minmax(70px,.5fr);">
+
+      <!-- Title -->
+      <input name="expense_title_{{ forloop.counter0 }}"
+             value="{{ e.title }}"
+             class="table-input-modern">
+
+      <!-- Owner -->
+      <select name="expense_owner_{{ forloop.counter0 }}"
+              class="table-input-modern owner-select">
+
+        <option value="">Select</option>
+
+        {% for oc in owner_cash_entries %}
+          <option value="{{ oc.id }}"
+            {% if e.owner and e.owner.id == oc.id %}selected{% endif %}>
+            {{ oc.owner.name }}
+          </option>
+        {% endfor %}
+
+      </select>
+
+      <!-- Amount -->
+      <input name="expense_amount_{{ forloop.counter0 }}"
+              value="{{ e.amount }}"
+              class="table-input-modern money amount-field"
+              oninput="validateExpenseBalance(this); updateLiveGrandTotal?.()">
+
+      <!-- Notes -->
+      <input name="expense_notes_{{ forloop.counter0 }}"
+             value="{{ e.notes }}"
+             class="table-input-modern">
+
+      <!-- Delete -->
+      <div class="flex justify-center">
+        <button type="button"
+          onclick="this.closest('.expense-row').remove(); updateLiveGrandTotal?.();"
+          class="delete-btn-modern">
+          ✕
+        </button>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="table-footer-modern">
+    <span>💡 Expense will reduce owner balance</span>
+    <button type="button" onclick="addExpenseRow()" class="btn-green-modern">
+      ➕ Add Expense
+    </button>
+  </div>
+
+</div>
+<!-- ===== EXPENSE PREMIUM POLISH ===== -->
+<style>/* ===== HEADER GLASS ===== */
+.expense-header{
+  background:linear-gradient(180deg,#faf5ff,#ffffff);
+  backdrop-filter:blur(6px);
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+/* ===== ROW FEEL ===== */
+.expense-row{
+  transition:all .18s ease;
+}
+/* ===== EXPENSE ROW ===== */
+.expense-row:hover{
+  background:linear-gradient(to right,#faf5ff,#ffffff);
+  transform:scale(1.002);
+  transition:.15s ease;
+}
+
+/* ===== OWNER SELECT ===== */
+.owner-select{
+  background:linear-gradient(180deg,#ffffff,#faf5ff);
+}
+
+/* ===== AMOUNT FIELD ===== */
+.amount-field{
+  background:linear-gradient(180deg,#ffffff,#f3e8ff);
+  color:#6b21a8;
+  font-weight:800;
+}
+/* ===== DELETE BUTTON ===== */
+.premium-delete{
+  border-radius:10px;
+  padding:6px 10px;
+  font-weight:900;
+  transition:.2s;
+}
+
+.premium-delete:hover{
+  transform:scale(1.12);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:768px){
+  .expense-row{
+    min-width:860px;
+  }
+}
+</style>
+
+<!-- ===== SAFE TOGGLE HELPER ===== -->
+<script>
+if (typeof toggleSection === "undefined") {
+  function toggleSection(el){
+    const card = el.nextElementSibling;
+    const arrow = el.querySelector(".section-arrow");
+
+    if (!card) return;
+
+    card.classList.toggle("hidden");
+
+    if (arrow) {
+      arrow.style.transform =
+        card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
+    }
+  }
+}
+
+
+/* ================= EXPENSE INDEX ================= */
+let expenseIndex = {{ other_expenses|length|default:0 }};
+
+/* ================= ADD EXPENSE ROW ================= */
+function addExpenseRow(){
+  const container = document.getElementById("expenseRows");
+  if (!container) return;
+
+  const row = document.createElement("div");
+  row.className = "table-row-modern expense-row";
+
+  row.style.gridTemplateColumns = `
+    minmax(180px,1.5fr)
+    minmax(180px,1.5fr)
+    minmax(110px,.9fr)
+    minmax(200px,1.6fr)
+    minmax(70px,.5fr)
+  `;
+
+  row.innerHTML = `
+    <input name="expense_title_${expenseIndex}"
+           class="table-input-modern">
+
+    <select name="expense_owner_${expenseIndex}"
+            class="table-input-modern owner-select"
+            onchange="validateExpenseBalance(this.closest('.expense-row').querySelector('[name^=expense_amount_]'))">
+      <option value="">Select</option>
+      {% for oc in owner_cash_entries %}
+        <option value="{{ oc.id }}"
+                data-balance="{{ oc.balance|default:oc.amount }}">
+          {{ oc.owner.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <input name="expense_amount_${expenseIndex}"
+       value="0"
+       class="table-input-modern money amount-field"
+       oninput="validateExpenseBalance(this); updateLiveGrandTotal?.()">
+
+    <input name="expense_notes_${expenseIndex}"
+           class="table-input-modern">
+
+    <div class="flex justify-center">
+      <button type="button"
+        onclick="this.closest('.expense-row').remove(); updateLiveGrandTotal?.();"
+        class="delete-btn-modern">
+        ✕
+      </button>
+    </div>
+  `;
+
+  container.appendChild(row);
+
+  // focus first field
+  row.querySelector("input")?.focus();
+
+  expenseIndex++;
+}
+
+/* ================= OWNER CASH VALIDATION ================= */
+
+function validateExpenseBalance(amountInput){
+
+  const row = amountInput.closest(".expense-row");
+  if (!row) return;
+
+  const ownerSelect = row.querySelector('[name^="expense_owner_"]');
+  if (!ownerSelect) return;
+
+  const selectedOption = ownerSelect.selectedOptions[0];
+  if (!selectedOption) return;
+
+  // 🔥 SAFE BALANCE PARSE
+  const balanceRaw = selectedOption.dataset.balance || "0";
+  const balance = Number(String(balanceRaw).replace(/,/g,'')) || 0;
+
+  const amount = Number(amountInput.value || 0);
+
+  // remove old warning
+  amountInput.classList.remove("ring-2","ring-red-400");
+
+  // 🚨 IMPORTANT: must check owner selected
+  if (!ownerSelect.value) return;
+
+  if (amount > balance){
+    alert(`⚠️ Amount exceeds owner cash.\nAvailable: ₹${balance.toLocaleString("en-IN")}`);
+    amountInput.classList.add("ring-2","ring-red-400");
+    amountInput.focus();
+  }
+}
+
+</script>
