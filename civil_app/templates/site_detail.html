@@ -41,7 +41,7 @@
   </p>
 </div>
 
-<div class="flex items-center gap-3 flex-wrap justify-between">
+<div class="top-actions">
   <input type="date"
          id="work_date"
          value="{{ work_date|date:'Y-m-d' }}"
@@ -253,6 +253,28 @@
 <!-- ================= STYLES ================= -->
 
 <style>
+  html, body{
+  overflow-x:hidden;
+}
+.top-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  justify-content:space-between;
+}
+
+/* ⭐ mobile stacking */
+@media (max-width:640px){
+  .top-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .top-actions > *{
+    width:100%;
+  }
+}
   /* ===== INLINE HEADER TOTAL ===== */
 .inline-total{
   display:flex;
@@ -282,7 +304,13 @@
 /* small screens */
 @media (max-width:640px){
   .inline-total{
-    padding:.35rem .6rem;
+    width:100%;
+    justify-content:center;
+    padding:.5rem;
+  }
+
+  .inline-total-amount{
+    font-size:1.05rem;
   }
 }
 /* ===== MODAL CHECK ROW ===== */
@@ -344,11 +372,24 @@
   flex-direction:column;
   gap:14px;
 }
+
+/* tablet+ */
 @media (min-width:768px){
   .premium-header{
     flex-direction:row;
     align-items:center;
     justify-content:space-between;
+  }
+}
+
+/* ⭐ mobile polish */
+@media (max-width:640px){
+  .premium-header{
+    gap:10px;
+  }
+
+  .premium-header h2{
+    font-size:1.25rem;
   }
 }
 
@@ -368,6 +409,13 @@
   padding:.45rem .6rem;
   font-size:1.05rem;
   font-weight:800;
+}
+
+/* ⭐ mobile */
+@media (max-width:640px){
+  .site-switcher{
+    font-size:.95rem;
+  }
 }
 
 .date-input-modern{
@@ -444,7 +492,10 @@
 .reset-link:hover{ background:#f8fafc; }
 
 @media (max-width:640px){
-  .save-btn{ position:sticky; bottom:12px; }
+  .save-btn{
+    position:sticky;
+    bottom:12px;
+  }
 }
 /* ===== MODAL BASE CARD ===== */
 .modal-card{
@@ -562,6 +613,27 @@
 
 .modal-btn.save:active{
   transform:translateY(0);
+}
+/* ⭐ modal mobile fit */
+@media (max-width:640px){
+  .modal-card{
+    width:92%;
+    max-width:none;
+    margin:10px;
+  }
+
+  .modal-head{
+    font-size:.95rem;
+  }
+
+  .modal-footer{
+    flex-direction:column;
+  }
+
+  .modal-btn{
+    width:100%;
+    text-align:center;
+  }
 }
 </style>
 

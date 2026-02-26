@@ -1624,7 +1624,7 @@ def owner_cash_list(request):
         )["s"] or 0
 
         total_out = OtherExpense.objects.filter(
-            owner__owner=owner
+            owner=owner
         ).aggregate(
             s=Sum("amount")
         )["s"] or 0

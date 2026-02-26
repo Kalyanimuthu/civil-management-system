@@ -15,7 +15,7 @@
       </p>
     </div>
 
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
       <a href="{% url 'all_bills' %}"
          class="btn-soft-yellow">
         📑 View Bills
@@ -29,10 +29,10 @@
 
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
     <!-- ================= FILTER PANEL ================= -->
-    <aside class="glass-card p-6 space-y-5 lg:col-span-1 h-fit sticky top-6">
+    <aside class="glass-card p-5 space-y-5 lg:col-span-1 h-fit lg:sticky lg:top-6">
 
       <h3 class="font-bold text-slate-800 text-lg">🔍 Filters</h3>
 <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}" class="block text-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 py-2 rounded-lg font-bold mb-5 shadow"> 📄 Download PDF </a>
@@ -91,12 +91,9 @@
         <button class="btn-primary w-full">
           Apply Filters
         </button>
-        <button class="btn-secondary w-full text-center">
-        <a href="{% url 'reports' %}"
-           >
+        <a href="{% url 'reports' %}" class="btn-secondary w-full text-center block">
           Reset
         </a>
-        <button>
 
       </form>
     </aside>
@@ -105,7 +102,7 @@
     <main class="lg:col-span-4 space-y-8">
 
       <!-- ================= KPI CARDS ================= -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
         <div class="kpi-card bg-orange-50 border-orange-200">
           <p class="kpi-label">Labour</p>
@@ -132,7 +129,7 @@
       <!-- ================= TABLE ================= -->
       <div class="glass-card overflow-hidden">
 
-        <div class="table-wrap">
+        <div class="table-wrap overflow-x-auto">
           <table class="modern-table">
             <thead>
               <tr>
@@ -285,7 +282,45 @@
 .modern-table tbody tr:hover{
   background:#f8fafc;
 }
+/* ================= MOBILE PERFECT ================= */
 
+@media (max-width: 640px){
+
+  .modern-table{
+    font-size:.75rem;
+  }
+
+  .modern-table th,
+  .modern-table td{
+    padding:.55rem .45rem;
+    white-space:nowrap;
+  }
+
+  .kpi-value{
+    font-size:1.4rem;
+  }
+
+  .glass-card{
+    border-radius:.9rem;
+  }
+
+  .filter-input{
+    padding:.4rem .5rem;
+    font-size:.8rem;
+  }
+
+}
+@media (max-width: 480px){
+
+  .modern-table th{
+    font-size:.65rem;
+  }
+
+  .kpi-card{
+    padding:.9rem;
+  }
+
+}
 </style>
 
 {% endblock %}
