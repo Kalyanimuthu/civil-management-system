@@ -22,19 +22,21 @@
       <div>
         <label class="label">From</label>
         <input type="date" name="from_date"
-               value="{{ from_date }}"
-               class="input">
+              value="{{ from_date|date:'Y-m-d' }}"
+              class="input">
+
+        
       </div>
 
       <div>
         <label class="label">To</label>
         <input type="date" name="to_date"
-               value="{{ to_date }}"
-               class="input">
+              value="{{ to_date|date:'Y-m-d' }}"
+              class="input">
       </div>
       <button class="btn-primary">Apply</button>
       <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
-         class="btn-soft-red">
+        class="btn-soft-red">
         📄 Download PDF
       </a>
       
@@ -49,7 +51,7 @@
     <table class="bill-table">
       <thead>
         <tr>
-          <th>Team</th>
+          <th class="text-left">Team</th>
           <th>Advance</th>
           <th>Total</th>
         </tr>
@@ -76,7 +78,7 @@
     <table class="bill-table">
       <thead>
         <tr>
-          <th>Department</th>
+          <th class="text-left">Department</th>
           <th>Advance</th>
           <th>Total</th>
         </tr>
@@ -103,7 +105,7 @@
     <table class="bill-table">
       <thead>
         <tr>
-          <th>Agent</th>
+          <th class="text-left">Agent</th>
           <th>Advance</th>
           <th>Total</th>
         </tr>
@@ -130,7 +132,7 @@
     <table class="bill-table">
       <thead>
         <tr>
-          <th>Expense</th>
+          <th class="text-left">Expense</th>
           <th>Advance</th>
           <th>Total</th>
         </tr>
@@ -175,7 +177,8 @@
       </div>
     </div>
 
-    <table class="bill-table">
+    <div class="modal-table-wrap">
+  <table class="bill-table">
       <thead>
         <tr>
           <th>Date</th>
@@ -187,7 +190,7 @@
       </thead>
       <tbody id="modalBody"></tbody>
     </table>
-
+  </div>
   </div>
 </div>
 
@@ -229,9 +232,9 @@ function openBill(type, id, title) {
     pdfUrl = `/bill/expense/${encodeURIComponent(id)}/`;
   }
 
-  pdfLink.href = `${pdfUrl}?from_date={{ from_date }}&to_date={{ to_date }}&pdf=1`;
+  pdfLink.href = `${pdfUrl}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&pdf=1`;
 
-  fetch(`${apiUrl}?from_date={{ from_date }}&to_date={{ to_date }}`)
+  fetch(`${apiUrl}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}`)
     .then(res => res.json())
     .then(data => {
 
@@ -275,7 +278,8 @@ document.getElementById("billModal").addEventListener("click", function (e) {
 
 <!-- ================= STYLES ================= -->
 <style>
-  
+/* ================= BASE ================= */
+
 .btn-soft-red{
   background:#fee2e2;
   color:#7f1d1d;
@@ -284,22 +288,227 @@ document.getElementById("billModal").addEventListener("click", function (e) {
   font-weight:700;
 }
 
-.label{font-size:.7rem;font-weight:700;color:#64748b}
-.input{border:1px solid #e5e7eb;border-radius:.6rem;padding:.45rem .6rem;font-size:.85rem}
-.btn-primary{background:#2563eb;color:white;padding:.55rem 1.4rem;border-radius:.6rem;font-weight:800}
-.bill-card{background:white;border-radius:18px;padding:1.5rem;border:1px solid #e5e7eb;box-shadow:0 10px 25px rgba(0,0,0,.05);transition:.25s}
-.bill-card:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,.08)}
-.bill-card-expense{background:linear-gradient(180deg,#faf5ff,#ffffff)}
-.bill-title{font-size:1.1rem;font-weight:900;margin-bottom:1rem}
-.bill-table{width:100%;border-collapse:collapse}
-.bill-table th{font-size:.7rem;text-transform:uppercase;color:#475569;text-align:left;padding:.7rem;border-bottom:1px solid #e5e7eb}
-.bill-table td{padding:.75rem;border-bottom:1px solid #e5e7eb}
-.row-click{cursor:pointer;transition:.18s}
-.row-click:hover{background:#f8fafc}
-.link{color:#2563eb;font-weight:800}
-.amount-red{color:#dc2626;font-weight:800}
-.amount-green{color:#16a34a;font-weight:900}
-.empty{text-align:center;color:#94a3b8;padding:1rem}
+.label{
+  font-size:.7rem;
+  font-weight:700;
+  color:#64748b;
+}
+
+.input{
+  border:1px solid #e5e7eb;
+  border-radius:.6rem;
+  padding:.5rem .7rem;
+  font-size:.9rem;
+  background:#fff;
+}
+
+.btn-primary{
+  background:#2563eb;
+  color:white;
+  padding:.6rem 1.4rem;
+  border-radius:.6rem;
+  font-weight:800;
+  box-shadow:0 6px 14px rgba(37,99,235,.25);
+}
+
+/* ================= BILL CARD ================= */
+
+.bill-card{
+  width:100%;
+  background:white;
+  border-radius:18px;
+  padding:1.5rem;
+  border:1px solid #e5e7eb;
+  box-shadow:0 10px 25px rgba(0,0,0,.05);
+  transition:.25s;
+}
+
+.bill-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+.bill-card-expense{
+  background:linear-gradient(180deg,#faf5ff,#ffffff);
+}
+
+.bill-title{
+  font-size:1.15rem;
+  font-weight:900;
+  margin-bottom:1rem;
+}
+
+/* ================= TABLE ================= */
+
+.bill-table{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+  font-size:.92rem;
+}
+
+.bill-table thead th{
+  font-size:.72rem;
+  text-transform:uppercase;
+  color:#475569;
+  background:#f8fafc;
+  padding:.75rem;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.bill-table td{
+  padding:.8rem .75rem;
+  border-bottom:1px solid #eef2f7;
+  word-break:break-word;
+}
+
+/* column sizing (main tables) */
+.bill-table th:nth-child(1),
+.bill-table td:nth-child(1){
+  width:50%;
+  text-align:left;
+}
+
+.bill-table th:nth-child(2),
+.bill-table td:nth-child(2){
+  width:25%;
+  text-align:right;
+}
+
+.bill-table th:nth-child(3),
+.bill-table td:nth-child(3){
+  width:25%;
+  text-align:right;
+}
+
+/* ================= ROW STATES ================= */
+
+.row-click{
+  cursor:pointer;
+  transition:.15s ease;
+}
+
+.row-click:hover{
+  background:#f8fafc;
+}
+
+.link{
+  color:#2563eb;
+  font-weight:800;
+}
+
+.amount-red{
+  color:#dc2626;
+  font-weight:800;
+}
+
+.amount-green{
+  color:#16a34a;
+  font-weight:900;
+}
+
+.empty{
+  text-align:center;
+  color:#94a3b8;
+  padding:1.2rem;
+}
+
+/* ================= MODAL ================= */
+
+#billModal > div{
+  width:92%;
+  max-width:900px;
+  min-width:320px;
+  border-radius:18px;
+}
+
+/* scroll wrapper */
+.modal-table-wrap{
+  width:100%;
+  overflow-x:auto;
+}
+
+/* modal table special sizing */
+#billModal .bill-table{
+  width:100%;
+  table-layout:fixed;
+  font-size:.9rem;
+}
+
+/* modal column widths */
+#billModal .bill-table th:nth-child(1),
+#billModal .bill-table td:nth-child(1){
+  width:18%;
+}
+
+#billModal .bill-table th:nth-child(2),
+#billModal .bill-table td:nth-child(2){
+  width:22%;
+  text-align:center;
+}
+
+#billModal .bill-table th:nth-child(3),
+#billModal .bill-table td:nth-child(3){
+  width:22%;
+}
+
+#billModal .bill-table th:nth-child(4),
+#billModal .bill-table td:nth-child(4){
+  width:19%;
+  text-align:right;
+}
+
+#billModal .bill-table th:nth-child(5),
+#billModal .bill-table td:nth-child(5){
+  width:19%;
+  text-align:right;
+}
+
+/* ================= MOBILE PERFECT ================= */
+
+@media (max-width:640px){
+
+  .bill-card{
+    padding:1rem;
+    border-radius:14px;
+  }
+
+  .bill-title{
+    font-size:1rem;
+  }
+
+  .bill-table{
+    font-size:.8rem;
+  }
+
+  .bill-table th,
+  .bill-table td{
+    padding:.55rem .45rem;
+    white-space:nowrap;
+  }
+
+  .btn-primary{
+    padding:.55rem 1rem;
+    font-size:.85rem;
+  }
+}
+
+/* ================= VERY SMALL MOBILE ================= */
+
+@media (max-width:420px){
+
+  .bill-table{
+    font-size:.75rem;
+  }
+
+  .bill-table th{
+    font-size:.65rem;
+  }
+
+  .input{
+    font-size:.8rem;
+  }
+}
 </style>
 
 {% endblock %}

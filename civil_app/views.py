@@ -1088,11 +1088,12 @@ def department_bill(request, department_id):
 
 @login_required
 def all_bills(request):
-    from_date = request.GET.get("from_date")
-    to_date = request.GET.get("to_date")
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date = parse_date(request.GET.get("to_date"))
 
     if not from_date:
         from_date = date.today()
+
     if not to_date:
         to_date = date.today()
 

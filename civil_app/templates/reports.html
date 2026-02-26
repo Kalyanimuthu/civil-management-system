@@ -1,186 +1,214 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-6 py-8 space-y-10">
+<div class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
 
   <!-- ================= HEADER ================= -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
+
+
+<div>
+  <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
+    📊 Reports Dashboard
+  </h2>
+  <p class="text-slate-500 mt-1 text-sm">
+    Advanced expense & labour analytics
+  </p>
+</div>
+
+<div class="flex flex-wrap gap-2 w-full sm:w-auto">
+  <a href="{% url 'all_bills' %}" class="btn-soft-yellow">
+    📑 View Bills
+  </a>
+</div>
+
+
+  </div>
+
+  <!-- ================= GRID ================= -->
+
+  <div class="dashboard-grid">
+
+
+<!-- ================= FILTER PANEL ================= -->
+<aside class="glass-card p-4 md:p-5 space-y-5 h-fit lg:sticky lg:top-6">
+
+  <h3 class="font-bold text-slate-800 text-lg">🔍 Filters</h3>
+
+  <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
+     class="block text-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 py-2 rounded-lg font-bold shadow">
+    📄 Download PDF
+  </a>
+
+  <form method="get" class="space-y-4">
 
     <div>
-      <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-        📊 Reports Dashboard
-      </h2>
-      <p class="text-slate-500 mt-1 text-sm">
-        Advanced expense & labour analytics
-      </p>
+      <label class="filter-label">From</label>
+      <input type="date" name="from_date"
+             value="{{ from_date|date:'Y-m-d' }}"
+             class="filter-input">
     </div>
 
-    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-      <a href="{% url 'all_bills' %}"
-         class="btn-soft-yellow">
-        📑 View Bills
-      </a>
+    <div>
+      <label class="filter-label">To</label>
+      <input type="date" name="to_date"
+             value="{{ to_date|date:'Y-m-d' }}"
+             class="filter-input">
+    </div>
 
-      
+    <div>
+      <label class="filter-label">Site</label>
+      <select name="site" class="filter-input">
+        <option value="">All</option>
+        {% for s in sites %}
+          <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="filter-label">Team</label>
+      <select name="team" class="filter-input">
+        <option value="">All</option>
+        {% for t in teams %}
+          <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
+            {{ t.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="filter-label">Department</label>
+      <select name="department" class="filter-input">
+        <option value="">All</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
+            {{ d.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="btn-primary w-full">
+      Apply Filters
+    </button>
+
+    <a href="{% url 'reports' %}" class="btn-secondary w-full text-center block">
+      Reset
+    </a>
+
+  </form>
+</aside>
+
+<!-- ================= MAIN CONTENT ================= -->
+<main class="dashboard-main space-y-6 md:space-y-8">
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+
+    <div class="kpi-card bg-orange-50 border-orange-200">
+      <p class="kpi-label">Labour</p>
+      <p class="kpi-value text-orange-600">₹{{ total_labour }}</p>
+    </div>
+
+    <div class="kpi-card bg-blue-50 border-blue-200">
+      <p class="kpi-label">Material</p>
+      <p class="kpi-value text-blue-600">₹{{ total_material }}</p>
+    </div>
+
+    <div class="kpi-card bg-red-50 border-red-200">
+      <p class="kpi-label">Advance</p>
+      <p class="kpi-value text-red-600">₹{{ total_advance }}</p>
+    </div>
+
+    <div class="kpi-card bg-yellow-50 border-yellow-300">
+      <p class="kpi-label">Grand Total</p>
+      <p class="kpi-value text-green-700">₹{{ grand_total }}</p>
     </div>
 
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+  <!-- TABLE -->
+  <div class="glass-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Site</th>
+            <th>Department</th>
+            <th>Team</th>
+            <th class="text-right">Labour</th>
+            <th class="text-right">Material</th>
+            <th class="text-right">Advance</th>
+            <th class="text-right">Total</th>
+          </tr>
+        </thead>
 
-    <!-- ================= FILTER PANEL ================= -->
-    <aside class="glass-card p-5 space-y-5 lg:col-span-1 h-fit lg:sticky lg:top-6">
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ r.date|date:'Y-m-d' }}</td>
+            <td class="font-semibold">{{ r.site.name }}</td>
+            <td>{{ r.department }}</td>
+            <td>{{ r.team }}</td>
+            <td class="text-right text-orange-600">₹{{ r.labour }}</td>
+            <td class="text-right text-blue-600">₹{{ r.material }}</td>
+            <td class="text-right text-red-500">₹{{ r.advance }}</td>
+            <td class="text-right font-bold text-green-700">₹{{ r.total }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center py-10 text-slate-400">
+              No records found
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      <h3 class="font-bold text-slate-800 text-lg">🔍 Filters</h3>
-<a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}" class="block text-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 py-2 rounded-lg font-bold mb-5 shadow"> 📄 Download PDF </a>
-      <form method="get" class="space-y-4">
+</main>
 
-        <div>
-          <label class="filter-label">From</label>
-          <input type="date" name="from_date"
-                 value="{{ from_date|date:'Y-m-d' }}"
-                 class="filter-input">
-        </div>
-
-        <div>
-          <label class="filter-label">To</label>
-          <input type="date" name="to_date"
-                 value="{{ to_date|date:'Y-m-d' }}"
-                 class="filter-input">
-        </div>
-
-        <div>
-          <label class="filter-label">Site</label>
-          <select name="site" class="filter-input">
-            <option value="">All</option>
-            {% for s in sites %}
-              <option value="{{ s.id }}" {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
-                {{ s.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label class="filter-label">Team</label>
-          <select name="team" class="filter-input">
-            <option value="">All</option>
-            {% for t in teams %}
-              <option value="{{ t.id }}" {% if selected_team == t.id|stringformat:"s" %}selected{% endif %}>
-                {{ t.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label class="filter-label">Department</label>
-          <select name="department" class="filter-input">
-            <option value="">All</option>
-            {% for d in departments %}
-              <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
-                {{ d.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <button class="btn-primary w-full">
-          Apply Filters
-        </button>
-        <a href="{% url 'reports' %}" class="btn-secondary w-full text-center block">
-          Reset
-        </a>
-
-      </form>
-    </aside>
-
-    <!-- ================= MAIN CONTENT ================= -->
-    <main class="lg:col-span-4 space-y-8">
-
-      <!-- ================= KPI CARDS ================= -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-        <div class="kpi-card bg-orange-50 border-orange-200">
-          <p class="kpi-label">Labour</p>
-          <p class="kpi-value text-orange-600">₹{{ total_labour }}</p>
-        </div>
-
-        <div class="kpi-card bg-blue-50 border-blue-200">
-          <p class="kpi-label">Material</p>
-          <p class="kpi-value text-blue-600">₹{{ total_material }}</p>
-        </div>
-
-        <div class="kpi-card bg-red-50 border-red-200">
-          <p class="kpi-label">Advance</p>
-          <p class="kpi-value text-red-600">₹{{ total_advance }}</p>
-        </div>
-
-        <div class="kpi-card bg-yellow-50 border-yellow-300">
-          <p class="kpi-label">Grand Total</p>
-          <p class="kpi-value text-green-700">₹{{ grand_total }}</p>
-        </div>
-
-      </div>
-
-      <!-- ================= TABLE ================= -->
-      <div class="glass-card overflow-hidden">
-
-        <div class="table-wrap overflow-x-auto">
-          <table class="modern-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Site</th>
-                <th>Department</th>
-                <th>Team</th>
-                <th class="text-right">Labour</th>
-                <th class="text-right">Material</th>
-                <th class="text-right">Advance</th>
-                <th class="text-right">Total</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {% for r in rows %}
-              <tr>
-                <td>{{ r.date|date:'Y-m-d' }}</td>
-                <td class="font-semibold">{{ r.site.name }}</td>
-                <td>{{ r.department }}</td>
-                <td>{{ r.team }}</td>
-                <td class="text-right text-orange-600">₹{{ r.labour }}</td>
-                <td class="text-right text-blue-600">₹{{ r.material }}</td>
-                <td class="text-right text-red-500">₹{{ r.advance }}</td>
-                <td class="text-right font-bold text-green-700">₹{{ r.total }}</td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="8" class="text-center py-12 text-slate-400">
-                  No records found
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-
-    </main>
 
   </div>
 </div>
-<!-- ================= STYLES ================= -->
+
 <style>
 
+/* ===== CARDS ===== */
 .glass-card{
-  background:rgba(255,255,255,.85);
-  backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.9);
+  backdrop-filter:blur(14px);
   border:1px solid #e5e7eb;
-  border-radius:1.2rem;
-  box-shadow:0 15px 40px rgba(0,0,0,.06);
+  border-radius:1rem;
+  box-shadow:0 10px 28px rgba(0,0,0,.06);
 }
 
+.kpi-card{
+  border-radius:1rem;
+  padding:1rem;
+  border:1px solid;
+}
+
+.kpi-label{
+  font-size:.7rem;
+  font-weight:800;
+  color:#64748b;
+  text-transform:uppercase;
+}
+
+.kpi-value{
+  font-size:1.6rem;
+  font-weight:900;
+}
+
+/* ===== FILTER ===== */
 .filter-label{
   font-size:.7rem;
   font-weight:800;
@@ -194,27 +222,22 @@
   width:100%;
   border:1px solid #e5e7eb;
   border-radius:.6rem;
-  padding:.45rem .6rem;
+  padding:.5rem .6rem;
   font-size:.85rem;
 }
 
-.filter-input:focus{
-  outline:none;
-  border-color:#2563eb;
-  box-shadow:0 0 0 2px rgba(37,99,235,.15);
-}
-
+/* ===== BUTTONS ===== */
 .btn-primary{
   background:#0f172a;
   color:white;
-  padding:.55rem;
+  padding:.6rem;
   border-radius:.6rem;
   font-weight:700;
 }
 
 .btn-secondary{
   background:#f1f5f9;
-  padding:.55rem;
+  padding:.6rem;
   border-radius:.6rem;
   font-weight:600;
 }
@@ -227,28 +250,7 @@
   font-weight:700;
 }
 
-.kpi-card{
-  border-radius:1rem;
-  padding:1.2rem;
-  border:1px solid;
-}
-
-.kpi-label{
-  font-size:.7rem;
-  font-weight:800;
-  color:#64748b;
-  text-transform:uppercase;
-}
-
-.kpi-value{
-  font-size:1.8rem;
-  font-weight:900;
-}
-
-.table-wrap{
-  overflow:auto;
-}
-
+/* ===== TABLE ===== */
 .modern-table{
   width:100%;
   border-collapse:collapse;
@@ -258,57 +260,75 @@
 .modern-table th{
   background:#0f172a;
   color:white;
-  padding:.8rem;
+  padding:.7rem;
   font-size:.7rem;
   text-transform:uppercase;
 }
 
 .modern-table td{
-  padding:.8rem;
+  padding:.7rem;
   border-bottom:1px solid #f1f5f9;
 }
 
 .modern-table tbody tr:hover{
   background:#f8fafc;
 }
-/* ================= MOBILE PERFECT ================= */
+
+/* ================= MOBILE ================= */
+
+
+
+/* ===== DASHBOARD GRID ===== */
+.dashboard-grid{
+  display:grid;
+  grid-template-columns: 280px minmax(0,1fr);
+  gap:24px;
+  align-items:start; /* ⭐ important */
+}
+
+/* ===== MAIN SAFETY ===== */
+.dashboard-main{
+  min-width:0;
+}
+
+/* ================= TABLET FIX ================= */
+/* keep side-by-side until small mobile */
 
 @media (max-width: 640px){
 
-  .modern-table{
-    font-size:.75rem;
+  .dashboard-grid{
+    grid-template-columns: 1fr; /* stack ONLY on small phones */
   }
 
-  .modern-table th,
-  .modern-table td{
-    padding:.55rem .45rem;
-    white-space:nowrap;
-  }
-
-  .kpi-value{
-    font-size:1.4rem;
-  }
-
-  .glass-card{
-    border-radius:.9rem;
-  }
-
-  .filter-input{
-    padding:.4rem .5rem;
-    font-size:.8rem;
+  .dashboard-grid aside{
+    max-width:420px;
+    margin:0 auto;
+    position:relative !important;
+    top:auto !important;
   }
 
 }
-@media (max-width: 480px){
-
-  .modern-table th{
-    font-size:.65rem;
+@media (max-width:480px){
+  .kpi-grid{
+    grid-template-columns:1fr;
   }
+}
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap:16px;
+}
 
-  .kpi-card{
-    padding:.9rem;
+@media (max-width:1024px){
+  .kpi-grid{
+    grid-template-columns: repeat(2,1fr);
   }
+}
 
+@media (max-width:640px){
+  .kpi-grid{
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
