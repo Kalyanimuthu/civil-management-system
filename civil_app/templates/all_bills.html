@@ -32,8 +32,12 @@
                value="{{ to_date }}"
                class="input">
       </div>
-
       <button class="btn-primary">Apply</button>
+      <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
+         class="btn-soft-red">
+        📄 Download PDF
+      </a>
+      
 
     </form>
   </div>
@@ -271,6 +275,15 @@ document.getElementById("billModal").addEventListener("click", function (e) {
 
 <!-- ================= STYLES ================= -->
 <style>
+  
+.btn-soft-red{
+  background:#fee2e2;
+  color:#7f1d1d;
+  padding:.5rem .9rem;
+  border-radius:.7rem;
+  font-weight:700;
+}
+
 .label{font-size:.7rem;font-weight:700;color:#64748b}
 .input{border:1px solid #e5e7eb;border-radius:.6rem;padding:.45rem .6rem;font-size:.85rem}
 .btn-primary{background:#2563eb;color:white;padding:.55rem 1.4rem;border-radius:.6rem;font-weight:800}

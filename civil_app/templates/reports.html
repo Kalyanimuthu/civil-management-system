@@ -21,10 +21,7 @@
         📑 View Bills
       </a>
 
-      <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
-         class="btn-soft-red">
-        📄 Download PDF
-      </a>
+      
     </div>
 
   </div>
@@ -225,14 +222,6 @@
 .btn-soft-yellow{
   background:#fef9c3;
   color:#854d0e;
-  padding:.5rem .9rem;
-  border-radius:.7rem;
-  font-weight:700;
-}
-
-.btn-soft-red{
-  background:#fee2e2;
-  color:#7f1d1d;
   padding:.5rem .9rem;
   border-radius:.7rem;
   font-weight:700;
