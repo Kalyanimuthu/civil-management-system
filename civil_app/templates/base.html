@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=1200">
   <title>Civil Management</title>
 
   <!-- Font performance -->
@@ -25,6 +25,19 @@
     body {
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
+    .desktop-scroll{
+  width:100%;
+}
+
+@media (max-width:768px){
+  .desktop-scroll{
+    overflow-x:auto;
+  }
+
+  .desktop-scroll > *{
+    min-width:1100px;
+  }
+}
   </style>
 
 </head>
