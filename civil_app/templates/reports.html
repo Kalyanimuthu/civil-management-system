@@ -308,57 +308,7 @@
 .dashboard-main{
   min-width:0;
 }
-/* ================= SITE BLOCK ================= */
 
-.site-block{
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:14px;
-  margin-bottom:18px;
-  background:#ffffff;
-}
-
-.site-title{
-  font-weight:900;
-  color:#1d4ed8;
-  margin-bottom:8px;
-  font-size:15px;
-}
-
-/* ================= TABLE TITLE ================= */
-
-.tbl-title{
-  font-weight:800;
-  font-size:12px;
-  margin:10px 0 4px;
-  color:#374151;
-}
-
-/* ================= MINI TABLE ================= */
-
-.mini-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-  margin-bottom:6px;
-}
-
-.mini-table th{
-  background:#f1f5f9;
-  font-weight:800;
-  padding:6px;
-  border:1px solid #e5e7eb;
-  text-align:left;
-}
-
-.mini-table td{
-  padding:6px;
-  border:1px solid #eef2f7;
-}
-
-.mini-table tbody tr:nth-child(even){
-  background:#fafafa;
-}
 /* ================= TABLET FIX ================= */
 /* keep side-by-side until small mobile */
 
@@ -428,120 +378,62 @@ function openDayModal(){
 
       data.sites.forEach(site => {
 
-        html += `
-        <div class="site-block">
+        html += `<div class="border rounded-xl p-4 mb-5">
+          <h4 class="font-bold text-blue-700 mb-3">📍 ${site.site}</h4>`;
 
-          <div class="site-title">📍 ${site.site}</div>
-        `;
-
-        // ================= CIVIL =================
+        // ===== CIVIL =====
         if (site.civil.length){
-          html += `
-            <div class="tbl-title">👷 Civil Work</div>
-            <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th>Mason F/H</th>
-                  <th>Helper F/H</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
+          html += `<div class="font-semibold text-sm mb-1">👷 Civil Work</div>`;
           site.civil.forEach(c=>{
             html += `
-              <tr>
-                <td>${c.team}</td>
-                <td>${c.mason_full} / ${c.mason_half}</td>
-                <td>${c.helper_full} / ${c.helper_half}</td>
-              </tr>
+              <div class="text-sm ml-2 mb-2">
+                <div><b>Team:</b> ${c.team}</div>
+                <div>Mason Full: ${c.mason_full} | Half: ${c.mason_half}</div>
+                <div>Helper Full: ${c.helper_full} | Half: ${c.helper_half}</div>
+              </div>
             `;
           });
-
-          html += `</tbody></table>`;
         }
 
-        // ================= MATERIAL =================
+        // ===== MATERIAL =====
         if (site.material.length){
-          html += `
-            <div class="tbl-title">🧱 Material</div>
-            <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Agent</th>
-                  <th>Description</th>
-                  <th>Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
+          html += `<div class="font-semibold text-sm mt-2">🧱 Material</div>`;
           site.material.forEach(m=>{
             html += `
-              <tr>
-                <td>${m.agent}</td>
-                <td>${m.description || "-"}</td>
-                <td>${m.qty || "-"}</td>
-              </tr>
+              <div class="text-sm ml-2 mb-2">
+                <div><b>Agent:</b> ${m.agent}</div>
+                <div>Description: ${m.description || "-"}</div>
+                <div>Qty: ${m.qty || "-"}</div>
+              </div>
             `;
           });
-
-          html += `</tbody></table>`;
         }
 
-        // ================= DEPARTMENT =================
+        // ===== DEPARTMENT =====
         if (site.department.length){
-          html += `
-            <div class="tbl-title">🏢 Department</div>
-            <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Department</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
+          html += `<div class="font-semibold text-sm mt-2">🏢 Department</div>`;
           site.department.forEach(d=>{
             html += `
-              <tr>
-                <td>${d.department}</td>
-                <td>${d.description || "-"}</td>
-              </tr>
+              <div class="text-sm ml-2 mb-2">
+                <div><b>Dept:</b> ${d.department}</div>
+                <div>Description: ${d.description || "-"}</div>
+              </div>
             `;
           });
-
-          html += `</tbody></table>`;
         }
 
-        // ================= EXPENSE =================
+        // ===== EXPENSE =====
         if (site.expense.length){
-          html += `
-            <div class="tbl-title">💸 Expense</div>
-            <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Owner</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
+          html += `<div class="font-semibold text-sm mt-2">💸 Expense</div>`;
           site.expense.forEach(e=>{
             html += `
-              <tr>
-                <td>${e.title}</td>
-                <td>${e.description || "-"}</td>
-                <td>${e.owner}</td>
-              </tr>
+              <div class="text-sm ml-2 mb-2">
+                <div><b>Title:</b> ${e.title}</div>
+                <div>Description: ${e.description || "-"}</div>
+                <div>Owner: ${e.owner}</div>
+              </div>
             `;
           });
-
-          html += `</tbody></table>`;
         }
 
         html += `</div>`;
