@@ -41,4 +41,12 @@ urlpatterns = [
     path("api/bill/department/<int:department_id>/", views.bill_department_detail, name="bill_department_detail"),
     path("api/bill/material/<str:agent_name>/", views.bill_material_detail, name="bill_material_detail"),
     path("api/bill/expense/<str:name>/",views.api_bill_expense,name="api_bill_expense"),
+    path("api/day-full/", views.api_day_full_detail, name="api_day_full_detail"),
+
+    # ================= BILL PDF (MODAL DOWNLOAD) =================
+    path("bill/team/<int:team_id>/", views.bill_civil_pdf, name="bill_civil_pdf"),
+    path("bill/department/<int:department_id>/", views.bill_department_pdf, name="bill_department_pdf"),
+    path("bill/agent/<str:agent_name>/", views.bill_material_pdf, name="bill_material_pdf"),
+    path("bill/expense/<str:name>/", views.bill_expense_pdf, name="bill_expense_pdf"),
 ]
+

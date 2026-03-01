@@ -1,3 +1,5 @@
+from django.template.loader import render_to_string
+from weasyprint import HTML
 from django.db.models.functions import Coalesce
 from civil_app.utils.pdf import render_to_pdf_weasy
 from django.utils import timezone
@@ -11,7 +13,7 @@ from django.template.loader import get_template
 from django.utils.timezone import now
 from datetime import date, timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum, Value, DecimalField, CharField
+from django.db.models import Sum, Value, DecimalField, CharField, FloatField
 from django.contrib import messages
 from .models import (
     Site, Team, Department,
@@ -963,130 +965,6 @@ def report_pdf(request):
     return render_to_pdf_weasy("reports_pdf.html", context)
 
 @login_required
-def team_bill(request, team_id):
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
-
-    team = get_object_or_404(Team, id=team_id)
-
-    works = CivilDailyWork.objects.filter(
-        team=team,
-        date__range=[from_date, to_date]
-    )
-
-    advances = CivilAdvance.objects.filter(
-        team=team,
-        date__range=[from_date, to_date]
-    )
-
-    rows = []
-    total = 0
-
-    for w in works:
-        adv = advances.filter(date=w.date).first()
-        adv_amt = adv.amount if adv else 0
-
-        amount = w.labour_amount - adv_amt
-        total += amount
-
-        rows.append({
-            "date": w.date,
-            "site": w.site.name,
-            "labour": w.labour_amount,
-            "advance": adv_amt,
-            "total": amount,
-        })
-
-    # PDF
-    if request.GET.get("pdf"):
-        return render_to_pdf_weasy("team_bill_pdf.html", {
-            "team": team,
-            "rows": rows,
-            "from_date": from_date,
-            "to_date": to_date,
-            "total": total,
-        })
-
-    return render(request, "team_bill.html", {
-        "team": team,
-        "rows": rows,
-        "from_date": from_date,
-        "to_date": to_date,
-        "total": total,
-    })
-
-@login_required
-def agent_bill(request, agent_name):
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
-
-    materials = MaterialEntry.objects.filter(
-        agent_name=agent_name,
-        date__range=[from_date, to_date]
-    )
-
-    rows = []
-    total = 0
-
-    for m in materials:
-        rows.append({
-            "date": m.date,
-            "site": m.site.name,
-            "material": m.name,
-            "qty": m.quantity,
-            "rate": m.rate,
-            "total": m.total,
-        })
-        total += m.total
-
-    # PDF
-    if request.GET.get("pdf"):
-        return render_to_pdf_weasy("agent_bill_pdf.html", {
-            "agent": agent_name,
-            "rows": rows,
-            "from_date": from_date,
-            "to_date": to_date,
-            "total": total,
-        })
-
-    return render(request, "agent_bill.html", {
-        "agent": agent_name,
-        "rows": rows,
-        "from_date": from_date,
-        "to_date": to_date,
-        "total": total,
-    })
-
-@login_required
-def department_bill(request, department_id):
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
-
-    department = get_object_or_404(Department, id=department_id)
-
-    works = DepartmentWork.objects.filter(
-        department=department,
-        date__range=[from_date, to_date]
-    )
-
-    rows = []
-    total = 0
-
-    for w in works:
-        amount = w.total_amount
-        total += amount
-
-        rows.append({
-            "date": w.date.strftime("%Y-%m-%d"),
-            "site": w.site.name,
-            "advance": w.advance_amount or 0,
-            "total": amount,
-        })
-
-    # JSON for modal
-    return JsonResponse(rows, safe=False)
-
-@login_required
 def all_bills(request):
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
@@ -1204,210 +1082,435 @@ def all_bills_pdf(request):
     if not to_date:
         to_date = date.today()
 
-    # ================= CIVIL =================
-    civil_totals = (
+    # =================================================
+    # ================= CIVIL (TEAM → SITE) ===========
+    # =================================================
+
+    teams = (
         CivilDailyWork.objects
         .filter(date__range=[from_date, to_date])
-        .values("team__name")
-        .annotate(
-            total_amount=Sum("labour_amount"),
-        )
+        .values("team_id", "team__name")
+        .distinct()
     )
-
-    civil_advances = (
-        CivilAdvance.objects
-        .filter(date__range=[from_date, to_date])
-        .values("team__name")
-        .annotate(total_advance=Sum("amount"))
-    )
-
-    advance_map = {
-        a["team__name"]: a["total_advance"]
-        for a in civil_advances
-    }
 
     civil_rows = []
-    for c in civil_totals:
+
+    for t in teams:
+        team_id = t["team_id"]
+
+        # ---- SITE WORK ----
+        site_qs = (
+            CivilDailyWork.objects
+            .filter(team_id=team_id, date__range=[from_date, to_date])
+            .values("site_id", "site__name")
+            .annotate(
+                total=Coalesce(
+                    Sum("total_amount"),
+                    Value(0),
+                    output_field=FloatField()
+                )
+            )
+            .order_by("site__name")
+        )
+
+        # ---- SITE ADVANCE MAP (🔥 FIXED) ----
+        adv_qs = (
+            CivilAdvance.objects
+            .filter(team_id=team_id, date__range=[from_date, to_date])
+            .values("site_id")
+            .annotate(
+                advance=Coalesce(
+                    Sum("amount"),
+                    Value(0),
+                    output_field=FloatField()
+                )
+            )
+        )
+
+        advance_map = {
+            a["site_id"]: a["advance"]
+            for a in adv_qs
+        }
+
+        sites = []
+        team_total = 0
+        team_adv_total = 0
+
+        for s in site_qs:
+            site_id = s["site_id"]
+
+            adv = advance_map.get(site_id, 0)
+            tot = s["total"] or 0
+
+            team_total += tot
+            team_adv_total += adv
+
+            sites.append({
+                "site": s["site__name"],
+                "advance": adv,  # ✅ NOW WORKS
+                "total": tot,
+            })
+
         civil_rows.append({
-            "name": c["team__name"],
-            "advance": advance_map.get(c["team__name"], 0),
-            "total": c["total_amount"] or 0,
+            "name": t["team__name"],
+            "advance": team_adv_total,
+            "total": team_total,
+            "sites": sites,
         })
 
-    # ================= DEPARTMENT =================
-    dept_rows = (
+    # =================================================
+    # ================= DEPARTMENT ====================
+    # =================================================
+    departments = (
         DepartmentWork.objects
         .filter(date__range=[from_date, to_date])
-        .values("department__name")
-        .annotate(
-            total=Sum("total_amount"),
-            advance=Sum("advance_amount"),
-        )
+        .values("department_id", "department__name")
+        .distinct()
     )
 
-    # ================= MATERIAL =================
-    material_rows = (
+    dept_rows = []
+
+    for d in departments:
+        dept_id = d["department_id"]
+
+        site_qs = (
+            DepartmentWork.objects
+            .filter(department_id=dept_id, date__range=[from_date, to_date])
+            .values("site_id", "site__name")
+            .annotate(
+                advance=Coalesce(Sum("advance_amount"), Value(0), output_field=FloatField()),
+                total=Coalesce(Sum("total_amount"), Value(0), output_field=FloatField()),
+            )
+            .order_by("site__name")
+        )
+
+        sites = []
+        adv_total = 0
+        amt_total = 0
+
+        for s in site_qs:
+            adv_total += s["advance"]
+            amt_total += s["total"]
+
+            sites.append({
+                "site": s["site__name"],
+                "advance": s["advance"],
+                "total": s["total"],
+            })
+
+        dept_rows.append({
+            "name": d["department__name"],
+            "advance": adv_total,
+            "total": amt_total,
+            "sites": sites,
+        })
+
+    # =================================================
+    # ================= MATERIAL ======================
+    # =================================================
+    agents = (
         MaterialEntry.objects
         .filter(date__range=[from_date, to_date])
         .values("agent_name")
-        .annotate(
-            total=Sum("total"),
-            advance=Sum("advance"),
-        )
+        .distinct()
     )
 
+    material_rows = []
 
-    expense_rows = (
+    for a in agents:
+        name = a["agent_name"]
+
+        site_qs = (
+            MaterialEntry.objects
+            .filter(agent_name=name, date__range=[from_date, to_date])
+            .values("site_id", "site__name")
+            .annotate(
+                advance=Coalesce(Sum("advance"), Value(0), output_field=FloatField()),
+                total_raw=Coalesce(Sum("total"), Value(0), output_field=FloatField()),
+            )
+            .order_by("site__name")
+        )
+
+        sites = []
+        adv_total = 0
+        amt_total = 0
+
+        for s in site_qs:
+            payable = (s["total_raw"] or 0) - (s["advance"] or 0)
+
+            adv_total += s["advance"]
+            amt_total += payable
+
+            sites.append({
+                "site": s["site__name"],
+                "advance": s["advance"],
+                "total": payable,
+            })
+
+        material_rows.append({
+            "name": name,
+            "advance": adv_total,
+            "total": amt_total,
+            "sites": sites,
+        })
+
+    # =================================================
+    # ================= EXPENSE =======================
+    # =================================================
+
+    expenses = (
         OtherExpense.objects
         .filter(date__range=[from_date, to_date])
         .values("title")
-        .annotate(
-            owner_name=Coalesce(
-                "owner__name",
-                Value("—"),
-                output_field=CharField()
-            ),
-            advance=Sum("amount"),
-            total=Sum("amount"),
+        .distinct()
+    )
+
+    expense_rows = []
+
+    for e in expenses:
+        title = e["title"]
+
+        site_qs = (
+            OtherExpense.objects
+            .filter(title=title, date__range=[from_date, to_date])
+            .values("site_id", "site__name", "owner__name")
+            .annotate(
+                total=Coalesce(Sum("amount"), Value(0), output_field=FloatField())
+            )
+            .order_by("site__name")
         )
-        .order_by("title")
-    )
 
-    civil_sum = sum(row["total"] or 0 for row in civil_rows)
-    dept_sum = sum((d["total"] or 0) for d in dept_rows)
-    material_sum = sum((m["total"] or 0) for m in material_rows)
+        sites = []
+        amt_total = 0
 
-    total_expense = (
-        OtherExpense.objects
-        .filter(date__range=[from_date, to_date])
-        .aggregate(total=Sum("amount"))["total"] or 0
-    )
+        for s in site_qs:
+            amt_total += s["total"]
 
-    grand_total = (
-        civil_sum
-        + dept_sum
-        + material_sum
-        + total_expense
-    )
-    
+            sites.append({
+                "site": s["site__name"] or "-",
+                "owner": s["owner__name"] or "-",
+                "advance": 0,
+                "total": s["total"],
+            })
 
-    return render_to_pdf_weasy("all_bills_pdf.html", {
-        "from_date": from_date,
-        "to_date": to_date,
-        "civil_rows": civil_rows,
-        "dept_rows": dept_rows,
-        "material_rows": material_rows,
-        "expense_rows": expense_rows,
-        "grand_total": grand_total,
-        "total_expense": total_expense,
-        "now": timezone.now(),
-    })
-
-def bill_civil_detail(request, team_id):
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
-
-    rows = CivilDailyWork.objects.filter(
-        team_id=team_id,
-        date__range=[from_date, to_date]
-    ).select_related("site")
-
-    advance_map = {
-        a.date: a.amount
-        for a in CivilAdvance.objects.filter(
-            team_id=team_id,
-            date__range=[from_date, to_date]
-        )
-    }
-
-    data = []
-    for r in rows:
-        data.append({
-            "date": r.date,
-            "site": r.site.name,
-            "advance": advance_map.get(r.date, 0),
-            "total": r.total_amount,
+        expense_rows.append({
+            "name": title,
+            "advance": 0,
+            "total": amt_total,
+            "sites": sites,
         })
 
-    return JsonResponse(data, safe=False)
+    # =================================================
+    # ================= GRAND TOTAL ===================
+    # =================================================
 
-def bill_department_detail(request, department_id):
+    civil_sum = sum(row["total"] for row in civil_rows)
+    dept_sum = sum(d["total"] for d in dept_rows)
+    material_sum = sum(m["total"] for m in material_rows)
+    expense_sum = sum(e["total"] for e in expense_rows)
+
+    grand_total = civil_sum + dept_sum + material_sum + expense_sum
+
+    return render_to_pdf_weasy(
+        "all_bills_pdf.html",
+        {
+            "from_date": from_date,
+            "to_date": to_date,
+            "civil_rows": civil_rows,
+            "dept_rows": dept_rows,
+            "material_rows": material_rows,
+            "expense_rows": expense_rows,
+            "grand_total": grand_total,
+            "now": timezone.now(),
+        },
+    )
+
+
+@login_required
+def bill_civil_detail(request, team_id):
+    from django.db.models import Sum, Value, FloatField
+    from django.db.models.functions import Coalesce
+
     from_date = parse_date(request.GET.get("from_date"))
     to_date   = parse_date(request.GET.get("to_date"))
 
-    # SAFETY FALLBACK
-    if not from_date or not to_date:
-        from_date = to_date = date.today()
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    # ================= WORK =================
+    work_qs = (
+        CivilDailyWork.objects
+        .filter(team_id=team_id, date__range=[from_date, to_date])
+        .values("site_id", "site__name")
+        .annotate(
+            total=Coalesce(
+                Sum("total_amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    # ================= ADVANCE (SITE WISE) =================
+    adv_qs = (
+        CivilAdvance.objects
+        .filter(team_id=team_id, date__range=[from_date, to_date])
+        .values("site_id")
+        .annotate(
+            advance=Coalesce(
+                Sum("amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    adv_map = {a["site_id"]: a["advance"] for a in adv_qs}
+
+    rows = []
+    total_amt = 0
+    total_adv = 0
+
+    for w in work_qs:
+        adv = adv_map.get(w["site_id"], 0)
+
+        total_amt += w["total"]
+        total_adv += adv
+
+        rows.append({
+            "site__name": w["site__name"],
+            "advance": adv,
+            "total": w["total"],
+        })
+
+    return JsonResponse({
+        "rows": rows,
+        "team_total": {
+            "advance_total": total_adv,
+            "grand_total": total_amt,
+        }
+    })
+
+@login_required
+def bill_department_detail(request, department_id):
+
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
 
     department = get_object_or_404(Department, id=department_id)
 
-    works = DepartmentWork.objects.filter(
-        department=department,
-        date__range=[from_date, to_date]
+    # =============================
+    # SITE-WISE GROUPING
+    # =============================
+    qs = (
+        DepartmentWork.objects
+        .filter(department=department, date__range=[from_date, to_date])
+        .values("site_id", "site__name")
+        .annotate(
+            advance=Coalesce(
+                Sum("advance_amount"),
+                Value(0),
+                output_field=FloatField()
+            ),
+            total=Coalesce(
+                Sum("total_amount"),
+                Value(0),
+                output_field=FloatField()
+            ),
+        )
+        .order_by("site__name")
     )
 
     rows = []
-    for w in works:
+    total_adv = 0
+    total_amt = 0
+
+    for r in qs:
+        adv = r["advance"] or 0
+        tot = r["total"] or 0
+
+        total_adv += adv
+        total_amt += tot
+
         rows.append({
-            "date": w.date.strftime("%Y-%m-%d"),
-            "site": w.site.name,
-            "advance": w.advance_amount or 0,
-            "total": w.total_amount,
+            "site__name": r["site__name"],
+            "advance": r["advance"],
+            "total": r["total"],
         })
 
-    return JsonResponse(rows, safe=False)
-
-def bill_material_detail(request, agent_name):
-    from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
-
-    rows = MaterialEntry.objects.filter(
-        agent_name=agent_name,
-        date__range=[from_date, to_date]
-    ).select_related("site")
-
-    data = [{
-        "date": r.date,
-        "site": r.site.name,
-        "advance": r.advance or 0,
-        "total": (r.total or 0) - (r.advance or 0),
-    } for r in rows]
-
-    return JsonResponse(data, safe=False)
-
-@login_required
-def payment_receipt(request, payment_id):
-    payment = get_object_or_404(BillPayment, id=payment_id)
-    return render_to_pdf_weasy("receipt_pdf.html", {
-        "payment": payment
+    return JsonResponse({
+        "rows": rows,
+        "team_total": {  # keep same key for JS reuse
+            "advance_total": total_adv,
+            "grand_total": total_amt,
+        }
     })
 
-def api_civil_bill(request, team_id):
-    from_date = request.GET.get("from_date") or date.today()
-    to_date = request.GET.get("to_date") or date.today()
+@login_required
+def bill_material_detail(request, agent_name):
 
-    qs = CivilDailyWork.objects.filter(
-        team_id=team_id,
-        date__range=[from_date, to_date]
-    ).select_related("site")
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
 
-    data = []
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    # =============================
+    # SITE-WISE GROUPING
+    # =============================
+    qs = (
+        MaterialEntry.objects
+        .filter(agent_name=agent_name, date__range=[from_date, to_date])
+        .values("site_id", "site__name")
+        .annotate(
+            advance=Coalesce(
+                Sum("advance"),
+                Value(0),
+                output_field=FloatField()
+            ),
+            total_raw=Coalesce(
+                Sum("total"),
+                Value(0),
+                output_field=FloatField()
+            ),
+        )
+        .order_by("site__name")
+    )
+
+    rows = []
+    total_adv = 0
+    total_amt = 0
+
     for r in qs:
-        advance = CivilAdvance.objects.filter(
-            team_id=team_id, date=r.date
-        ).first()
+        adv = r["advance"] or 0
+        raw = r["total_raw"] or 0
+        payable = raw - adv
 
-        adv_amt = advance.amount if advance else 0
+        total_adv += r["advance"]
+        total_amt += payable
 
-        data.append({
-            "date": r.date.strftime("%Y-%m-%d"),
-            "site": r.site.name,
-            "advance": adv_amt,
-            "total": r.total_amount,
+        rows.append({
+            "site__name": r["site__name"],
+            "advance": r["advance"],
+            "total": payable,  # 👈 payable shown in UI
         })
 
-    return JsonResponse(data, safe=False)
-
+    return JsonResponse({
+        "rows": rows,
+        "team_total": {
+            "advance_total": total_adv,
+            "grand_total": total_amt,
+        }
+    })
 
 @login_required
 @admin_required
@@ -1667,31 +1770,446 @@ def owner_cash_add(request):
 
 @login_required
 def api_bill_expense(request, name):
+    from django.db.models import Sum, Value, FloatField
+    from django.db.models.functions import Coalesce
+
     from_date = parse_date(request.GET.get("from_date"))
-    to_date = parse_date(request.GET.get("to_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    # =============================
+    # SITE + OWNER GROUPING
+    # =============================
+    qs = (
+        OtherExpense.objects
+        .filter(title=name, date__range=[from_date, to_date])
+        .values(
+            "site_id",
+            "site__name",
+            "owner__name",   # ✅ owner optional
+        )
+        .annotate(
+            total=Coalesce(
+                Sum("amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )
+        .order_by("site__name")
+    )
+
+    rows = []
+    total_amt = 0
+
+    for r in qs:
+        total_amt += r["total"]
+
+        rows.append({
+            "site__name": r["site__name"] or "-",
+            "site__owner__name": r.get("owner__name") or "-",  # ✅ safe
+            "advance": 0,
+            "total": r["total"],
+        })
+
+    return JsonResponse({
+        "rows": rows,
+        "team_total": {
+            "advance_total": 0,
+            "grand_total": total_amt,
+        }
+    })
+
+
+@login_required
+def bill_civil_pdf(request, team_id):
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    team = get_object_or_404(Team, id=team_id)
+
+    # ================= SITE WISE =================
+    work_qs = (
+        CivilDailyWork.objects
+        .filter(team_id=team_id, date__range=[from_date, to_date])
+        .values("site_id", "site__name")
+        .annotate(
+            total=Coalesce(
+                Sum("total_amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )
+        .order_by("site__name")
+    )
+
+    # ================= ADVANCE MAP (SAFE) =================
+    adv_qs = (
+        CivilAdvance.objects
+        .filter(team_id=team_id, date__range=[from_date, to_date])
+        .values("site_id")  # ⚠️ works only if site exists
+        .annotate(
+            advance=Coalesce(
+                Sum("amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    adv_map = {a["site_id"]: a["advance"] for a in adv_qs}
+
+    rows = []
+    grand_total = 0
+    advance_total = 0
+
+    for w in work_qs:
+        adv = adv_map.get(w["site_id"], 0)
+
+        grand_total += w["total"]
+        advance_total += adv
+
+        rows.append({
+            "site": w["site__name"],
+            "advance": adv,
+            "total": w["total"],
+        })
+
+    advance_total = (
+        CivilAdvance.objects
+        .filter(team_id=team_id, date__range=[from_date, to_date])
+        .aggregate(
+            total=Coalesce(
+                Sum("amount"),
+                Value(0),
+                output_field=FloatField()
+            )
+        )["total"]
+    )
+
+    html = render_to_string(
+        "civil_team_pdf.html",
+        {
+            "team": team,
+            "rows": rows,
+            "advance_total": advance_total,
+            "grand_total": grand_total,
+            "from_date": from_date,
+            "to_date": to_date,
+        },
+    )
+
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="team_{team_id}_bill.pdf"'
+    )
+    return response
+
+
+@login_required
+def bill_department_pdf(request, department_id):
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    department = get_object_or_404(Department, id=department_id)
+
+    # ================= SITE-WISE =================
+    qs = (
+        DepartmentWork.objects
+        .filter(department=department, date__range=[from_date, to_date])
+        .values("site__name")
+        .annotate(
+            advance=Coalesce(
+                Sum("advance_amount"),
+                Value(0),
+                output_field=FloatField()
+            ),
+            total=Coalesce(
+                Sum("total_amount"),
+                Value(0),
+                output_field=FloatField()
+            ),
+        )
+        .order_by("site__name")
+    )
+
+    rows = []
+    total_adv = 0
+    total_amt = 0
+
+    for r in qs:
+        adv = r["advance"] or 0
+        tot = r["total"] or 0
+
+        total_adv += adv
+        total_amt += tot
+
+        rows.append({
+            "site": r["site__name"],
+            "advance": adv,
+            "total": tot,
+        })
+
+    html = render_to_string(
+        "civil_team_pdf.html",  # ✅ reuse same premium template
+        {
+            "team": department,  # template expects .name
+            "rows": rows,
+            "advance_total": total_adv,
+            "grand_total": total_amt,
+            "from_date": from_date,
+            "to_date": to_date,
+            "now": timezone.now(),
+        },
+    )
+
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="department_{department_id}_bill.pdf"'
+    )
+    return response
+
+@login_required
+def bill_material_pdf(request, agent_name):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+    from django.db.models import Sum, Value, FloatField
+    from django.db.models.functions import Coalesce
+    from django.utils import timezone
+
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
+
+    qs = (
+        MaterialEntry.objects
+        .filter(agent_name=agent_name, date__range=[from_date, to_date])
+        .values("site__name")
+        .annotate(
+            advance=Coalesce(
+                Sum("advance"),
+                Value(0),
+                output_field=FloatField()
+            ),
+            total_raw=Coalesce(
+                Sum("total"),
+                Value(0),
+                output_field=FloatField()
+            ),
+        )
+        .order_by("site__name")
+    )
+
+    rows = []
+    total_adv = 0
+    total_amt = 0
+
+    for r in qs:
+        adv = r["advance"] or 0
+        raw = r["total_raw"] or 0
+        payable = raw - adv
+
+        total_adv += adv
+        total_amt += payable
+
+        rows.append({
+            "site": r["site__name"],
+            "advance": adv,
+            "total": payable,
+        })
+
+    html = render_to_string(
+        "civil_team_pdf.html",
+        {
+            "team": type("obj", (), {"name": agent_name})(),  # simple object
+            "rows": rows,
+            "advance_total": total_adv,
+            "grand_total": total_amt,
+            "from_date": from_date,
+            "to_date": to_date,
+            "now": timezone.now(),
+        },
+    )
+
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="material_{agent_name}_bill.pdf"'
+    )
+    return response
+
+@login_required
+def bill_expense_pdf(request, name):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+    from django.db.models import Sum, Value, FloatField
+    from django.db.models.functions import Coalesce
+    from django.utils import timezone
+
+    from_date = parse_date(request.GET.get("from_date"))
+    to_date   = parse_date(request.GET.get("to_date"))
+
+    if not from_date:
+        from_date = date.today()
+    if not to_date:
+        to_date = date.today()
 
     qs = (
         OtherExpense.objects
-        .filter(
-            title=name,
-            date__range=[from_date, to_date]
+        .filter(title=name, date__range=[from_date, to_date])
+        .values("site__name")
+        .annotate(
+            total=Coalesce(
+                Sum("amount"),
+                Value(0),
+                output_field=FloatField()
+            )
         )
-        .select_related("site", "owner")
-        .order_by("date")
+        .order_by("site__name")
     )
 
-    data = []
+    rows = []
+    total_amt = 0
 
     for r in qs:
-        data.append({
-            "date": r.date.strftime("%Y-%m-%d"),
+        tot = r["total"] or 0
+        total_amt += tot
 
-            "site": r.site.name if r.site else "-",            
-            "owner": r.owner.name if r.owner else "-",
-
+        rows.append({
+            "site": r["site__name"] or "-",
             "advance": 0,
-            "total": float(r.amount or 0),
+            "total": tot,
         })
 
-    return JsonResponse(data, safe=False)
+    html = render_to_string(
+        "civil_team_pdf.html",
+        {
+            "team": type("obj", (), {"name": name})(),
+            "rows": rows,
+            "advance_total": 0,
+            "grand_total": total_amt,
+            "from_date": from_date,
+            "to_date": to_date,
+            "now": timezone.now(),
+        },
+    )
 
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="expense_{name}_bill.pdf"'
+    )
+    return response
+
+
+@login_required
+def api_day_full_detail(request):
+
+    from_date = parse_date(request.GET.get("date"))
+
+    if not from_date:
+        return JsonResponse({"sites": []})
+
+    sites = Site.objects.all().order_by("name")
+
+    result = []
+
+    for site in sites:
+
+        # ================= CIVIL =================
+        civil_qs = CivilDailyWork.objects.filter(
+            site=site,
+            date=from_date
+        )
+
+        civil_rows = [
+            {
+                "team": c.team.name,
+                "mason_full": c.mason_full,
+                "mason_half": c.mason_half,
+                "helper_full": c.helper_full,
+                "helper_half": c.helper_half,
+            }
+            for c in civil_qs
+        ]
+
+        # ================= MATERIAL =================
+        material_qs = MaterialEntry.objects.filter(
+            site=site,
+            date=from_date
+        )
+
+        material_rows = [
+            {
+                "agent": m.agent_name,
+                "description": getattr(m, "description", ""),
+                "qty": getattr(m, "qty", ""),
+            }
+            for m in material_qs
+        ]
+
+        # ================= DEPARTMENT =================
+        dept_qs = DepartmentWork.objects.filter(
+            site=site,
+            date=from_date
+        )
+
+        dept_rows = [
+            {
+                "department": d.department.name,
+                "description": getattr(d, "description", ""),
+            }
+            for d in dept_qs
+        ]
+
+        # ================= EXPENSE =================
+        expense_qs = OtherExpense.objects.filter(
+            site=site,
+            date=from_date
+        )
+
+        expense_rows = [
+            {
+                "title": e.title,
+                "description": getattr(e, "description", ""),
+                "owner": e.owner.name if e.owner else "-",
+            }
+            for e in expense_qs
+        ]
+
+        # skip empty sites
+        if civil_rows or material_rows or dept_rows or expense_rows:
+            result.append({
+                "site": site.name,
+                "civil": civil_rows,
+                "material": material_rows,
+                "department": dept_rows,
+                "expense": expense_rows,
+            })
+
+    return JsonResponse({"sites": result})
+
+    

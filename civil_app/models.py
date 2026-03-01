@@ -3,7 +3,7 @@ from django.db import models
 # ---------- SITE ----------
 class Site(models.Model):
     name = models.CharField(max_length=100)
-    
+    owner = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.name
@@ -103,7 +103,7 @@ class CivilAdvance(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     date = models.DateField()
-    amount = models.PositiveIntegerField()
+    amount = models.FloatField(default=0)
     remarks = models.CharField(max_length=255, blank=True)
 
     class Meta:

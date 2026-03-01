@@ -17,27 +17,25 @@
 
     <!-- FILTER -->
     <form method="get"
-          class="flex gap-4 items-end bg-white px-5 py-4 rounded-2xl shadow border">
+      class="flex flex-wrap sm:flex-nowrap items-end gap-3 bg-white px-4 py-4 rounded-2xl shadow border">
 
-      <div>
+      <div class="flex flex-col min-w-[130px] flex-1 sm:flex-none">
         <label class="label">From</label>
         <input type="date" name="from_date"
               value="{{ from_date|date:'Y-m-d' }}"
-              class="input">
-
-        
+              class="input w-full">
       </div>
 
-      <div>
+      <div class="flex flex-col min-w-[130px] flex-1 sm:flex-none">
         <label class="label">To</label>
         <input type="date" name="to_date"
               value="{{ to_date|date:'Y-m-d' }}"
-              class="input">
+              class="input w-full">
       </div>
-      <button class="btn-primary">Apply</button>
+      
       <a href="{% url 'all_bills_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}"
-        class="btn-soft-red">
-        📄 Download PDF
+        class="btn-soft-red flex-1 sm:flex-none text-center whitespace-nowrap">
+        Download PDF
       </a>
       
 
@@ -181,7 +179,6 @@
   <table class="bill-table">
       <thead>
         <tr>
-          <th>Date</th>
           <th>Site</th>
           <th>Owner</th>
           <th>Advance</th>
@@ -204,7 +201,7 @@ function openBill(type, id, title) {
   const pdfLink = document.getElementById("pdfLink");
 
   titleEl.innerText = title;
-  body.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+  body.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -238,28 +235,43 @@ function openBill(type, id, title) {
     .then(res => res.json())
     .then(data => {
 
-      if (!data.length) {
-        body.innerHTML = "<tr><td colspan='5'>No records</td></tr>";
+      // 🔥 supports BOTH old + new API
+      const rows = Array.isArray(data) ? data : (data.rows || []);
+      const totals = data.team_total || {};
+
+      if (!rows.length) {
+        body.innerHTML = "<tr><td colspan='4'>No records</td></tr>";
         return;
       }
 
       let html = "";
-      data.forEach(r => {
+
+      rows.forEach(r => {
         html += `
           <tr>
-            <td>${r.date}</td>
-            <td>${r.site || '-'}</td>
-            <td>${r.owner || '-'}</td>
-            <td class="text-red-600">₹${r.advance || 0}</td>
+            <td>${r.site__name || r.site || '-'}</td>
+            <td>${r.site__owner__name || '-'}</td>
+            <td class="text-red-600">₹${r.advance ?? 0}</td>
             <td class="font-bold text-green-700">₹${r.total || 0}</td>
           </tr>
         `;
       });
 
+      // team total (only if exists)
+      if (totals && (totals.advance_total || totals.grand_total)) {
+        html += `
+          <tr class="bg-slate-100 font-extrabold">
+            <td colspan="2">TEAM TOTAL</td>
+            <td class="text-red-700 text-right">₹${totals.advance_total || 0}</td>
+            <td class="text-green-800">₹${totals.grand_total || 0}</td>
+          </tr>
+        `;
+      }
+
       body.innerHTML = html;
     })
     .catch(() => {
-      body.innerHTML = "<tr><td colspan='5'>Error loading data</td></tr>";
+      body.innerHTML = "<tr><td colspan='4'>Error loading data</td></tr>";
     });
 }
 
@@ -274,6 +286,27 @@ document.getElementById("billModal").addEventListener("click", function (e) {
     closeModal();
   }
 });
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const fromInput = document.querySelector("input[name='from_date']");
+  const toInput   = document.querySelector("input[name='to_date']");
+
+  if (!fromInput || !toInput) return; // safety
+
+  const form = fromInput.closest("form");
+
+  function autoSubmit(){
+    form.submit();
+  }
+
+  fromInput.addEventListener("change", autoSubmit);
+  toInput.addEventListener("change", autoSubmit);
+
+});
+
 </script>
 
 <!-- ================= STYLES ================= -->
@@ -444,7 +477,7 @@ document.getElementById("billModal").addEventListener("click", function (e) {
 #billModal .bill-table th:nth-child(2),
 #billModal .bill-table td:nth-child(2){
   width:22%;
-  text-align:center;
+  text-align:right;
 }
 
 #billModal .bill-table th:nth-child(3),

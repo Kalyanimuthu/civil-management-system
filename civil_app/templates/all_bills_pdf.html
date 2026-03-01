@@ -163,7 +163,54 @@ td:first-child{
   text-align:right;
   color:#6b7280;
 }
+/* ================= DROPDOWN LOOK ================= */
 
+.team-row{
+  background:linear-gradient(180deg,#fff7ed,#ffedd5);
+  font-weight:900;
+}
+
+.team-name{
+  position:relative;
+  padding-left:18px;
+}
+
+/* dropdown arrow */
+.team-name::before{
+  content:"▼";
+  position:absolute;
+  left:4px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:9px;
+  color:#92400e;
+}
+
+.site-row td:first-child{
+  padding-left:26px;
+  color:#374151;
+}
+/* ================= SECTION GROUP STYLE ================= */
+
+.group-row{
+  background:linear-gradient(180deg,#f8fafc,#eef2ff);
+  font-weight:900;
+}
+
+.group-name{
+  position:relative;
+  padding-left:18px;
+}
+
+.group-name::before{
+  content:"▼";
+  position:absolute;
+  left:4px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:9px;
+  color:#1e40af;
+}
 </style>
 </head>
 
@@ -195,14 +242,26 @@ td:first-child{
 </tr>
 </thead>
 <tbody>
-{% for c in civil_rows %}
-<tr>
-  <td>{{ c.name }}</td>
-  <td class="money advance">₹{{ c.advance|default:0 }}</td>
-  <td class="money total">₹{{ c.total|default:0 }}</td>
+{% for team in civil_rows %}
+
+<tr class="team-row">
+  <td class="team-name">{{ team.name }}</td>
+  <td class="money advance">₹{{ team.advance }}</td>
+  <td class="money total">₹{{ team.total }}</td>
 </tr>
+
+{% for s in team.sites %}
+<tr class="site-row">
+  <td>{{ s.site }}</td>
+  <td class="money advance">₹{{ s.advance }}</td>
+  <td class="money total">₹{{ s.total }}</td>
+</tr>
+{% endfor %}
+
 {% empty %}
-<tr><td colspan="3" style="text-align:center;">No civil data</td></tr>
+<tr>
+  <td colspan="3" style="text-align:center;">No civil data</td>
+</tr>
 {% endfor %}
 </tbody>
 </table>
@@ -219,10 +278,25 @@ td:first-child{
 </thead>
 <tbody>
 {% for d in dept_rows %}
+
+<tr class="team-row">
+  <td class="team-name">{{ d.name }}</td>
+  <td class="money advance">₹{{ d.advance }}</td>
+  <td class="money total">₹{{ d.total }}</td>
+</tr>
+
+{% for s in d.sites %}
+<tr class="site-row">
+  <td>{{ s.site }}</td>
+  <td class="money advance">₹{{ s.advance }}</td>
+  <td class="money total">₹{{ s.total }}</td>
+</tr>
+{% endfor %}
+
+
+{% empty %}
 <tr>
-  <td>{{ d.department__name }}</td>
-  <td class="money advance">₹{{ d.advance|default:0 }}</td>
-  <td class="money total">₹{{ d.total|default:0 }}</td>
+  <td colspan="3" style="text-align:center;">No department data</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -239,11 +313,25 @@ td:first-child{
 </tr>
 </thead>
 <tbody>
-{% for m in material_rows %}
+{% for m in dept_rows %}
+
+<tr class="team-row">
+  <td class="team-name">{{ m.name }}</td>
+  <td class="money advance">₹{{ m.advance }}</td>
+  <td class="money total">₹{{ m.total }}</td>
+</tr>
+
+{% for s in m.sites %}
+<tr class="site-row">
+  <td>{{ s.site }}</td>
+  <td class="money advance">₹{{ s.advance }}</td>
+  <td class="money total">₹{{ s.total }}</td>
+</tr>
+{% endfor %}
+
+{% empty %}
 <tr>
-  <td>{{ m.agent_name }}</td>
-  <td class="money advance">₹{{ m.advance|default:0 }}</td>
-  <td class="money total">₹{{ m.total|default:0 }}</td>
+  <td colspan="3" style="text-align:center;">No material data</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -262,12 +350,25 @@ td:first-child{
 </thead>
 <tbody>
 {% for e in expense_rows %}
-<tr>
-  <td>{{ e.title }}</td>
-  <td>{{ e.owner_name }}</td>
+
+<!-- EXPENSE HEADER -->
+<tr class="team-row">
+  <td class="team-name">{{ e.name }}</td>
+  <td></td>
   <td class="money advance">₹{{ e.advance|default:0 }}</td>
   <td class="money total">₹{{ e.total|default:0 }}</td>
 </tr>
+
+<!-- SITE ROWS -->
+{% for s in e.sites %}
+<tr class="site-row">
+  <td>{{ s.site }}</td>
+  <td>{{ s.owner }}</td>
+  <td class="money advance">₹{{ s.advance|default:0 }}</td>
+  <td class="money total">₹{{ s.total|default:0 }}</td>
+</tr>
+{% endfor %}
+
 {% empty %}
 <tr>
   <td colspan="4" style="text-align:center;">No expense data</td>
