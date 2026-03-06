@@ -5,7 +5,18 @@
   <span class="flex items-center gap-2">
     🏢 <span>Other Departments</span>
   </span>
-  <span class="section-arrow-modern">▾</span>
+  <select id="deptSelect">
+  <option value="">+ Select Department</option>
+
+  {% for d in other_depts %}
+  <option 
+    value="{{ d.id }}"
+    data-rate="{{ default_rates|get_item:d.id|default:0 }}">
+    {{ d.name }}
+  </option>
+  {% endfor %}
+
+  </select>
 </h3>
 
 <div class="table-card-modern dept-wrapper">
@@ -30,65 +41,56 @@
   </div>
 
   <!-- ===== BODY ===== -->
-  <div class="table-body-modern">
+  <div id="deptBody" class="table-body-modern">
 
-    {% for dept in other_depts %}
-    {% with row=dept_map|get_item:dept.id %}
-    <div class="table-row-modern dept-row"
-         style="grid-template-columns:
-         minmax(200px,1.6fr)
-         repeat(2,minmax(70px,.8fr))
-         minmax(90px,.9fr)
-         minmax(100px,1fr)
-         minmax(110px,1fr)
-         minmax(110px,1fr);">
+{% for id,row in dept_map.items %}
+{% with dept=row.department %}
 
-      <!-- Department -->
-      <div class="font-semibold truncate">
-        {{ dept.name }}
-      </div>
+<div id="dept_row_{{ dept.id }}" class="table-row-modern dept-row"
+style="grid-template-columns:
+minmax(200px,1.6fr)
+repeat(2,minmax(70px,.8fr))
+minmax(90px,.9fr)
+minmax(100px,1fr)
+minmax(110px,1fr)
+minmax(110px,1fr);">
 
-      <!-- Full -->
-      <input name="dept_full_{{ dept.id }}"
-             value="{{ row.full_day_count|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcDept({{ dept.id }})">
+<div class="font-semibold">{{ dept.name }}</div>
 
-      <!-- Half -->
-      <input name="dept_half_{{ dept.id }}"
-             value="{{ row.half_day_count|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcDept({{ dept.id }})">
+<input name="dept_full_{{ dept.id }}"
+value="{{ row.full_day_count|default:0 }}"
+class="table-input-modern money"
+oninput="calcDept({{ dept.id }})">
 
-      <!-- Rate -->
-      <input name="dept_rate_{{ dept.id }}"
-             value="{% if row and row.full_day_rate %}{{ row.full_day_rate }}{% else %}{{ default_rates|get_item:dept.id|default:0 }}{% endif %}"
-             class="table-input-modern money rate-highlight"
-             oninput="calcDept({{ dept.id }})">
+<input name="dept_half_{{ dept.id }}"
+value="{{ row.half_day_count|default:0 }}"
+class="table-input-modern money"
+oninput="calcDept({{ dept.id }})">
 
-      <!-- Advance -->
-      <input name="dept_advance_{{ dept.id }}"
-             value="{{ row.advance_amount|default:0 }}"
-             class="table-input-modern money advance-modern"
-             oninput="calcDept({{ dept.id }})">
+<input name="dept_rate_{{ dept.id }}"
+value="{{ row.full_day_rate }}"
+class="table-input-modern money rate-highlight"
+oninput="calcDept({{ dept.id }})">
 
-      <!-- Labour -->
-      <div id="dept_labour_{{ dept.id }}"
-           class="table-box-modern labour-modern">
-        {{ row.labour_amount|default:0 }}
-      </div>
+<input name="dept_advance_{{ dept.id }}"
+value="{{ row.advance_amount|default:0 }}"
+class="table-input-modern money advance-modern"
+oninput="calcDept({{ dept.id }})">
 
-      <!-- Total -->
-      <div id="dept_total_{{ dept.id }}"
-           class="table-box-modern total-modern">
-        {{ row.total_amount|default:0 }}
-      </div>
+<div id="dept_labour_{{ dept.id }}" class="table-box-modern labour-modern">
+{{ row.labour_amount }}
+</div>
 
-    </div>
-    {% endwith %}
-    {% endfor %}
+<div id="dept_total_{{ dept.id }}" class="table-box-modern total-modern">
+{{ row.total_amount }}
+</div>
 
-  </div>
+</div>
+
+{% endwith %}
+{% endfor %}
+
+</div>
 </div>
 <!-- ===== DEPT PREMIUM POLISH ===== -->
 <style>
@@ -178,5 +180,65 @@ if (typeof toggleSection === "undefined") {
         card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
     }
   }
+}
+document.getElementById("deptSelect")
+.addEventListener("change", addDept);
+
+function addDept(){
+
+  const select = document.getElementById("deptSelect");
+  const option = select.options[select.selectedIndex];
+
+  const deptId = option.value;
+  const deptName = option.text;
+  const rate = option.dataset.rate;
+
+  if(!deptId){
+    alert("Select department first");
+    return;
+  }
+
+  if(document.getElementById("dept_row_"+deptId)){
+    alert("Department already added");
+    return;
+  }
+
+  const container = document.getElementById("deptBody");
+
+  const html = `
+  <div id="dept_row_${deptId}" class="table-row-modern dept-row"
+  style="grid-template-columns:
+  minmax(200px,1.6fr)
+  repeat(2,minmax(70px,.8fr))
+  minmax(90px,.9fr)
+  minmax(100px,1fr)
+  minmax(110px,1fr)
+  minmax(110px,1fr);">
+
+  <div class="font-semibold">${deptName}</div>
+
+  <input name="dept_full_${deptId}" class="table-input-modern money"
+  oninput="calcDept(${deptId})">
+
+  <input name="dept_half_${deptId}" class="table-input-modern money"
+  oninput="calcDept(${deptId})">
+
+  <input name="dept_rate_${deptId}" value="${rate}"
+  class="table-input-modern money"
+  oninput="calcDept(${deptId})">
+
+  <input name="dept_advance_${deptId}" class="table-input-modern money"
+  oninput="calcDept(${deptId})">
+
+  <div id="dept_labour_${deptId}" class="table-box-modern labour-modern">0</div>
+
+  <div id="dept_total_${deptId}" class="table-box-modern total-modern">0</div>
+
+  </div>
+  `;
+
+  container.insertAdjacentHTML("beforeend", html);
+
+  select.value="";
 }
 </script>

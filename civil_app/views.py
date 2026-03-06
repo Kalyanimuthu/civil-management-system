@@ -249,7 +249,22 @@ def site_detail(request, site_id):
         # =================================================
         # ================= CIVIL =========================
         # =================================================
-        for team in teams:
+        team_ids = set()
+
+        for key in request.POST:
+
+            if key.startswith("mason_full_") \
+            or key.startswith("helper_full_") \
+            or key.startswith("mason_half_") \
+            or key.startswith("helper_half_") \
+            or key.startswith("advance_"):
+
+                team_ids.add(int(key.split("_")[-1]))
+
+        for team_id in team_ids:
+
+            team = Team.objects.get(id=team_id)
+
             mf = to_int(request.POST.get(f"mason_full_{team.id}"))
             hf = to_int(request.POST.get(f"helper_full_{team.id}"))
             mh = to_int(request.POST.get(f"mason_half_{team.id}"))
@@ -258,6 +273,14 @@ def site_detail(request, site_id):
             adv_raw = request.POST.get(f"advance_{team.id}")
             adv = float(adv_raw) if adv_raw not in [None, ""] else 0
 
+            if (
+                request.POST.get(f"mason_full_{team.id}") is None and
+                request.POST.get(f"helper_full_{team.id}") is None and
+                request.POST.get(f"mason_half_{team.id}") is None and
+                request.POST.get(f"helper_half_{team.id}") is None and
+                adv_raw is None
+            ):
+                continue
             # Save advance separately
             if adv_raw not in [None, ""]:
                 CivilAdvance.objects.update_or_create(
@@ -294,7 +317,22 @@ def site_detail(request, site_id):
         # =================================================
         # =============== OTHER DEPARTMENTS ===============
         # =================================================
-        for dept in departments:
+        dept_ids = set()
+
+        for key in request.POST:
+
+            if key.startswith("dept_full_") \
+            or key.startswith("dept_half_") \
+            or key.startswith("dept_advance_") \
+            or key.startswith("dept_rate_"):
+
+                dept_ids.add(int(key.split("_")[-1]))
+
+
+        for dept_id in dept_ids:
+
+            dept = Department.objects.get(id=dept_id)
+
             full = to_int(request.POST.get(f"dept_full_{dept.id}"))
             half = to_int(request.POST.get(f"dept_half_{dept.id}"))
 
@@ -303,20 +341,18 @@ def site_detail(request, site_id):
 
             rate = DefaultRate.objects.filter(department=dept).first()
             if not rate:
-                continue  # safety
+                continue
 
             rate_input = request.POST.get(f"dept_rate_{dept.id}")
+
             try:
                 rate_val = float(rate_input) if rate_input else rate.full_day_rate
             except ValueError:
                 rate_val = rate.full_day_rate
 
-
-            # ✅ USE rate_val (not rate.full_day_rate)
             labour = (full * rate_val) + (half * rate_val / 2)
             total = labour - adv
 
-            # 🔥 ALWAYS persist if ANY value exists
             if full or half or adv:
                 DepartmentWork.objects.update_or_create(
                     site=site,
@@ -328,7 +364,7 @@ def site_detail(request, site_id):
                         "full_day_rate": rate_val,
                         "half_day_rate": rate.half_day_rate,
                         "labour_amount": labour,
-                        "advance_amount": adv,   # ✅ critical
+                        "advance_amount": adv,
                         "total_amount": total,
                     }
                 )
@@ -416,19 +452,25 @@ def site_detail(request, site_id):
     }
 
     civil_rows = []
+
     for team in teams:
         rate = get_team_rate(team, work_date)
         if not rate:
             continue
 
         work = civil_map.get(team.id)
+        advance = advance_map.get(team.id, 0)
+
+        # ⭐ ONLY SHOW teams with entry
+        if not work and advance == 0:
+            continue
 
         civil_rows.append({
             "team": team,
             "rate": rate,
             "work": work,
             "labour": work.labour_amount if work else 0,
-            "advance": advance_map.get(team.id, 0),
+            "advance": advance,
             "total": work.total_amount if work else 0,
         })
 
@@ -461,6 +503,7 @@ def site_detail(request, site_id):
         
         "site": site,
         "sites": sites,
+        "teams": teams,
         "work_date": work_date,
         "civil_rows": civil_rows,
         "dept_map": dept_map,
@@ -2165,8 +2208,7 @@ def api_day_full_detail(request):
         material_rows = [
             {
                 "agent": m.agent_name,
-                "description": getattr(m, "description", ""),
-                "qty": getattr(m, "qty", ""),
+                "qty": m.quantity,   # correct field
             }
             for m in material_qs
         ]
@@ -2180,7 +2222,8 @@ def api_day_full_detail(request):
         dept_rows = [
             {
                 "department": d.department.name,
-                "description": getattr(d, "description", ""),
+                "full": d.full_day_count,
+                "half": d.half_day_count,
             }
             for d in dept_qs
         ]
@@ -2194,7 +2237,6 @@ def api_day_full_detail(request):
         expense_rows = [
             {
                 "title": e.title,
-                "description": getattr(e, "description", ""),
                 "owner": e.owner.name if e.owner else "-",
             }
             for e in expense_qs
@@ -2211,5 +2253,4 @@ def api_day_full_detail(request):
             })
 
     return JsonResponse({"sites": result})
-
     

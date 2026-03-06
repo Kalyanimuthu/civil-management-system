@@ -186,13 +186,15 @@
 <div id="dayModal"
      class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
 
-  <div class="bg-white rounded-2xl w-[95%] max-w-5xl p-6 max-h-[85vh] overflow-auto">
+  <div class="bg-white rounded-2xl w-[95%] max-w-5xl p-6 max-h-[85vh] overflow-auto relative">
 
-    <div class="flex justify-between mb-4">
-      <h3 id="dayModalTitle" class="font-bold text-lg"></h3>
-      <button onclick="closeDayModal()" class="text-red-600 text-xl">✕</button>
-    </div>
+    <!-- CLOSE BUTTON -->
+    <button onclick="closeDayModal()"
+            class="absolute top-3 right-4 text-red-600 text-xl font-bold">
+      ✕
+    </button>
 
+    <!-- REPORT CONTENT -->
     <div id="dayModalBody"></div>
 
   </div>
@@ -353,6 +355,11 @@
 function openDayModal(){
 
   const dateInput = document.querySelector("input[name='from_date']");
+  if(!dateInput){
+    alert("Date input not found");
+    return;
+  }
+
   const date = dateInput.value;
 
   if (!date){
@@ -364,83 +371,78 @@ function openDayModal(){
   const body = document.getElementById("dayModalBody");
   const title = document.getElementById("dayModalTitle");
 
-  title.innerText = "Full Day Report — " + date;
+  if(title){
+    title.innerText = "Report — " + date;
+  }
+
   body.innerHTML = "Loading...";
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
 
   fetch(`/api/day-full/?date=${date}`)
-    .then(r => r.json())
-    .then(data => {
+  .then(r => r.json())
+  .then(data => {
 
-      let html = "";
+    let html = "";
 
-      data.sites.forEach(site => {
+    data.sites.forEach(site => {
 
-        html += `<div class="border rounded-xl p-4 mb-5">
-          <h4 class="font-bold text-blue-700 mb-3">📍 ${site.site}</h4>`;
+      html += `
+      <div class="border rounded-xl p-4 mb-4">
+      <div class="font-bold text-blue-700 mb-2">📍 ${site.site}</div>
+      `;
 
-        // ===== CIVIL =====
-        if (site.civil.length){
-          html += `<div class="font-semibold text-sm mb-1">👷 Civil Work</div>`;
-          site.civil.forEach(c=>{
-            html += `
-              <div class="text-sm ml-2 mb-2">
-                <div><b>Team:</b> ${c.team}</div>
-                <div>Mason Full: ${c.mason_full} | Half: ${c.mason_half}</div>
-                <div>Helper Full: ${c.helper_full} | Half: ${c.helper_half}</div>
-              </div>
-            `;
-          });
-        }
-
-        // ===== MATERIAL =====
-        if (site.material.length){
-          html += `<div class="font-semibold text-sm mt-2">🧱 Material</div>`;
-          site.material.forEach(m=>{
-            html += `
-              <div class="text-sm ml-2 mb-2">
-                <div><b>Agent:</b> ${m.agent}</div>
-                <div>Description: ${m.description || "-"}</div>
-                <div>Qty: ${m.qty || "-"}</div>
-              </div>
-            `;
-          });
-        }
-
-        // ===== DEPARTMENT =====
-        if (site.department.length){
-          html += `<div class="font-semibold text-sm mt-2">🏢 Department</div>`;
-          site.department.forEach(d=>{
-            html += `
-              <div class="text-sm ml-2 mb-2">
-                <div><b>Dept:</b> ${d.department}</div>
-                <div>Description: ${d.description || "-"}</div>
-              </div>
-            `;
-          });
-        }
-
-        // ===== EXPENSE =====
-        if (site.expense.length){
-          html += `<div class="font-semibold text-sm mt-2">💸 Expense</div>`;
-          site.expense.forEach(e=>{
-            html += `
-              <div class="text-sm ml-2 mb-2">
-                <div><b>Title:</b> ${e.title}</div>
-                <div>Description: ${e.description || "-"}</div>
-                <div>Owner: ${e.owner}</div>
-              </div>
-            `;
-          });
-        }
-
-        html += `</div>`;
+      // ===== CIVIL =====
+      site.civil.forEach(c=>{
+        html += `
+        <div class="text-sm ml-2 mb-1">
+          ${c.team} —
+          M:${c.mason_full}/${c.mason_half}
+          H:${c.helper_full}/${c.helper_half}
+        </div>
+        `;
       });
 
-      body.innerHTML = html || "<div>No data for this date</div>";
+      // ===== DEPARTMENT (LABOUR COUNT ADDED) =====
+      site.department.forEach(d=>{
+        html += `
+        <div class="text-sm ml-2 mb-1">
+          ${d.department} —
+          F:${d.full} H:${d.half}
+        </div>
+        `;
+      });
+
+      // ===== MATERIAL =====
+      site.material.forEach(m=>{
+        html += `
+        <div class="text-sm ml-2 mb-1">
+          ${m.agent} — Qty: ${m.qty || "-"}
+        </div>
+        `;
+      });
+
+      // ===== EXPENSE =====
+      site.expense.forEach(e=>{
+        html += `
+        <div class="text-sm ml-2 mb-1">
+          ${e.title} — ${e.owner}
+        </div>
+        `;
+      });
+
+      html += `</div>`;
     });
+
+    body.innerHTML = html || "No data for this date";
+
+  })
+  .catch(err=>{
+    body.innerHTML = "Error loading data";
+    console.error(err);
+  });
+
 }
 
 function closeDayModal(){

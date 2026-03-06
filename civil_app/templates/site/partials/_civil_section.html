@@ -3,7 +3,21 @@
   <span class="flex items-center gap-2">
     👷 <span>Civil Teams</span>
   </span>
-  <span class="section-arrow-modern">▾</span>
+  
+<select id="civilTeamSelect">
+<option value="">+ Select Team</option>
+
+{% for t in teams %}
+<option 
+  value="{{ t.id }}"
+  data-mason="{{ t.teamrate_set.last.mason_full_rate }}"
+  data-helper="{{ t.teamrate_set.last.helper_full_rate }}"
+>
+{{ t.name }}
+</option>
+
+{% endfor %}
+</select>
 </h3>
 
 <div class="table-card-modern civil-wrapper">
@@ -32,74 +46,62 @@
   </div>
 
   <!-- ===== BODY ===== -->
-  <div class="table-body-modern">
+  
+<div id="civilBody" class="table-body-modern">
 
-    {% for row in civil_rows %}
-    <div class="table-row-modern"
-         style="grid-template-columns:
-         minmax(160px,1.4fr)
-         repeat(4,minmax(50px,.6fr))
-         minmax(70px,.7fr)
-         minmax(70px,.7fr)
-         minmax(80px,.8fr)
-         minmax(90px,.9fr)
-         minmax(90px,.9fr);">
+{% for row in civil_rows %}
+<div id="civil_row_{{ row.team.id }}" class="table-row-modern"
+style="grid-template-columns:
+minmax(160px,1.4fr)
+repeat(4,minmax(50px,.6fr))
+minmax(70px,.7fr)
+minmax(70px,.7fr)
+minmax(80px,.8fr)
+minmax(90px,.9fr)
+minmax(90px,.9fr);">
 
-      <!-- Team -->
-      <div class="font-semibold truncate">
-        {{ row.team.name }}
-      </div>
+<div class="font-semibold">{{ row.team.name }}</div>
 
-      <!-- Mason Full -->
-      <input name="mason_full_{{ row.team.id }}"
-             value="{{ row.work.mason_full|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+<input name="mason_full_{{ row.team.id }}"
+value="{{ row.work.mason_full|default:0 }}"
+class="table-input-modern money"
+oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <!-- Helper Full -->
-      <input name="helper_full_{{ row.team.id }}"
-             value="{{ row.work.helper_full|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+<input name="helper_full_{{ row.team.id }}"
+value="{{ row.work.helper_full|default:0 }}"
+class="table-input-modern money"
+oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <!-- Mason Half -->
-      <input name="mason_half_{{ row.team.id }}"
-             value="{{ row.work.mason_half|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+<input name="mason_half_{{ row.team.id }}"
+value="{{ row.work.mason_half|default:0 }}"
+class="table-input-modern money"
+oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <!-- Helper Half -->
-      <input name="helper_half_{{ row.team.id }}"
-             value="{{ row.work.helper_half|default:0 }}"
-             class="table-input-modern money"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+<input name="helper_half_{{ row.team.id }}"
+value="{{ row.work.helper_half|default:0 }}"
+class="table-input-modern money"
+oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <!-- Rates -->
-      <div class="table-box-modern">₹{{ row.rate.mason_full_rate }}</div>
-      <div class="table-box-modern">₹{{ row.rate.helper_full_rate }}</div>
+<div class="table-box-modern">₹{{ row.rate.mason_full_rate }}</div>
+<div class="table-box-modern">₹{{ row.rate.helper_full_rate }}</div>
 
-      <!-- Advance -->
-      <input name="advance_{{ row.team.id }}"
-             value="{{ row.advance }}"
-             class="table-input-modern money advance-modern"
-             oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
+<input name="advance_{{ row.team.id }}"
+value="{{ row.advance }}"
+class="table-input-modern money advance-modern"
+oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-      <!-- Labour -->
-      <div id="civil_labour_{{ row.team.id }}"
-           class="table-box-modern labour-modern">
-        {{ row.labour }}
-      </div>
+<div id="civil_labour_{{ row.team.id }}" class="table-box-modern labour-modern">
+{{ row.labour }}
+</div>
 
-      <!-- Total -->
-      <div id="civil_total_{{ row.team.id }}"
-           class="table-box-modern total-modern">
-        {{ row.total }}
-      </div>
+<div id="civil_total_{{ row.team.id }}" class="table-box-modern total-modern">
+{{ row.total }}
+</div>
 
-    </div>
-    {% endfor %}
+</div>
+{% endfor %}
 
-  </div>
+</div>
 </div>
 <style>
   /* ===== SECTION HEADER ===== */
@@ -235,6 +237,8 @@
 }
 </style>
 <script>
+  document.getElementById("civilTeamSelect")
+.addEventListener("change", addCivilTeam);
 function toggleSection(el){
   const card = el.nextElementSibling;
   const arrow = el.querySelector(".section-arrow-modern");
@@ -249,5 +253,69 @@ function toggleSection(el){
         ? "rotate(-90deg)"
         : "rotate(0deg)";
   }
+}
+function addCivilTeam(){
+
+  const select = document.getElementById("civilTeamSelect");
+
+  const option = select.options[select.selectedIndex];
+
+  const teamId = option.value;
+  const teamName = option.text;
+
+  const masonRate = option.dataset.mason;
+  const helperRate = option.dataset.helper;
+
+  if(!teamId){
+    alert("Select team first");
+    return;
+  }
+
+  if(document.getElementById("civil_row_"+teamId)){
+    alert("Team already added");
+    return;
+  }
+
+  const container = document.getElementById("civilBody");
+
+  const html = `
+  <div id="civil_row_${teamId}" class="table-row-modern"
+  style="grid-template-columns:
+  minmax(160px,1.4fr)
+  repeat(4,minmax(50px,.6fr))
+  minmax(70px,.7fr)
+  minmax(70px,.7fr)
+  minmax(80px,.8fr)
+  minmax(90px,.9fr)
+  minmax(90px,.9fr);">
+
+    <div class="font-semibold">${teamName}</div>
+
+    <input name="mason_full_${teamId}" class="table-input-modern money"
+    oninput="calcCivil(${teamId}, ${masonRate}, ${helperRate})">
+
+    <input name="helper_full_${teamId}" class="table-input-modern money"
+    oninput="calcCivil(${teamId}, ${masonRate}, ${helperRate})">
+
+    <input name="mason_half_${teamId}" class="table-input-modern money"
+    oninput="calcCivil(${teamId}, ${masonRate}, ${helperRate})">
+
+    <input name="helper_half_${teamId}" class="table-input-modern money"
+    oninput="calcCivil(${teamId}, ${masonRate}, ${helperRate})">
+
+    <div class="table-box-modern">₹${masonRate}</div>
+    <div class="table-box-modern">₹${helperRate}</div>
+
+    <input name="advance_${teamId}" class="table-input-modern money"
+    oninput="calcCivil(${teamId}, ${masonRate}, ${helperRate})">
+
+    <div id="civil_labour_${teamId}" class="table-box-modern labour-modern">0</div>
+    <div id="civil_total_${teamId}" class="table-box-modern total-modern">0</div>
+
+  </div>
+  `;
+
+  container.insertAdjacentHTML("beforeend", html);
+
 }
 </script>

@@ -114,10 +114,10 @@ tbody tr:nth-child(even){
 .col-total1{ width:20%; }
 
 /* expense table */
-.col-name{ width:40%; }
-.col-owner{ width:25%; }
-.col-amt{ width:17.5%; }
-.col-total{ width:17.5%; }
+.col-name{ width:60%; }
+.col-owner{ width:20%; }
+
+.col-total{ width:20%; }
 
 /* ================= ALIGNMENT ================= */
 td:first-child{
@@ -313,7 +313,7 @@ td:first-child{
 </tr>
 </thead>
 <tbody>
-{% for m in dept_rows %}
+{% for m in material_rows %}
 
 <tr class="team-row">
   <td class="team-name">{{ m.name }}</td>
@@ -344,7 +344,7 @@ td:first-child{
 <tr>
   <th class="col-name">Expense</th>
   <th class="col-owner">Owner</th>
-  <th class="col-amt">Amount</th>
+  
   <th class="col-total">Net Total</th>
 </tr>
 </thead>
@@ -355,7 +355,7 @@ td:first-child{
 <tr class="team-row">
   <td class="team-name">{{ e.name }}</td>
   <td></td>
-  <td class="money advance">₹{{ e.advance|default:0 }}</td>
+  
   <td class="money total">₹{{ e.total|default:0 }}</td>
 </tr>
 
@@ -364,7 +364,7 @@ td:first-child{
 <tr class="site-row">
   <td>{{ s.site }}</td>
   <td>{{ s.owner }}</td>
-  <td class="money advance">₹{{ s.advance|default:0 }}</td>
+  
   <td class="money total">₹{{ s.total|default:0 }}</td>
 </tr>
 {% endfor %}
