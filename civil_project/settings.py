@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'civil_app.apps.CivilAppConfig',
+    'django.contrib.humanize',
 
 ]
 

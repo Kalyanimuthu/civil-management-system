@@ -1,52 +1,75 @@
 {% load civil_extras %}
 
 <!-- ================= DEPARTMENTS ================= -->
-<h3 onclick="toggleSection(this)" class="section-title-modern">
-  <span class="flex items-center gap-2">
-    🏢 <span>Other Departments</span>
-  </span>
-  <select id="deptSelect">
-  <option value="">+ Select Department</option>
 
-  {% for d in other_depts %}
-  <option 
-    value="{{ d.id }}"
-    data-rate="{{ default_rates|get_item:d.id|default:0 }}">
-    {{ d.name }}
-  </option>
-  {% endfor %}
+<div class="dept-section">
 
-  </select>
-</h3>
+<!-- HEADER -->
+
+<div class="section-header-modern">
+
+<div class="section-left">
+<div class="section-icon">🏢</div>
+<span>Other Departments</span>
+</div>
+
+<div class="section-actions">
+
+<select id="deptSelect" class="team-select-modern">
+<option value="">+ Add Team</option>
+
+{% for d in other_depts %}
+<option 
+value="{{ d.id }}"
+data-rate="{{ default_rates|get_item:d.id|default:0 }}">
+{{ d.name }}
+</option>
+{% endfor %}
+
+</select>
+
+
+
+</div>
+
+</div>
+
+
+<!-- CARD -->
 
 <div class="table-card-modern dept-wrapper">
 
-  <!-- ===== HEADER ===== -->
-  <div class="table-head-modern"
-       style="grid-template-columns:
-       minmax(200px,1.6fr)
-       repeat(2,minmax(70px,.8fr))
-       minmax(90px,.9fr)
-       minmax(100px,1fr)
-       minmax(110px,1fr)
-       minmax(110px,1fr);">
+<!-- HEADER -->
 
-    <div>Department</div>
-    <div class="text-center">Full</div>
-    <div class="text-center">Half</div>
-    <div class="text-center">Rate</div>
-    <div class="text-center">Advance</div>
-    <div class="text-center">Labour</div>
-    <div class="text-center">Total</div>
-  </div>
+<div class="table-head-modern"
+style="grid-template-columns:
+minmax(200px,1.6fr)
+repeat(2,minmax(70px,.8fr))
+minmax(90px,.9fr)
+minmax(100px,1fr)
+minmax(110px,1fr)
+minmax(110px,1fr);">
 
-  <!-- ===== BODY ===== -->
-  <div id="deptBody" class="table-body-modern">
+<div>Department</div>
+<div class="text-center">Full</div>
+<div class="text-center">Half</div>
+<div class="text-center">Rate</div>
+<div class="text-center">Advance</div>
+<div class="text-center">Labour</div>
+<div class="text-center">Total</div>
+
+</div>
+
+
+<!-- BODY -->
+
+<div id="deptBody" class="table-body-modern">
 
 {% for id,row in dept_map.items %}
 {% with dept=row.department %}
 
-<div id="dept_row_{{ dept.id }}" class="table-row-modern dept-row"
+<div id="dept_row_{{ dept.id }}"
+class="table-row-modern dept-row"
 style="grid-template-columns:
 minmax(200px,1.6fr)
 repeat(2,minmax(70px,.8fr))
@@ -77,11 +100,13 @@ value="{{ row.advance_amount|default:0 }}"
 class="table-input-modern money advance-modern"
 oninput="calcDept({{ dept.id }})">
 
-<div id="dept_labour_{{ dept.id }}" class="table-box-modern labour-modern">
+<div id="dept_labour_{{ dept.id }}"
+class="table-box-modern labour-modern">
 {{ row.labour_amount }}
 </div>
 
-<div id="dept_total_{{ dept.id }}" class="table-box-modern total-modern">
+<div id="dept_total_{{ dept.id }}"
+class="table-box-modern total-modern">
 {{ row.total_amount }}
 </div>
 
@@ -91,96 +116,171 @@ oninput="calcDept({{ dept.id }})">
 {% endfor %}
 
 </div>
+
+</div>
+
 </div>
 <!-- ===== DEPT PREMIUM POLISH ===== -->
 <style>
-/* ===== DEPT HEADER GLASS ===== */
-.dept-header{
-  background:linear-gradient(180deg,#fff7ed,#ffffff);
-  backdrop-filter:blur(6px);
-  box-shadow:0 4px 12px rgba(0,0,0,.04);
+/* ===== SECTION HEADER ===== */
+
+.section-header-modern{
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+padding:14px 18px;
+border-radius:14px;
+
+border:1px solid #e2e8f0;
+background:linear-gradient(180deg,#ffffff,#f8fafc);
+
+font-weight:900;
+cursor:pointer;
+margin-top:22px;
 }
 
-/* ===== ROW FEEL ===== */
-.dept-row{
-  transition:all .18s ease;
+.section-left{
+display:flex;
+align-items:center;
+gap:8px;
 }
 
-.dept-row:hover{
-  background:linear-gradient(to right,#fff7ed,#ffffff);
-  transform:scale(1.003);
+.section-icon{
+width:32px;
+height:32px;
+border-radius:8px;
+background:#f1f5f9;
+
+display:flex;
+align-items:center;
+justify-content:center;
 }
 
-/* ===== RATE FIELD EMPHASIS ===== */
-.dept-row input[name^="dept_rate_"]{
-  background:linear-gradient(180deg,#fff,#fef3c7);
-}
-/* ===== DEPT WORK GRID ===== */
-.dept-work-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:6px;
+.section-actions{
+display:flex;
+align-items:center;
+gap:10px;
 }
 
-/* reuse from civil if already exists */
-.work-field{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
+/* ===== CARD ===== */
+
+.table-card-modern{
+margin-top:8px;
+background:white;
+border-radius:18px;
+border:1px solid #e5e7eb;
+overflow:hidden;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,.05),
+inset 0 1px 0 rgba(255,255,255,.6);
 }
 
-.work-field label{
-  font-size:.65rem;
-  font-weight:800;
-  color:#64748b;
-  text-align:center;
+/* ===== HEADER ===== */
+
+.table-head-modern{
+display:grid;
+background:linear-gradient(180deg,#f8fafc,#eef2ff);
+padding:10px 14px;
+
+font-size:.72rem;
+font-weight:900;
+color:#475569;
+
+border-bottom:1px solid #e5e7eb;
+letter-spacing:.04em;
 }
 
-.work-field input{
-  height:28px;
-  border:1px solid #d1d5db;
-  border-radius:6px;
-  text-align:center;
-  font-weight:700;
-  font-size:.8rem;
+/* ===== ROW ===== */
+
+.table-row-modern{
+display:grid;
+align-items:center;
+gap:8px;
+padding:10px 14px;
+
+border-bottom:1px solid #f1f5f9;
+background:white;
+transition:.15s ease;
 }
 
-/* ===== RATE HIGHLIGHT ===== */
+.table-row-modern:nth-child(even){
+background:#fafafa;
+}
+
+.table-row-modern:hover{
+background:#f8fafc;
+}
+
+/* ===== INPUT ===== */
+
+.table-input-modern{
+height:32px;
+
+border:1px solid #e2e8f0;
+border-radius:8px;
+
+padding:2px 8px;
+font-size:.82rem;
+font-weight:700;
+}
+
+.table-input-modern:focus{
+outline:none;
+border-color:#facc15;
+box-shadow:0 0 0 2px rgba(250,204,21,.18);
+}
+
+/* ===== BOX ===== */
+
+.table-box-modern{
+height:32px;
+display:flex;
+align-items:center;
+justify-content:center;
+
+background:#f1f5f9;
+border-radius:6px;
+
+font-weight:800;
+font-size:.82rem;
+}
+
+/* ===== FINANCIAL COLORS ===== */
+
+.labour-modern{
+background:#fff7ed;
+color:#92400e;
+}
+
+.total-modern{
+background:linear-gradient(135deg,#dcfce7,#bbf7d0);
+color:#065f46;
+}
+
+.advance-modern{
+background:#fff7ed;
+}
+
 .rate-highlight{
-  background:linear-gradient(180deg,#fff,#fef3c7);
+background:linear-gradient(180deg,#ffffff,#fef3c7);
 }
 
-/* ===== ROW HOVER PREMIUM ===== */
-.dept-row:hover{
-  background:linear-gradient(to right,#fff7ed,#ffffff);
-  transform:scale(1.002);
-  transition:.15s ease;
-}
 /* ===== MOBILE ===== */
+
 @media (max-width:768px){
-  .dept-row{
-    min-width:760px;
-  }
+
+.dept-row{
+min-width:760px;
+}
+
 }
 </style>
 
 <!-- ===== SAFE TOGGLE HELPER ===== -->
 <script>
-if (typeof toggleSection === "undefined") {
-  function toggleSection(el){
-    const card = el.nextElementSibling;
-    const arrow = el.querySelector(".section-arrow");
 
-    if (!card) return;
-
-    card.classList.toggle("hidden");
-
-    if (arrow) {
-      arrow.style.transform =
-        card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
-    }
-  }
-}
 document.getElementById("deptSelect")
 .addEventListener("change", addDept);
 

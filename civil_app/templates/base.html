@@ -1,360 +1,280 @@
 {% load static %}
-
 <!DOCTYPE html>
 
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1200, initial-scale=1, maximum-scale=1">
-  <title>Civil Management</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Font performance -->
+<title>SK Builders</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Google Font -->
 
-  <!-- Inter font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind -->
+<!-- Tailwind -->
 
-  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    body {
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    
-  </style>
+<style>
+
+:root{
+--primary:#facc15;
+--primary-dark:#f59e0b;
+--bg:#f8fafc;
+--text:#0f172a;
+}
+
+html{
+scroll-behavior:smooth;
+}
+
+body{
+font-family:'Inter',system-ui,-apple-system;
+background:linear-gradient(135deg,#f1f5f9,#ffffff);
+min-height:100vh;
+display:flex;
+flex-direction:column;
+color:var(--text);
+}
+
+/* ===== NAV LINK ===== */
+
+.nav-link{
+position:relative;
+padding:16px 8px;
+display:inline-flex;
+align-items:center;
+gap:6px;
+color:#475569;
+font-weight:600;
+transition:.2s ease;
+}
+
+.nav-link:hover{
+color:#92400e;
+}
+
+.nav-link::after{
+content:"";
+position:absolute;
+bottom:0;
+left:0;
+width:0;
+height:3px;
+background:linear-gradient(to right,#facc15,#f59e0b);
+transition:.25s;
+border-radius:999px;
+}
+
+.nav-link:hover::after{
+width:100%;
+}
+
+.nav-link.active{
+color:#92400e;
+font-weight:700;
+}
+
+.nav-link.active::after{
+width:100%;
+}
+
+/* ===== PAGE ANIMATION ===== */
+
+.animate-page{
+animation:fadeIn .35s ease-out;
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+transform:translateY(10px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+/* ===== GLASS NAVBAR ===== */
+
+.glass{
+backdrop-filter:blur(12px);
+background:rgba(255,255,255,0.75);
+}
+
+/* ===== FOOTER ===== */
+
+.footer{
+background:#0f172a;
+color:#94a3b8;
+font-size:12px;
+text-align:center;
+padding:16px;
+margin-top:auto;
+}
+
+/* ===== MOBILE SCALE ===== */
+
+@media (max-width:768px){
+
+html{
+zoom:.9;
+}
+
+}
+
+</style>
 
 </head>
 
-<body class="bg-gradient-to-br from-slate-100 via-white to-slate-200 min-h-screen flex flex-col">
+<body>
 
-  <!-- ================= HEADER ================= -->
+<!-- ================= HEADER ================= -->
 
-  <header class="bg-slate-700 text-white px-6 py-4
-                 flex items-center justify-between
-                 shadow-xl relative overflow-hidden">
+<header class="bg-slate-800 text-white px-6 py-4
+flex items-center justify-between
+shadow-xl relative overflow-hidden">
 
+<!-- background glow -->
 
-<!-- Lemon glow -->
 <div class="absolute inset-0 bg-gradient-to-r
-            from-yellow-400/10 via-transparent to-transparent"></div>
+from-yellow-400/10 via-transparent to-transparent"></div>
 
-<!-- Logo + Title -->
-<div class="relative flex items-center gap-3">
-  <div class="rounded-xl shadow flex items-center justify-center">
-    <img src="{% static 'images/logo.jpeg' %}"
-         alt="SK Builders"
-         class="h-10 w-auto drop-shadow-sm">
-  </div>
+<!-- BRAND -->
 
-  <div>
-    <h1 class="font-extrabold text-lg leading-tight">
-      SK Builders
-    </h1>
-    <p class="text-xs text-slate-300"></p>
-  </div>
-</div>
-
-<!-- User Section -->
 <div class="relative flex items-center gap-3">
 
-  {% if user.is_authenticated %}
+<img src="{% static 'images/logo.jpeg' %}"
+class="h-10 rounded-lg shadow">
 
-    <span class="text-sm text-slate-200 font-semibold">
-      👋 {{ user.username }}
-    </span>
-
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit"
-              class="bg-red-500 hover:bg-red-600
-                     text-white text-sm font-bold
-                     px-4 py-1.5 rounded-full shadow transition">
-        🚪 Logout
-      </button>
-    </form>
-
-  {% else %}
-
-    <a href="{% url 'login' %}"
-       class="bg-yellow-400 hover:bg-yellow-500
-              text-slate-900 text-sm font-bold
-              px-4 py-1.5 rounded-full
-              shadow transition">
-      🔐 Login
-    </a>
-
-  {% endif %}
+<div>
+<h1 class="font-extrabold text-lg">
+SK Builders
+</h1>
+<p class="text-xs text-slate-300">
+Civil Management
+</p>
+</div>
 
 </div>
 
+<!-- USER -->
 
-  </header>
+<div class="relative flex items-center gap-3">
 
-  <!-- ================= NAVBAR ================= -->
+{% if user.is_authenticated %}
 
-  <nav class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b shadow-sm">
-    <div class="max-w-7xl mx-auto px-4">
+<span class="text-sm font-semibold text-slate-200">
+👋 {{ user.username }}
+</span>
 
+<form method="post" action="{% url 'logout' %}">
+{% csrf_token %}
 
-  <ul class="flex gap-4 md:gap-8 justify-start md:justify-center
-             overflow-x-auto whitespace-nowrap
-             text-sm font-semibold text-slate-600">
+<button class="bg-red-500 hover:bg-red-600
+px-4 py-1.5 rounded-full
+text-sm font-bold shadow transition">
+Logout
+</button>
 
-    <li>
-      <a href="/"
-         class="nav-link {% if request.path == '/' %}active{% endif %}">
-        🏠 Dashboard
-      </a>
-    </li>
+</form>
 
-    <li>
-      <a href="/sites/"
-         class="nav-link {% if '/sites' in request.path %}active{% endif %}">
-        🏗 Sites
-      </a>
-    </li>
+{% else %}
 
-    <li>
-      <a href="{% url 'reports' %}"
-         class="nav-link {% if 'reports' in request.path %}active{% endif %}">
-        📊 Reports
-      </a>
-    </li>
+<a href="{% url 'login' %}"
+class="bg-yellow-400 hover:bg-yellow-500
+text-slate-900 font-bold text-sm
+px-4 py-1.5 rounded-full shadow">
+Login
+</a>
 
-    <li>
-      <a href="{% url 'masters_and_payments' %}"
-         class="nav-link {% if 'masters' in request.path %}active{% endif %}">
-        🧩 Masters
-      </a>
-    </li>
+{% endif %}
 
-    <li>
-      <a href="{% url 'owner_cash_list' %}"
-         class="nav-link {% if 'owner-cash' in request.path %}active{% endif %}">
-        💰 Owner Cash
-      </a>
-    </li>
-
-  </ul>
 </div>
 
+</header>
 
-  </nav>
+<!-- ================= NAV ================= -->
 
-  <!-- ================= CONTENT ================= -->
+<nav class="sticky top-0 z-40 border-b glass shadow-sm">
 
-  <main class="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 py-5 animate-page">
-    <div class="
-                p-6 min-h-[70vh]
-                ">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
+<div class="max-w-7xl mx-auto px-4">
 
-  <!-- ================= FOOTER ================= -->
+<ul class="flex gap-8 justify-center
+overflow-x-auto whitespace-nowrap
+text-sm">
 
-  <footer class="bg-slate-900 text-gray-400 text-xs text-center py-4">
-    © {{ now|date:"Y" }} Civil Management System
-  </footer>
+<li>
+<a href="/"
+class="nav-link {% if request.path == '/' %}active{% endif %}">
+🏠 Dashboard
+</a>
+</li>
+
+<li>
+<a href="/sites/"
+class="nav-link {% if '/sites' in request.path %}active{% endif %}">
+🏗 Sites
+</a>
+</li>
+
+<li>
+<a href="{% url 'reports' %}"
+class="nav-link {% if 'reports' in request.path %}active{% endif %}">
+📊 Reports
+</a>
+</li>
+
+<li>
+<a href="{% url 'masters_and_payments' %}"
+class="nav-link {% if 'masters' in request.path %}active{% endif %}">
+🧩 Masters
+</a>
+</li>
+
+<li>
+<a href="{% url 'owner_cash_list' %}"
+class="nav-link {% if 'owner-cash' in request.path %}active{% endif %}">
+💰 Owner Cash
+</a>
+</li>
+
+</ul>
+
+</div>
+
+</nav>
+
+<!-- ================= MAIN ================= -->
+
+<main class="flex-1 max-w-7xl mx-auto w-full
+px-4 md:px-6 py-6 animate-page">
+
+<div class="bg-white
+rounded-2xl
+shadow-sm
+border border-slate-200
+p-6
+min-h-[70vh]">
+
+{% block content %}{% endblock %}
+
+</div>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+
+<footer class="footer">
+
+© {{ now|date:"Y" }} SK Builders Civil Management System
+
+</footer>
 
 </body>
 </html>
-
-<!-- ================= NAV + ANIMATIONS ================= -->
-
-<style>
-  /* ===== SMART MOBILE SCALE ===== */
-@media (max-width:768px){
-
-  html{
-    zoom:0.85; /* try 0.8 – 0.9 based on your taste */
-  }
-
-}
-/* ===== SMART MOBILE SCALE ===== */
-@media (max-width:768px){
-
-  html{
-    zoom:0.85; /* try 0.8 – 0.9 based on your taste */
-  }
-
-}
-  .nav-link {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 1rem 0.5rem;
-    color: #475569;
-    transition: color 0.2s ease;
-  }
-
-  .nav-link::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0%;
-    height: 3px;
-    background: linear-gradient(to right, #facc15, #f59e0b);
-    transition: width 0.25s ease;
-    border-radius: 999px;
-  }
-
-  .nav-link:hover {
-    color: #92400e;
-  }
-
-  .nav-link:hover::after {
-    width: 100%;
-  }
-
-  .nav-link.active {
-    color: #92400e;
-    font-weight: 700;
-  }
-
-  .nav-link.active::after {
-    width: 100%;
-  }
-
-  /* Page animation */
-  .animate-page {
-    animation: pageIn 0.4s ease-out;
-  }
-
-  @keyframes pageIn {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* ================= ERP TABLE ================= */
-
-  .erp-table-wrap{
-    overflow-x:auto;
-    background:white;
-  }
-
-  .erp-head{
-    display:grid;
-    background:#f8fafc;
-    font-size:.75rem;
-    font-weight:700;
-    letter-spacing:.03em;
-    padding:12px 14px;
-    border-bottom:1px solid #e2e8f0;
-    color:#475569;
-  }
-
-  .erp-body{
-    max-height:360px;
-    overflow-y:auto;
-  }
-
-  .erp-row{
-    display:grid;
-    gap:10px;
-    padding:10px 12px;
-    align-items:center;
-    border-bottom:1px solid #f1f5f9;
-    transition:.12s ease;
-    background:white;
-  }
-
-  .erp-row:nth-child(even){
-    background:#fbfdff;
-  }
-
-  .erp-row:hover{
-    background:#f8fafc;
-  }
-
-  .erp-input{
-    border:1px solid #e2e8f0;
-    border-radius:6px;
-    padding:6px 8px;
-    font-size:.85rem;
-    font-weight:600;
-    background:white;
-    height:32px;
-  }
-
-  .erp-input:focus{
-    outline:none;
-    border-color:#facc15;
-    box-shadow:0 0 0 2px rgba(250,204,21,.18);
-  }
-
-  .erp-box{
-    background:#f1f5f9;
-    border-radius:6px;
-    padding:6px 8px;
-    text-align:center;
-    font-weight:700;
-    font-size:.85rem;
-    height:32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .erp-labour{
-    background:#fef3c7;
-    color:#92400e;
-  }
-
-  .erp-total{
-    background:#dcfce7;
-    color:#166534;
-  }
-
-  .erp-money{
-    text-align:right;
-    font-weight:700;
-  }
-
-  .erp-delete{
-    background:#fee2e2;
-    color:#dc2626;
-    font-weight:900;
-    padding:4px 8px;
-    border-radius:6px;
-    transition:.15s;
-    font-size:.8rem;
-  }
-
-  .erp-delete:hover{
-    background:#fecaca;
-    transform:scale(1.05);
-  }
-
-  .erp-footer{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:12px 14px;
-    background:#f8fafc;
-    font-size:.75rem;
-    color:#64748b;
-    font-weight:600;
-    border-top:1px solid #e2e8f0;
-  }
-
-  @media (max-width:768px){
-    .erp-head,
-    .erp-row{
-      min-width:920px;
-    }
-  }
-</style>

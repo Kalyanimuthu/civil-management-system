@@ -189,15 +189,36 @@ def dashboard(request):
 @login_required
 @admin_required
 def site_manage(request):
+
     if request.method == "POST":
         name = request.POST.get("name")
+
         if name:
             Site.objects.create(name=name)
+
         return redirect("site_manage")
 
+    sites = Site.objects.all().order_by("name")
+
     return render(request, "site_manage.html", {
-        "sites": Site.objects.all()
+        "sites": sites
     })
+
+
+@login_required
+@admin_required
+def edit_site(request, id):
+
+    site = get_object_or_404(Site, id=id)
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+
+        if name:
+            site.name = name
+            site.save()
+
+    return redirect("site_manage")
 
 @login_required
 @staff_required
@@ -1371,8 +1392,6 @@ def all_bills_pdf(request):
 
 @login_required
 def bill_civil_detail(request, team_id):
-    from django.db.models import Sum, Value, FloatField
-    from django.db.models.functions import Coalesce
 
     from_date = parse_date(request.GET.get("from_date"))
     to_date   = parse_date(request.GET.get("to_date"))
@@ -1388,15 +1407,22 @@ def bill_civil_detail(request, team_id):
         .filter(team_id=team_id, date__range=[from_date, to_date])
         .values("site_id", "site__name")
         .annotate(
+
             total=Coalesce(
                 Sum("total_amount"),
                 Value(0),
                 output_field=FloatField()
-            )
+            ),
+
+            mason_full=Coalesce(Sum("mason_full"), Value(0)),
+            mason_half=Coalesce(Sum("mason_half"), Value(0)),
+
+            helper_full=Coalesce(Sum("helper_full"), Value(0)),
+            helper_half=Coalesce(Sum("helper_half"), Value(0)),
         )
     )
 
-    # ================= ADVANCE (SITE WISE) =================
+    # ================= ADVANCE =================
     adv_qs = (
         CivilAdvance.objects
         .filter(team_id=team_id, date__range=[from_date, to_date])
@@ -1417,13 +1443,22 @@ def bill_civil_detail(request, team_id):
     total_adv = 0
 
     for w in work_qs:
+
         adv = adv_map.get(w["site_id"], 0)
 
         total_amt += w["total"]
         total_adv += adv
 
         rows.append({
+
             "site__name": w["site__name"],
+
+            "mason_full": w["mason_full"],
+            "mason_half": w["mason_half"],
+
+            "helper_full": w["helper_full"],
+            "helper_half": w["helper_half"],
+
             "advance": adv,
             "total": w["total"],
         })
@@ -1457,16 +1492,22 @@ def bill_department_detail(request, department_id):
         .filter(department=department, date__range=[from_date, to_date])
         .values("site_id", "site__name")
         .annotate(
+
             advance=Coalesce(
                 Sum("advance_amount"),
                 Value(0),
                 output_field=FloatField()
             ),
+
             total=Coalesce(
                 Sum("total_amount"),
                 Value(0),
                 output_field=FloatField()
             ),
+
+            # ⭐ labour counts
+            full=Coalesce(Sum("full_day_count"), Value(0)),
+            half=Coalesce(Sum("half_day_count"), Value(0)),
         )
         .order_by("site__name")
     )
@@ -1476,6 +1517,7 @@ def bill_department_detail(request, department_id):
     total_amt = 0
 
     for r in qs:
+
         adv = r["advance"] or 0
         tot = r["total"] or 0
 
@@ -1483,14 +1525,19 @@ def bill_department_detail(request, department_id):
         total_amt += tot
 
         rows.append({
+
             "site__name": r["site__name"],
-            "advance": r["advance"],
-            "total": r["total"],
+
+            "full": r["full"],
+            "half": r["half"],
+
+            "advance": adv,
+            "total": tot,
         })
 
     return JsonResponse({
         "rows": rows,
-        "team_total": {  # keep same key for JS reuse
+        "team_total": {
             "advance_total": total_adv,
             "grand_total": total_amt,
         }
@@ -1813,9 +1860,6 @@ def owner_cash_add(request):
 
 @login_required
 def api_bill_expense(request, name):
-    from django.db.models import Sum, Value, FloatField
-    from django.db.models.functions import Coalesce
-
     from_date = parse_date(request.GET.get("from_date"))
     to_date   = parse_date(request.GET.get("to_date"))
 
@@ -2031,12 +2075,6 @@ def bill_department_pdf(request, department_id):
 
 @login_required
 def bill_material_pdf(request, agent_name):
-    from django.template.loader import render_to_string
-    from weasyprint import HTML
-    from django.db.models import Sum, Value, FloatField
-    from django.db.models.functions import Coalesce
-    from django.utils import timezone
-
     from_date = parse_date(request.GET.get("from_date"))
     to_date   = parse_date(request.GET.get("to_date"))
 
@@ -2105,12 +2143,7 @@ def bill_material_pdf(request, agent_name):
 
 @login_required
 def bill_expense_pdf(request, name):
-    from django.template.loader import render_to_string
-    from weasyprint import HTML
-    from django.db.models import Sum, Value, FloatField
-    from django.db.models.functions import Coalesce
-    from django.utils import timezone
-
+    
     from_date = parse_date(request.GET.get("from_date"))
     to_date   = parse_date(request.GET.get("to_date"))
 

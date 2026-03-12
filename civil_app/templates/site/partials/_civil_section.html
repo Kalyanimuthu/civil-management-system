@@ -1,56 +1,47 @@
 <!-- ================= CIVIL ================= -->
-<h3 onclick="toggleSection(this)" class="section-title-modern">
-  <span class="flex items-center gap-2">
-    👷 <span>Civil Teams</span>
-  </span>
-  
-<select id="civilTeamSelect">
-<option value="">+ Select Team</option>
+
+<div class="civil-section">
+
+<!-- HEADER -->
+
+<div class="section-header-modern">
+
+<div class="section-left">
+<div class="section-icon">👷</div>
+<span>Civil Teams</span>
+</div>
+
+<div class="section-actions">
+
+<select id="civilTeamSelect" class="team-select-modern">
+<option value="">+ Add Team</option>
 
 {% for t in teams %}
-<option 
-  value="{{ t.id }}"
-  data-mason="{{ t.teamrate_set.last.mason_full_rate }}"
-  data-helper="{{ t.teamrate_set.last.helper_full_rate }}"
+<option
+value="{{ t.id }}"
+data-mason="{{ t.teamrate_set.last.mason_full_rate }}"
+data-helper="{{ t.teamrate_set.last.helper_full_rate }}"
 >
 {{ t.name }}
 </option>
-
 {% endfor %}
+
 </select>
-</h3>
+
+
+
+</div>
+
+</div>
+
+
+<!-- CARD -->
 
 <div class="table-card-modern civil-wrapper">
 
-  <!-- ===== HEADER ===== -->
-  <div class="table-head-modern"
-       style="grid-template-columns:
-       minmax(160px,1.4fr)
-       repeat(4,minmax(50px,.6fr))
-       minmax(70px,.7fr)
-       minmax(70px,.7fr)
-       minmax(80px,.8fr)
-       minmax(90px,.9fr)
-       minmax(90px,.9fr);">
+<!-- TABLE HEADER -->
 
-    <div>Team</div>
-    <div class="text-center">M F</div>
-    <div class="text-center">H F</div>
-    <div class="text-center">M H</div>
-    <div class="text-center">H H</div>
-    <div class="text-center">Mason ₹</div>
-    <div class="text-center">Helper ₹</div>
-    <div class="text-center">Advance</div>
-    <div class="text-center">Labour</div>
-    <div class="text-center">Total</div>
-  </div>
-
-  <!-- ===== BODY ===== -->
-  
-<div id="civilBody" class="table-body-modern">
-
-{% for row in civil_rows %}
-<div id="civil_row_{{ row.team.id }}" class="table-row-modern"
+<div class="table-head-modern"
 style="grid-template-columns:
 minmax(160px,1.4fr)
 repeat(4,minmax(50px,.6fr))
@@ -60,7 +51,40 @@ minmax(80px,.8fr)
 minmax(90px,.9fr)
 minmax(90px,.9fr);">
 
-<div class="font-semibold">{{ row.team.name }}</div>
+<div>Team</div>
+<div class="text-center">M F</div>
+<div class="text-center">H F</div>
+<div class="text-center">M H</div>
+<div class="text-center">H H</div>
+<div class="text-center">Mason ₹</div>
+<div class="text-center">Helper ₹</div>
+<div class="text-center">Advance</div>
+<div class="text-center">Labour</div>
+<div class="text-center">Total</div>
+
+</div>
+
+
+<!-- BODY -->
+
+<div id="civilBody" class="table-body-modern">
+
+{% for row in civil_rows %}
+
+<div id="civil_row_{{ row.team.id }}"
+class="table-row-modern"
+style="grid-template-columns:
+minmax(160px,1.4fr)
+repeat(4,minmax(50px,.6fr))
+minmax(70px,.7fr)
+minmax(70px,.7fr)
+minmax(80px,.8fr)
+minmax(90px,.9fr)
+minmax(90px,.9fr);">
+
+<div class="font-semibold">
+{{ row.team.name }}
+</div>
 
 <input name="mason_full_{{ row.team.id }}"
 value="{{ row.work.mason_full|default:0 }}"
@@ -82,8 +106,13 @@ value="{{ row.work.helper_half|default:0 }}"
 class="table-input-modern money"
 oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rate.helper_full_rate }})">
 
-<div class="table-box-modern">₹{{ row.rate.mason_full_rate }}</div>
-<div class="table-box-modern">₹{{ row.rate.helper_full_rate }}</div>
+<div class="table-box-modern">
+₹{{ row.rate.mason_full_rate }}
+</div>
+
+<div class="table-box-modern">
+₹{{ row.rate.helper_full_rate }}
+</div>
 
 <input name="advance_{{ row.team.id }}"
 value="{{ row.advance }}"
@@ -99,9 +128,13 @@ oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rat
 </div>
 
 </div>
+
 {% endfor %}
 
 </div>
+
+</div>
+
 </div>
 <style>
   /* ===== SECTION HEADER ===== */
@@ -124,11 +157,130 @@ oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rat
   background:#f8fafc;
 }
 
-.section-arrow-modern{
-  color:#94a3b8;
-  transition:transform .25s ease;
+.section-header-modern{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:14px 18px;
+border-radius:14px;
+border:1px solid #e2e8f0;
+background:linear-gradient(180deg,#ffffff,#f8fafc);
+font-weight:900;
+cursor:pointer;
+margin-top:20px;
 }
 
+.section-left{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.section-icon{
+width:32px;
+height:32px;
+border-radius:8px;
+background:#f1f5f9;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.section-actions{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.team-select-modern{
+border:1px solid #e2e8f0;
+border-radius:10px;
+padding:6px 10px;
+font-weight:700;
+background:white;
+}
+
+.table-card-modern{
+margin-top:8px;
+background:white;
+border-radius:16px;
+border:1px solid #e5e7eb;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.05);
+}
+
+.table-head-modern{
+display:grid;
+background:linear-gradient(180deg,#f8fafc,#eef2ff);
+padding:10px 14px;
+font-size:.72rem;
+font-weight:900;
+color:#475569;
+border-bottom:1px solid #e5e7eb;
+}
+
+.table-body-modern{
+max-height:420px;
+overflow-y:auto;
+}
+
+.table-row-modern{
+display:grid;
+align-items:center;
+gap:8px;
+padding:10px 14px;
+border-bottom:1px solid #f1f5f9;
+background:white;
+transition:.15s ease;
+}
+
+.table-row-modern:hover{
+background:#f8fafc;
+}
+
+.table-input-modern{
+height:32px;
+border:1px solid #e2e8f0;
+border-radius:8px;
+padding:2px 8px;
+font-size:.82rem;
+font-weight:700;
+}
+
+.table-input-modern:focus{
+outline:none;
+border-color:#facc15;
+box-shadow:0 0 0 2px rgba(250,204,21,.18);
+}
+
+.table-box-modern{
+height:32px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#f1f5f9;
+border-radius:6px;
+font-weight:800;
+font-size:.82rem;
+}
+
+.money{
+text-align:right;
+}
+
+.labour-modern{
+background:#fef3c7;
+color:#92400e;
+}
+
+.total-modern{
+background:#dcfce7;
+color:#166534;
+}
+
+.advance-modern{
+background:#fff7ed;
+}
 /* ===== CARD ===== */
 .table-card-modern{
   width:100%;
@@ -239,21 +391,7 @@ oninput="calcCivil({{ row.team.id }}, {{ row.rate.mason_full_rate }}, {{ row.rat
 <script>
   document.getElementById("civilTeamSelect")
 .addEventListener("change", addCivilTeam);
-function toggleSection(el){
-  const card = el.nextElementSibling;
-  const arrow = el.querySelector(".section-arrow-modern");
 
-  if (!card) return;
-
-  card.classList.toggle("hidden");
-
-  if (arrow){
-    arrow.style.transform =
-      card.classList.contains("hidden")
-        ? "rotate(-90deg)"
-        : "rotate(0deg)";
-  }
-}
 function addCivilTeam(){
 
   const select = document.getElementById("civilTeamSelect");

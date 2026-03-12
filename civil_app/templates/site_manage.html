@@ -1,175 +1,400 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="max-w-5xl mx-auto space-y-10 animate-page">
+<div class="max-w-6xl mx-auto space-y-10 animate-page">
 
-  <!-- ================= PAGE HEADER ================= -->
-  <div class="space-y-1">
-    <h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
-      🏗 Manage Sites
-    </h2>
-    <p class="text-sm text-gray-500">
-      Create, view and remove construction sites
-    </p>
-  </div>
+<!-- ================= HEADER ================= -->
 
-  <!-- ================= ADD SITE ================= -->
-  <section class="card space-y-4">
+<div class="flex items-center justify-between">
 
-    <h3 class="section-title flex items-center gap-2">
-      ➕ Add New Site
-    </h3>
+<div>
+<h2 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+🏗 Manage Sites
+</h2>
 
-    <form method="post" class="flex flex-col sm:flex-row gap-3">
-      {% csrf_token %}
+<p class="text-sm text-gray-500 mt-1">
+Create, manage and track construction sites
+</p>
+</div>
 
-      <input
-        name="name"
-        placeholder="Enter site name"
-        required
-        class="input flex-1"
-      >
-
-      <button class="btn-lemon">
-        Add Site
-      </button>
-    </form>
-
-  </section>
-
-  <!-- ================= SITE LIST ================= -->
-  <section class="card overflow-hidden">
-
-    <div class="list-header">
-      <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-        📍 Existing Sites
-      </h3>
-    </div>
-
-    <ul class="divide-y">
-      {% for s in sites %}
-      <li class="list-row">
-        <span class="font-semibold text-slate-800">
-          {{ s.name }}
-        </span>
-
-        <a
-          href="/delete-site/{{ s.id }}/"
-          onclick="return confirm('Are you sure you want to delete this site?')"
-          class="delete-btn">
-          🗑 Delete
-        </a>
-      </li>
-      {% empty %}
-      <li class="empty-row">
-        No sites added yet
-      </li>
-      {% endfor %}
-    </ul>
-
-  </section>
+<div class="stats-box">
+<span>Total Sites</span>
+<strong>{{ sites|length }}</strong>
+</div>
 
 </div>
 
-<!-- ================= STYLES ================= -->
+
+
+<!-- ================= ADD SITE ================= -->
+
+<section class="card space-y-4">
+
+<h3 class="section-title flex items-center gap-2">
+➕ Add New Site
+</h3>
+
+<form method="post" class="flex flex-col sm:flex-row gap-3">
+{% csrf_token %}
+
+<input
+name="name"
+placeholder="Enter site name"
+required
+class="input flex-1">
+
+<button class="btn-primary">
+Add Site
+</button>
+
+</form>
+
+</section>
+
+
+
+<!-- ================= SITE GRID ================= -->
+
+<section>
+
+<h3 class="section-title mb-4">
+📍 Your Sites
+</h3>
+
+{% if sites %}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+{% for s in sites %}
+
+<div class="site-card">
+
+<form method="post" action="/edit-site/{{ s.id }}/" class="site-form">
+{% csrf_token %}
+
+<div class="site-header">
+
+<div class="site-icon">🏗</div>
+
+<input
+name="name"
+value="{{ s.name }}"
+class="site-name-input"
+readonly
+>
+
+</div>
+
+<div class="site-actions">
+
+<button
+type="button"
+class="edit-btn"
+onclick="toggleEdit(this)">
+Edit
+</button>
+
+<button
+type="submit"
+class="save-btn hidden">
+Save
+</button>
+
+<a
+href="/delete-site/{{ s.id }}/"
+onclick="return confirm('Delete this site?')"
+class="delete-btn">
+
+Delete
+
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% else %}
+
+<div class="empty-box">
+
+<div class="empty-icon">
+🏗
+</div>
+
+<p>No sites created yet</p>
+
+<span>Add your first site above</span>
+
+</div>
+
+{% endif %}
+
+</section>
+
+</div>
+
+
+
 <style>
-:root{
-  --lemon:#facc15;
-  --lemon-soft:#fff7cc;
-  --lemon-dark:#ca8a04;
-}
 
-/* Page animation */
+/* ===== PAGE ANIMATION ===== */
+
 .animate-page{
-  animation:fadeUp .35s ease-out;
+animation:fadeUp .35s ease-out;
 }
+
 @keyframes fadeUp{
-  from{opacity:0;transform:translateY(14px)}
-  to{opacity:1;transform:translateY(0)}
+from{
+opacity:0;
+transform:translateY(14px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
 }
 
-/* Cards */
+
+
+/* ===== STATS ===== */
+
+.stats-box{
+background:white;
+border:1px solid #e5e7eb;
+border-radius:14px;
+padding:10px 18px;
+display:flex;
+flex-direction:column;
+align-items:center;
+box-shadow:0 8px 20px rgba(0,0,0,.05);
+}
+
+.stats-box span{
+font-size:11px;
+color:#64748b;
+}
+
+.stats-box strong{
+font-size:18px;
+font-weight:900;
+}
+
+
+
+/* ===== CARD ===== */
+
 .card{
-  background:white;
-  border:1px solid #e5e7eb;
-  border-radius:1.5rem;
-  padding:1.5rem;
-  box-shadow:0 10px 25px rgba(0,0,0,.06);
-  transition:.25s ease;
+background:white;
+border:1px solid #e5e7eb;
+border-radius:18px;
+padding:1.5rem;
+box-shadow:0 10px 30px rgba(0,0,0,.05);
+transition:.25s ease;
 }
+
 .card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 18px 40px rgba(0,0,0,.08);
+transform:translateY(-2px);
+box-shadow:0 18px 40px rgba(0,0,0,.08);
 }
 
-/* Titles */
+
+
+/* ===== TITLES ===== */
+
 .section-title{
-  font-size:1.125rem;
-  font-weight:800;
-  color:#0f172a;
+font-size:1.15rem;
+font-weight:900;
+color:#0f172a;
 }
 
-/* Inputs */
+
+
+/* ===== INPUT ===== */
+
 .input{
-  border-radius:.9rem;
-  padding:.75rem 1rem;
-  font-size:.9rem;
-  border:1px solid #d1d5db;
-  transition:.2s ease;
+border-radius:12px;
+padding:.75rem 1rem;
+font-size:.9rem;
+border:1px solid #d1d5db;
+transition:.2s ease;
 }
+
 .input:focus{
-  outline:none;
-  border-color:var(--lemon);
-  box-shadow:0 0 0 3px rgba(250,204,21,.4);
+outline:none;
+border-color:#facc15;
+box-shadow:0 0 0 3px rgba(250,204,21,.35);
 }
 
-/* Buttons */
-.btn-lemon{
-  background:linear-gradient(to right,#fde047,var(--lemon));
-  color:#422006;
-  font-weight:900;
-  padding:.75rem 1.5rem;
-  border-radius:.9rem;
-  transition:.25s ease;
-}
-.btn-lemon:hover{
-  transform:translateY(-2px);
-  box-shadow:0 12px 25px rgba(0,0,0,.18);
+
+
+/* ===== BUTTON ===== */
+
+.btn-primary{
+background:linear-gradient(135deg,#fde047,#facc15);
+color:#422006;
+font-weight:900;
+padding:.75rem 1.4rem;
+border-radius:12px;
+transition:.2s;
 }
 
-/* List */
-.list-header{
-  background:#f8fafc;
-  padding:1rem 1.25rem;
-  border-bottom:1px solid #e5e7eb;
+.btn-primary:hover{
+transform:translateY(-2px);
+box-shadow:0 12px 25px rgba(0,0,0,.18);
 }
 
-.list-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:1rem 1.25rem;
-  transition:.2s ease;
+
+
+/* ===== SITE CARD ===== */
+
+.site-card{
+background:white;
+border:1px solid #e5e7eb;
+border-radius:18px;
+padding:18px;
+box-shadow:0 10px 25px rgba(0,0,0,.05);
+transition:.25s ease;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
 }
-.list-row:hover{
-  background:var(--lemon-soft);
+
+.site-card:hover{
+transform:translateY(-3px);
+box-shadow:0 20px 45px rgba(0,0,0,.08);
+}
+
+
+
+/* ===== SITE HEADER ===== */
+
+.site-header{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:12px;
+}
+
+.site-icon{
+width:38px;
+height:38px;
+border-radius:10px;
+background:#f8fafc;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:18px;
+}
+
+
+
+/* ===== ACTIONS ===== */
+
+.site-actions{
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:.85rem;
+font-weight:700;
+}
+
+.open-btn{
+color:#2563eb;
+}
+
+.open-btn:hover{
+text-decoration:underline;
 }
 
 .delete-btn{
-  color:#ef4444;
-  font-size:.8rem;
-  font-weight:800;
-}
-.delete-btn:hover{
-  text-decoration:underline;
+color:#ef4444;
 }
 
-.empty-row{
-  padding:2rem;
-  text-align:center;
-  color:#9ca3af;
-  font-size:.9rem;
+.delete-btn:hover{
+text-decoration:underline;
+}
+
+
+
+/* ===== EMPTY STATE ===== */
+
+.empty-box{
+text-align:center;
+padding:60px 20px;
+background:#f8fafc;
+border-radius:16px;
+border:1px dashed #e5e7eb;
+}
+
+.empty-icon{
+font-size:40px;
+margin-bottom:10px;
+}
+
+.empty-box p{
+font-weight:800;
+color:#334155;
+}
+
+.empty-box span{
+font-size:13px;
+color:#94a3b8;
+}
+.site-name-input{
+border:none;
+background:transparent;
+font-weight:800;
+font-size:1rem;
+width:100%;
+}
+
+.site-name-input:focus{
+outline:none;
+border-bottom:2px solid #facc15;
+}
+
+.edit-btn{
+color:#2563eb;
+font-size:.85rem;
+font-weight:700;
+}
+
+.save-btn{
+background:#22c55e;
+color:white;
+padding:4px 10px;
+border-radius:6px;
+font-size:.8rem;
+font-weight:700;
+}
+
+.save-btn:hover{
+background:#16a34a;
 }
 </style>
+<script>
+  function toggleEdit(btn){
 
+const card = btn.closest(".site-card");
+
+const input = card.querySelector(".site-name-input");
+
+const saveBtn = card.querySelector(".save-btn");
+
+input.removeAttribute("readonly");
+
+input.focus();
+
+btn.classList.add("hidden");
+
+saveBtn.classList.remove("hidden");
+
+}
+</script>
 {% endblock %}
