@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>SK Builders</title>
-
+<link rel="icon" href="{% static 'images/logo.jpeg' %}">
 <!-- Google Font -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,7 +42,42 @@ color:var(--text);
 }
 
 /* ===== NAV LINK ===== */
+/* TOP NAV STYLE */
 
+.nav-top{
+position:relative;
+padding:6px 2px;
+color:#cbd5f5;
+transition:.2s;
+}
+
+.nav-top:hover{
+color:#facc15;
+}
+
+.nav-top::after{
+content:"";
+position:absolute;
+left:0;
+bottom:-6px;
+height:3px;
+width:0;
+background:#facc15;
+transition:.25s;
+border-radius:999px;
+}
+
+.nav-top:hover::after{
+width:100%;
+}
+
+.active-top{
+color:#facc15;
+}
+
+.active-top::after{
+width:100%;
+}
 .nav-link{
 position:relative;
 padding:14px 10px;
@@ -117,7 +152,26 @@ text-align:center;
 padding:16px;
 margin-top:auto;
 }
+.mobile-link{
+padding:10px 12px;
+border-radius:8px;
+transition:.2s;
+}
 
+.mobile-link:hover{
+background:#334155;
+color:#facc15;
+}
+.sidebar-link{
+padding:10px 14px;
+border-radius:8px;
+transition:.2s;
+}
+
+.sidebar-link:hover{
+background:#1e293b;
+color:#facc15;
+}
 </style>
 
 </head>
@@ -126,37 +180,52 @@ margin-top:auto;
 
 <!-- ================= HEADER ================= -->
 
-<header class="bg-slate-800 text-white px-4 py-4
-flex flex-col sm:flex-row
-sm:items-center sm:justify-between
-gap-3 shadow-xl relative overflow-hidden">
+<header class="bg-slate-800 text-white px-6 py-4
+flex items-center justify-between
+shadow-xl relative overflow-hidden">
 
-<!-- background glow -->
-
-<div class="absolute inset-0 bg-gradient-to-r
-from-yellow-400/10 via-transparent to-transparent"></div>
-
-<!-- BRAND -->
-
-<div class="relative flex items-center gap-3">
+<!-- LEFT : LOGO -->
+<a href="/" class="flex items-center gap-3 hover:opacity-90 transition">
 
 <img src="{% static 'images/logo.jpeg' %}"
 class="h-9 sm:h-10 rounded-lg shadow">
 
-<div>
-<h1 class="font-extrabold text-lg">
-SK Builders
-</h1>
-<p class="text-xs text-slate-300">
-Civil Management
-</p>
+<div class="leading-tight">
+<h1 class="font-extrabold text-lg">SK Builders</h1>
+<p class="text-xs text-slate-300">Civil Management</p>
 </div>
 
-</div>
+</a>
 
-<!-- USER -->
+<!-- CENTER : NAVIGATION -->
+<nav class="hidden md:flex items-center gap-8 text-sm font-semibold">
 
-<div class="relative flex items-center gap-3">
+<a href="/" class="nav-top {% if request.path == '/' %}active-top{% endif %}">
+🏠 Dashboard
+</a>
+
+<a href="/sites/" class="nav-top {% if '/sites' in request.path %}active-top{% endif %}">
+🏗 Sites
+</a>
+
+<a href="{% url 'reports' %}" class="nav-top {% if 'reports' in request.path %}active-top{% endif %}">
+📊 Reports
+</a>
+
+<a href="{% url 'masters_and_payments' %}" class="nav-top {% if 'masters' in request.path %}active-top{% endif %}">
+🧩 Masters
+</a>
+
+<a href="{% url 'owner_cash_list' %}" class="nav-top {% if 'owner-cash' in request.path %}active-top{% endif %}">
+💰 Owner Cash
+</a>
+
+</nav>
+
+
+
+<!-- RIGHT : USER -->
+<div class="flex items-center gap-3">
 
 {% if user.is_authenticated %}
 
@@ -186,63 +255,57 @@ Login
 
 {% endif %}
 
+<button onclick="openSidebar()"
+class="md:hidden text-2xl hover:text-yellow-400 transition">
+☰
+</button>
 </div>
 
 </header>
 
-<!-- ================= NAV ================= -->
+<!-- ===== MOBILE SIDEBAR ===== -->
 
-<nav class="hidden md:block sticky top-0 z-40 border-b glass shadow-sm">
+<div id="sidebarOverlay"
+class="fixed inset-0 bg-black/40 hidden z-40"
+onclick="closeSidebar()"></div>
 
-<div class="max-w-7xl mx-auto px-4">
+<aside id="mobileSidebar"
+class="fixed top-0 left-0 h-full w-64 bg-slate-900 text-white
+transform -translate-x-full transition-transform duration-300
+z-50 shadow-2xl">
 
-<ul class="flex gap-6 sm:gap-8
-justify-start sm:justify-center
-overflow-x-auto
-scrollbar-hide
-whitespace-nowrap
-text-sm px-2">
+<div class="p-5 border-b border-slate-700">
 
-<li>
-<a href="/"
-class="nav-link {% if request.path == '/' %}active{% endif %}">
-🏠 Dashboard
-</a>
-</li>
-
-<li>
-<a href="/sites/"
-class="nav-link {% if '/sites' in request.path %}active{% endif %}">
-🏗 Sites
-</a>
-</li>
-
-<li>
-<a href="{% url 'reports' %}"
-class="nav-link {% if 'reports' in request.path %}active{% endif %}">
-📊 Reports
-</a>
-</li>
-
-<li>
-<a href="{% url 'masters_and_payments' %}"
-class="nav-link {% if 'masters' in request.path %}active{% endif %}">
-🧩 Masters
-</a>
-</li>
-
-<li>
-<a href="{% url 'owner_cash_list' %}"
-class="nav-link {% if 'owner-cash' in request.path %}active{% endif %}">
-💰 Owner Cash
-</a>
-</li>
-
-</ul>
+<h2 class="text-lg font-bold">SK Builders</h2>
+<p class="text-xs text-slate-400">Civil Management</p>
 
 </div>
 
+<nav class="flex flex-col p-4 gap-2 text-sm font-semibold">
+
+<a href="/" class="sidebar-link">
+🏠 Dashboard
+</a>
+
+<a href="/sites/" class="sidebar-link">
+🏗 Sites
+</a>
+
+<a href="{% url 'reports' %}" class="sidebar-link">
+📊 Reports
+</a>
+
+<a href="{% url 'masters_and_payments' %}" class="sidebar-link">
+🧩 Masters
+</a>
+
+<a href="{% url 'owner_cash_list' %}" class="sidebar-link">
+💰 Owner Cash
+</a>
+
 </nav>
+
+</aside>
 
 <!-- ================= MAIN ================= -->
 
@@ -261,44 +324,7 @@ min-h-[70vh]">
 </div>
 
 </main>
-<!-- ================= MOBILE NAV ================= -->
 
-<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-
-<div class="grid grid-cols-5 text-xs text-center">
-
-<a href="/" class="py-2 flex flex-col items-center
-{% if request.path == '/' %}text-yellow-500{% else %}text-slate-600{% endif %}">
-<span>🏠</span>
-<span>Home</span>
-</a>
-
-<a href="/sites/" class="py-2 flex flex-col items-center
-{% if '/sites' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
-<span>🏗</span>
-<span>Sites</span>
-</a>
-
-<a href="{% url 'reports' %}" class="py-2 flex flex-col items-center
-{% if 'reports' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
-<span>📊</span>
-<span>Reports</span>
-</a>
-
-<a href="{% url 'masters_and_payments' %}" class="py-2 flex flex-col items-center
-{% if 'masters' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
-<span>🧩</span>
-<span>Masters</span>
-</a>
-
-<a href="{% url 'owner_cash_list' %}" class="py-2 flex flex-col items-center
-{% if 'owner-cash' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
-<span>💰</span>
-<span>Cash</span>
-</a>
-
-</div>
-</nav>
 <!-- ================= FOOTER ================= -->
 
 <footer class="footer">
@@ -306,6 +332,28 @@ min-h-[70vh]">
 © {{ now|date:"Y" }} SK Builders Civil Management System
 
 </footer>
+<script>
 
+function openSidebar(){
+document
+.getElementById("mobileSidebar")
+.classList.remove("-translate-x-full");
+
+document
+.getElementById("sidebarOverlay")
+.classList.remove("hidden");
+}
+
+function closeSidebar(){
+document
+.getElementById("mobileSidebar")
+.classList.add("-translate-x-full");
+
+document
+.getElementById("sidebarOverlay")
+.classList.add("hidden");
+}
+
+</script>
 </body>
 </html>

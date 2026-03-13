@@ -1,329 +1,457 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-6 py-10 space-y-10 animate-fade">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="space-y-10">
 
 <!-- ================= HEADER ================= -->
 
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-  <div>
-    <h2 class="text-3xl font-extrabold text-slate-900">🏗 Sites Dashboard</h2>
-    <p class="text-sm text-gray-500 mt-1">Manage and monitor all construction sites</p>
-  </div>
+<div class="flex items-center justify-between">
 
-  <!-- SEARCH -->
-  <input
-    id="siteSearch"
-    onkeyup="filterSites()"
-    placeholder="Search sites..."
-    class="w-full sm:w-64 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
+<div>
+<h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">
+📊 Construction Dashboard
+</h1>
+
+<p class="text-sm text-gray-500 mt-1">
+Real-time overview of project costs and activity
+</p>
 </div>
 
-
-<!-- ================= STATS ================= -->
-
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-<div class="stat-card">
-<span>Total Sites</span>
-<strong>{{ sites|length }}</strong>
-</div>
-
-
-</div>
-
-
-<!-- ================= EMPTY ================= -->
-
-{% if not sites %}
-<div class="text-center py-20">
-<p class="text-gray-400 font-semibold">No sites added yet.</p>
-</div>
-{% endif %}
-
-
-<!-- ================= GRID ================= -->
-
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-{% for row in sites %}
-
-<div class="site-card" data-name="{{ row.site.name|lower }}">
-
-<!-- CARD HEADER -->
-
-<div class="site-header">
-
-<div class="title">
-<h3>{{ row.site.name }}</h3>
-<span class="status">Active</span>
+<div class="text-sm text-gray-500">
+{{ now|date:"d M Y" }}
 </div>
 
 </div>
 
 
-<!-- CARD DETAILS -->
 
-<div class="site-details">
+<!-- ================= STAT CARDS ================= -->
 
-<div class="metric blue">
-<span>This Week</span>
-<strong>₹{{ row.weekly_total|default:0 }}</strong>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+<div class="stat-card bg-gradient-to-br from-indigo-500 to-indigo-700">
+<div class="stat-icon">🏗</div>
+<div>
+<p class="stat-label">Total Sites</p>
+<p class="stat-value">{{ total_sites }}</p>
+</div>
 </div>
 
-<div class="metric red">
-<span>Advance</span>
-<strong>₹{{ row.today_advance|default:0 }}</strong>
+
+<div class="stat-card bg-gradient-to-br from-amber-400 to-orange-600">
+<div class="stat-icon">👷</div>
+<div>
+<p class="stat-label">Labour Today</p>
+<p class="stat-value">₹{{ today_labour|floatformat:0 }}</p>
+</div>
 </div>
 
 
-<!-- ACTIONS -->
+<div class="stat-card bg-gradient-to-br from-green-400 to-emerald-600">
+<div class="stat-icon">🧱</div>
+<div>
+<p class="stat-label">Material Cost</p>
+<p class="stat-value">₹{{ material_total|floatformat:0 }}</p>
+</div>
+</div>
 
-<div class="actions">
 
-<a href="/site/{{ row.site.id }}/" class="btn-primary">
-Open
-</a>
-
-<form method="post"
-action="/delete-site/{{ row.site.id }}/"
-onsubmit="return confirm('Delete site?')">
-
-{% csrf_token %}
-
-<button type="submit" class="btn-danger">
-Delete
-</button>
-
-</form>
-
+<div class="stat-card bg-gradient-to-br from-rose-400 to-red-600">
+<div class="stat-icon">💰</div>
+<div>
+<p class="stat-label">Expenses</p>
+<p class="stat-value">₹{{ expense_total|floatformat:0 }}</p>
+</div>
 </div>
 
 </div>
 
+
+<div class="flex justify-end mb-4">
+
+<select id="rangeSelect"
+        onchange="changeRange()"
+        class="border rounded-lg px-3 py-2 text-sm font-semibold">
+
+<option value="week"
+{% if selected_range == "week" %}selected{% endif %}>
+This Week
+</option>
+
+<option value="month"
+{% if selected_range == "month" %}selected{% endif %}>
+This Month
+</option>
+
+</select>
+
 </div>
+<!-- ================= CHART + SITES ================= -->
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+<!-- COST CHART -->
+
+<div class="glass-card lg:col-span-2">
+
+<div class="flex justify-between items-center mb-4">
+
+<h2 class="font-bold text-lg text-slate-700">
+📈 {{ selected_range|title }} Project Cost
+</h2>
+
+</div>
+
+<canvas id="costChart" height="120"></canvas>
+
+</div>
+
+
+
+
+<!-- TOP SITES -->
+
+<div class="glass-card">
+
+<h2 class="font-bold text-lg text-slate-700 mb-4">
+🏗 Top Sites
+</h2>
+
+<div class="space-y-4">
+
+{% for s in top_sites %}
+
+<div class="site-row">
+
+<div>
+<p class="font-bold text-slate-700">
+{{ s.site.name }}
+</p>
+
+<div class="progress">
+<div class="progress-bar"
+style="width:{{ forloop.counter|add:'20' }}%">
+</div>
+</div>
+
+</div>
+
+<p class="site-cost">
+₹{{ s.total|floatformat:0 }}
+</p>
+
+</div>
+
+{% empty %}
+
+<p class="text-gray-400 text-sm">
+No site data available
+</p>
 
 {% endfor %}
 
 </div>
+
 </div>
+
+</div>
+
+
+<div class="glass-card mt-8">
+
+<h2 class="font-bold text-lg text-slate-700 mb-4">
+🏗 Site Cost Comparison
+</h2>
+
+<canvas id="siteChart" height="120"></canvas>
+
+</div>
+
+<!-- ================= PROJECT TABLE ================= -->
+
+<div class="glass-card">
+
+<div class="flex justify-between mb-4">
+
+<h2 class="font-bold text-lg text-slate-700">
+📋 Site Cost Summary
+</h2>
+
+</div>
+
+<div class="overflow-x-auto">
+
+<table class="w-full text-sm">
+
+<thead class="table-head">
+
+<tr>
+<th class="p-3 text-left">Site</th>
+<th class="p-3 text-right">Weekly Cost</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for s in top_sites %}
+
+<tr class="table-row">
+
+<td class="p-3 font-semibold">
+{{ s.site.name }}
+</td>
+
+<td class="p-3 text-right font-bold text-green-700">
+₹{{ s.total|floatformat:0 }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- ================= CHART SCRIPT ================= -->
+
+<script>
+function changeRange(){
+
+const range = document.getElementById("rangeSelect").value;
+
+window.location.href = "?range=" + range;
+
+}
+
+const labels = JSON.parse('{{ chart_labels|escapejs }}');
+const values = JSON.parse('{{ chart_values|escapejs }}');
+
+const ctx = document.getElementById("costChart");
+
+new Chart(ctx, {
+
+type: "line",
+
+data: {
+
+labels: labels,
+
+datasets: [{
+
+label: "Cost",
+
+data: values,
+
+borderColor: "#6366f1",
+
+backgroundColor: "rgba(99,102,241,0.15)",
+
+fill: true,
+
+tension: 0.4,
+
+pointRadius: 4
+
+}]
+
+},
+
+options: {
+
+responsive: true,
+
+plugins: {
+
+legend: { display: false }
+
+},
+
+scales: {
+
+y: {
+
+ticks: {
+
+callback: function(value){
+
+return "₹"+value;
+
+}
+
+}
+
+}
+
+}
+
+}
+
+});
+
+const siteLabels = JSON.parse('{{ site_labels|escapejs }}');
+const siteValues = JSON.parse('{{ site_costs|escapejs }}');
+
+new Chart(document.getElementById("siteChart"),{
+
+type:"bar",
+
+data:{
+labels:siteLabels,
+
+datasets:[{
+label:"Total Cost",
+
+data:siteValues,
+
+backgroundColor:"#6366f1",
+
+borderRadius:6
+
+}]
+},
+
+options:{
+responsive:true,
+
+plugins:{
+legend:{display:false}
+},
+
+scales:{
+y:{
+ticks:{
+callback:(v)=>"₹"+v
+}
+}
+}
+
+}
+
+});
+</script>
+
 
 
 <!-- ================= STYLES ================= -->
 
 <style>
 
-.animate-fade{
-animation:fadeIn .4s ease-out;
-}
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:translateY(0)}
-}
-
-/* ===== STATS ===== */
+/* ===== STAT CARDS ===== */
 
 .stat-card{
-background:white;
-border-radius:14px;
-padding:18px;
-border:1px solid #e5e7eb;
-box-shadow:0 10px 25px rgba(0,0,0,.05);
 display:flex;
-flex-direction:column;
-gap:6px;
-}
-
-.stat-card span{
-font-size:12px;
-color:#6b7280;
-}
-
-.stat-card strong{
-font-size:22px;
-font-weight:900;
-color:#111827;
-}
-
-
-/* ===== SITE CARD ===== */
-
-.site-card{
-position:relative;
-background:linear-gradient(145deg,#ffffff,#fffbeb);
+align-items:center;
+gap:14px;
+padding:22px;
 border-radius:18px;
-padding:20px;
-border:1px solid #fde68a;
-box-shadow:0 10px 30px rgba(0,0,0,.05);
-transition:.35s ease;
-display:flex;
-flex-direction:column;
-min-height:170px;
-overflow:hidden;
+color:white;
+box-shadow:0 20px 40px rgba(0,0,0,.15);
+transition:.25s;
 }
 
-.site-card::before{
-content:"";
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:5px;
-background:linear-gradient(90deg,#facc15,#f97316);
+.stat-card:hover{
+transform:translateY(-4px);
+box-shadow:0 25px 50px rgba(0,0,0,.25);
 }
 
-.site-card:hover{
-transform:translateY(-6px);
-box-shadow:0 18px 45px rgba(0,0,0,.1);
+.stat-icon{
+font-size:26px;
+background:rgba(255,255,255,.2);
+padding:10px;
+border-radius:10px;
 }
 
-/* ===== HEADER ===== */
-
-.site-header h3{
-font-size:1.3rem;
-font-weight:800;
-color:#0f172a;
+.stat-label{
+font-size:13px;
+font-weight:700;
+opacity:.9;
 }
 
-.title{
+.stat-value{
+font-size:26px;
+font-weight:900;
+}
+
+
+
+/* ===== GLASS CARDS ===== */
+
+.glass-card{
+background:rgba(255,255,255,.75);
+backdrop-filter:blur(16px);
+border-radius:18px;
+border:1px solid rgba(0,0,0,.05);
+padding:24px;
+box-shadow:0 20px 50px rgba(0,0,0,.08);
+}
+
+
+
+/* ===== SITE ROW ===== */
+
+.site-row{
 display:flex;
 justify-content:space-between;
 align-items:center;
+gap:12px;
 }
 
-.status{
-font-size:11px;
-background:#ecfdf5;
-color:#047857;
-padding:3px 8px;
-border-radius:20px;
-font-weight:700;
-}
-
-/* ===== DETAILS ===== */
-
-.site-details{
-margin-top:14px;
-display:flex;
-flex-direction:column;
-gap:8px;
-}
-
-/* ===== METRICS ===== */
-
-.metric{
-display:flex;
-justify-content:space-between;
-padding:8px 10px;
-border-radius:10px;
-font-size:13px;
-font-weight:600;
-}
-
-.metric strong{
+.site-cost{
 font-weight:900;
+color:#166534;
 }
 
-.metric.blue{
-background:#eff6ff;
-color:#1d4ed8;
+
+
+/* ===== PROGRESS ===== */
+
+.progress{
+width:140px;
+height:6px;
+background:#e5e7eb;
+border-radius:4px;
+margin-top:4px;
 }
 
-.metric.red{
-background:#fef2f2;
-color:#b91c1c;
+.progress-bar{
+height:100%;
+background:#6366f1;
+border-radius:4px;
 }
 
-/* ===== ACTIONS ===== */
-.actions{
-margin-top:10px;
-display:flex;
-gap:8px;
-flex-wrap:wrap;
+
+
+/* ===== TABLE ===== */
+
+.table-head{
+background:#f8fafc;
+font-weight:800;
+color:#475569;
 }
 
-/* ===== BUTTONS ===== */
-
-.btn-primary{
-background:#2563eb;
-color:white;
-padding:6px 14px;
-border-radius:8px;
-font-size:13px;
-font-weight:700;
-text-decoration:none;
+.table-row{
+border-bottom:1px solid #f1f5f9;
+transition:.15s;
 }
 
-.btn-primary:hover{
-background:#1d4ed8;
+.table-row:hover{
+background:#f8fafc;
 }
 
-.btn-danger{
-background:#dc2626;
-color:white;
-padding:6px 14px;
-border:none;
-border-radius:8px;
-font-size:13px;
-font-weight:700;
-cursor:pointer;
-}
-
-.btn-danger:hover{
-background:#b91c1c;
-}
-.site-card{
-cursor:pointer;
-}
-@media (max-width:640px){
-
-.site-card{
-padding:16px;
-min-height:auto;
-}
-
-.site-header h3{
-font-size:1.1rem;
-}
-
-.metric{
-font-size:12px;
-padding:7px 8px;
-}
-
-.stat-card{
-padding:14px;
-}
-
-.stat-card strong{
-font-size:18px;
-}
-
-}
 
 </style>
-
-
-<!-- ================= SEARCH ================= -->
-
-<script>
-
-function filterSites(){
-
-const input=document.getElementById("siteSearch");
-const val=input.value.toLowerCase();
-
-document.querySelectorAll(".site-card").forEach(card=>{
-
-card.style.display =
-card.dataset.name.includes(val) ? "block" : "none";
-
-});
-
-}
-
-</script>
 
 
 {% endblock %}

@@ -3,15 +3,20 @@ from . import views
 
 urlpatterns = [
 
-    # ================= DASHBOARD =================
+    # ================= Dashboard =================
     path("", views.dashboard, name="dashboard"),
+    
 
     # ================= SITE =================
-    path("sites/", views.site_manage, name="site_manage"),
-    path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
-    path("edit-site/<int:id>/", views.edit_site, name="edit_site"),
+    path("sites/", views.site_entry, name="site_entry"),
+    
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
     path("site/<int:site_id>/copy-previous/", views.copy_previous_day, name="copy_previous_day",),
+
+    path("add-site/", views.add_site, name="add_site"),
+    path("edit-site/<int:id>/", views.edit_site, name="edit_site"),
+    path("delete-site/<int:id>/", views.delete_site, name="delete_site"),
+    
     path("owners/cash/", views.owner_cash_list, name="owner_cash_list"),
     path("owners/cash/add/", views.owner_cash_add, name="owner_cash_add"),
 
