@@ -1791,13 +1791,13 @@ def copy_previous_day(request, site_id):
 
         # ================= DESCRIPTION =================
         if copy_desc:
-            prev_desc = DailyNote.objects.filter(
+            prev_desc = SiteDailyNote.objects.filter(
                 site=site,
                 date=prev_date
             ).first()
 
             if prev_desc:
-                DailyNote.objects.update_or_create(
+                SiteDailyNote.objects.update_or_create(
                     site=site,
                     date=today,
                     defaults={"description": prev_desc.description}

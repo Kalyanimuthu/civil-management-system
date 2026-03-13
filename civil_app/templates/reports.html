@@ -18,6 +18,9 @@
 </div>
 
 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+  <button onclick="toggleFilters()" class="btn-secondary">
+  ☰ Filters
+  </button>
   <a href="{% url 'all_bills' %}" class="btn-soft-yellow">
     📑 View Bills
   </a>
@@ -26,6 +29,7 @@
         class="btn-primary">
   🔍 View Day Details
 </button>
+
 </div>
 
 
@@ -37,9 +41,11 @@
 
 
 <!-- ================= FILTER PANEL ================= -->
-<aside class="glass-card p-4 md:p-5 space-y-5 h-fit lg:sticky lg:top-6">
+<aside id="filterPanel" class="glass-card p-4 md:p-5 space-y-5 h-fit sticky top-6 self-start hidden">
 
-  <h3 class="font-bold text-slate-800 text-lg">🔍 Filters</h3>
+  <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+Filters
+</h3>
 
   <a href="{% url 'report_pdf' %}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&site={{ selected_site }}&team={{ selected_team }}&department={{ selected_department }}"
      class="block text-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 py-2 rounded-lg font-bold shadow">
@@ -98,8 +104,8 @@
       </select>
     </div>
 
-    <button class="btn-primary w-full">
-      Apply Filters
+    <button onclick="hideFilters()" class="btn-primary w-full">
+    Apply Filters
     </button>
 
     <a href="{% url 'reports' %}" class="btn-secondary w-full text-center block">
@@ -214,7 +220,9 @@ body{
 }
 
 /* ================= GLASS CARD ================= */
-
+aside.glass-card{
+padding:22px;
+}
 .glass-card{
   background:rgba(255,255,255,.85);
   backdrop-filter:blur(20px);
@@ -368,11 +376,11 @@ body{
 }
 
 /* ================= DASHBOARD GRID ================= */
-
 .dashboard-grid{
-  display:grid;
-  grid-template-columns:240px minmax(0,1fr);
-  gap:26px;
+display:grid;
+grid-template-columns:1fr;
+gap:26px;
+transition:.25s ease;
 }
 
 .dashboard-main{
@@ -501,6 +509,33 @@ function closeDayModal(){
   const modal = document.getElementById("dayModal");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
+}
+function toggleFilters(){
+
+const panel = document.getElementById("filterPanel");
+const grid = document.querySelector(".dashboard-grid");
+
+if(panel.classList.contains("hidden")){
+
+panel.classList.remove("hidden");
+grid.style.gridTemplateColumns = "220px 1fr";
+
+}else{
+
+panel.classList.add("hidden");
+grid.style.gridTemplateColumns = "1fr";
+
+}
+
+}
+function hideFilters(){
+
+const panel = document.getElementById("filterPanel");
+const grid = document.querySelector(".dashboard-grid");
+
+panel.classList.add("hidden");
+grid.style.gridTemplateColumns = "1fr";
+
 }
 </script>
 {% endblock %}

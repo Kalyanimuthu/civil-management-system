@@ -45,7 +45,7 @@ color:var(--text);
 
 .nav-link{
 position:relative;
-padding:16px 8px;
+padding:14px 10px;
 display:inline-flex;
 align-items:center;
 gap:6px;
@@ -118,16 +118,6 @@ padding:16px;
 margin-top:auto;
 }
 
-/* ===== MOBILE SCALE ===== */
-
-@media (max-width:768px){
-
-html{
-zoom:.9;
-}
-
-}
-
 </style>
 
 </head>
@@ -136,9 +126,10 @@ zoom:.9;
 
 <!-- ================= HEADER ================= -->
 
-<header class="bg-slate-800 text-white px-6 py-4
-flex items-center justify-between
-shadow-xl relative overflow-hidden">
+<header class="bg-slate-800 text-white px-4 py-4
+flex flex-col sm:flex-row
+sm:items-center sm:justify-between
+gap-3 shadow-xl relative overflow-hidden">
 
 <!-- background glow -->
 
@@ -150,7 +141,7 @@ from-yellow-400/10 via-transparent to-transparent"></div>
 <div class="relative flex items-center gap-3">
 
 <img src="{% static 'images/logo.jpeg' %}"
-class="h-10 rounded-lg shadow">
+class="h-9 sm:h-10 rounded-lg shadow">
 
 <div>
 <h1 class="font-extrabold text-lg">
@@ -201,13 +192,16 @@ Login
 
 <!-- ================= NAV ================= -->
 
-<nav class="sticky top-0 z-40 border-b glass shadow-sm">
+<nav class="hidden md:block sticky top-0 z-40 border-b glass shadow-sm">
 
 <div class="max-w-7xl mx-auto px-4">
 
-<ul class="flex gap-8 justify-center
-overflow-x-auto whitespace-nowrap
-text-sm">
+<ul class="flex gap-6 sm:gap-8
+justify-start sm:justify-center
+overflow-x-auto
+scrollbar-hide
+whitespace-nowrap
+text-sm px-2">
 
 <li>
 <a href="/"
@@ -253,13 +247,13 @@ class="nav-link {% if 'owner-cash' in request.path %}active{% endif %}">
 <!-- ================= MAIN ================= -->
 
 <main class="flex-1 max-w-7xl mx-auto w-full
-px-4 md:px-6 py-6 animate-page">
+px-4 md:px-6 py-6 pb-24 md:pb-6 animate-page">
 
 <div class="bg-white
 rounded-2xl
 shadow-sm
 border border-slate-200
-p-6
+p-4 sm:p-6
 min-h-[70vh]">
 
 {% block content %}{% endblock %}
@@ -267,7 +261,44 @@ min-h-[70vh]">
 </div>
 
 </main>
+<!-- ================= MOBILE NAV ================= -->
 
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+
+<div class="grid grid-cols-5 text-xs text-center">
+
+<a href="/" class="py-2 flex flex-col items-center
+{% if request.path == '/' %}text-yellow-500{% else %}text-slate-600{% endif %}">
+<span>🏠</span>
+<span>Home</span>
+</a>
+
+<a href="/sites/" class="py-2 flex flex-col items-center
+{% if '/sites' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
+<span>🏗</span>
+<span>Sites</span>
+</a>
+
+<a href="{% url 'reports' %}" class="py-2 flex flex-col items-center
+{% if 'reports' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
+<span>📊</span>
+<span>Reports</span>
+</a>
+
+<a href="{% url 'masters_and_payments' %}" class="py-2 flex flex-col items-center
+{% if 'masters' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
+<span>🧩</span>
+<span>Masters</span>
+</a>
+
+<a href="{% url 'owner_cash_list' %}" class="py-2 flex flex-col items-center
+{% if 'owner-cash' in request.path %}text-yellow-500{% else %}text-slate-600{% endif %}">
+<span>💰</span>
+<span>Cash</span>
+</a>
+
+</div>
+</nav>
 <!-- ================= FOOTER ================= -->
 
 <footer class="footer">
