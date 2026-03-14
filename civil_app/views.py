@@ -1319,16 +1319,18 @@ def all_bills(request):
 
 @login_required
 def all_bills_pdf(request):
+
     from_date = parse_date(request.GET.get("from_date"))
     to_date = parse_date(request.GET.get("to_date"))
 
     if not from_date:
         from_date = date.today()
+
     if not to_date:
         to_date = date.today()
 
     # =================================================
-    # ================= CIVIL (TEAM → SITE) ===========
+    # ================= CIVIL =========================
     # =================================================
 
     teams = (
@@ -1341,14 +1343,19 @@ def all_bills_pdf(request):
     civil_rows = []
 
     for t in teams:
+
         team_id = t["team_id"]
 
-        # ---- SITE WORK ----
         site_qs = (
             CivilDailyWork.objects
             .filter(team_id=team_id, date__range=[from_date, to_date])
             .values("site_id", "site__name")
             .annotate(
+                labour=Coalesce(
+                    Sum("labour_amount"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
                 total=Coalesce(
                     Sum("total_amount"),
                     Value(0),
@@ -1358,7 +1365,6 @@ def all_bills_pdf(request):
             .order_by("site__name")
         )
 
-        # ---- SITE ADVANCE MAP (🔥 FIXED) ----
         adv_qs = (
             CivilAdvance.objects
             .filter(team_id=team_id, date__range=[from_date, to_date])
@@ -1372,32 +1378,31 @@ def all_bills_pdf(request):
             )
         )
 
-        advance_map = {
-            a["site_id"]: a["advance"]
-            for a in adv_qs
-        }
+        advance_map = {a["site_id"]: a["advance"] for a in adv_qs}
 
         sites = []
-        team_total = 0
+        team_labour_total = 0
         team_adv_total = 0
+        team_total = 0
 
         for s in site_qs:
-            site_id = s["site_id"]
 
-            adv = advance_map.get(site_id, 0)
-            tot = s["total"] or 0
+            adv = advance_map.get(s["site_id"], 0)
 
-            team_total += tot
+            team_labour_total += s["labour"]
             team_adv_total += adv
+            team_total += s["total"]
 
             sites.append({
                 "site": s["site__name"],
-                "advance": adv,  # ✅ NOW WORKS
-                "total": tot,
+                "labour": s["labour"],
+                "advance": adv,
+                "total": s["total"],
             })
 
         civil_rows.append({
             "name": t["team__name"],
+            "labour": team_labour_total,
             "advance": team_adv_total,
             "total": team_total,
             "sites": sites,
@@ -1406,6 +1411,7 @@ def all_bills_pdf(request):
     # =================================================
     # ================= DEPARTMENT ====================
     # =================================================
+
     departments = (
         DepartmentWork.objects
         .filter(date__range=[from_date, to_date])
@@ -1416,6 +1422,7 @@ def all_bills_pdf(request):
     dept_rows = []
 
     for d in departments:
+
         dept_id = d["department_id"]
 
         site_qs = (
@@ -1423,28 +1430,46 @@ def all_bills_pdf(request):
             .filter(department_id=dept_id, date__range=[from_date, to_date])
             .values("site_id", "site__name")
             .annotate(
-                advance=Coalesce(Sum("advance_amount"), Value(0), output_field=FloatField()),
-                total=Coalesce(Sum("total_amount"), Value(0), output_field=FloatField()),
+                labour=Coalesce(
+                    Sum("labour_amount"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
+                advance=Coalesce(
+                    Sum("advance_amount"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
+                total=Coalesce(
+                    Sum("total_amount"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
             )
             .order_by("site__name")
         )
 
         sites = []
+        lab_total = 0
         adv_total = 0
         amt_total = 0
 
         for s in site_qs:
+
+            lab_total += s["labour"]
             adv_total += s["advance"]
             amt_total += s["total"]
 
             sites.append({
                 "site": s["site__name"],
+                "labour": s["labour"],
                 "advance": s["advance"],
                 "total": s["total"],
             })
 
         dept_rows.append({
             "name": d["department__name"],
+            "labour": lab_total,
             "advance": adv_total,
             "total": amt_total,
             "sites": sites,
@@ -1453,6 +1478,7 @@ def all_bills_pdf(request):
     # =================================================
     # ================= MATERIAL ======================
     # =================================================
+
     agents = (
         MaterialEntry.objects
         .filter(date__range=[from_date, to_date])
@@ -1463,6 +1489,7 @@ def all_bills_pdf(request):
     material_rows = []
 
     for a in agents:
+
         name = a["agent_name"]
 
         site_qs = (
@@ -1470,8 +1497,16 @@ def all_bills_pdf(request):
             .filter(agent_name=name, date__range=[from_date, to_date])
             .values("site_id", "site__name")
             .annotate(
-                advance=Coalesce(Sum("advance"), Value(0), output_field=FloatField()),
-                total_raw=Coalesce(Sum("total"), Value(0), output_field=FloatField()),
+                advance=Coalesce(
+                    Sum("advance"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
+                total_raw=Coalesce(
+                    Sum("total"),
+                    Value(0),
+                    output_field=FloatField()
+                ),
             )
             .order_by("site__name")
         )
@@ -1481,6 +1516,7 @@ def all_bills_pdf(request):
         amt_total = 0
 
         for s in site_qs:
+
             payable = (s["total_raw"] or 0) - (s["advance"] or 0)
 
             adv_total += s["advance"]
@@ -1506,7 +1542,7 @@ def all_bills_pdf(request):
     site_qs = (
         OtherExpense.objects
         .filter(date__range=[from_date, to_date])
-        .values("site__name")
+        .values("site_id", "site__name")
         .annotate(
             total=Coalesce(
                 Sum("amount"),
@@ -1521,11 +1557,9 @@ def all_bills_pdf(request):
 
     for s in site_qs:
 
-        site_name = s["site__name"] or "-"
-
         exp_qs = (
             OtherExpense.objects
-            .filter(site__name=site_name, date__range=[from_date, to_date])
+            .filter(site_id=s["site_id"], date__range=[from_date, to_date])
             .values("title", "owner__name")
             .annotate(
                 total=Coalesce(
@@ -1534,7 +1568,6 @@ def all_bills_pdf(request):
                     output_field=FloatField()
                 )
             )
-            .order_by("title")
         )
 
         expenses = []
@@ -1547,7 +1580,7 @@ def all_bills_pdf(request):
             })
 
         expense_rows.append({
-            "site": site_name,
+            "site": s["site__name"],
             "total": s["total"],
             "expenses": expenses,
         })
@@ -1556,10 +1589,10 @@ def all_bills_pdf(request):
     # ================= GRAND TOTAL ===================
     # =================================================
 
-    civil_sum = sum(row["total"] for row in civil_rows)
-    dept_sum = sum(d["total"] for d in dept_rows)
-    material_sum = sum(m["total"] for m in material_rows)
-    expense_sum = sum(e["total"] for e in expense_rows)
+    civil_sum = sum(r["total"] for r in civil_rows)
+    dept_sum = sum(r["total"] for r in dept_rows)
+    material_sum = sum(r["total"] for r in material_rows)
+    expense_sum = sum(r["total"] for r in expense_rows)
 
     grand_total = civil_sum + dept_sum + material_sum + expense_sum
 
@@ -1576,7 +1609,6 @@ def all_bills_pdf(request):
             "now": timezone.now(),
         },
     )
-
 
 @login_required
 def bill_civil_detail(request, team_id):
