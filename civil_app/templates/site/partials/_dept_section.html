@@ -19,6 +19,7 @@
 <option value="">+ Add Team</option>
 
 {% for d in other_depts %}
+
 <option 
 value="{{ d.id }}"
 data-rate="{{ default_rates|get_item:d.id|default:0 }}">
@@ -28,12 +29,9 @@ data-rate="{{ default_rates|get_item:d.id|default:0 }}">
 
 </select>
 
-
-
 </div>
 
 </div>
-
 
 <!-- CARD -->
 
@@ -41,14 +39,7 @@ data-rate="{{ default_rates|get_item:d.id|default:0 }}">
 
 <!-- HEADER -->
 
-<div class="table-head-modern"
-style="grid-template-columns:
-minmax(200px,1.6fr)
-repeat(2,minmax(70px,.8fr))
-minmax(90px,.9fr)
-minmax(100px,1fr)
-minmax(110px,1fr)
-minmax(110px,1fr);">
+<div class="table-head-modern dept-grid">
 
 <div>Department</div>
 <div class="text-center">Full</div>
@@ -60,7 +51,6 @@ minmax(110px,1fr);">
 
 </div>
 
-
 <!-- BODY -->
 
 <div id="deptBody" class="table-body-modern">
@@ -68,15 +58,7 @@ minmax(110px,1fr);">
 {% for id,row in dept_map.items %}
 {% with dept=row.department %}
 
-<div id="dept_row_{{ dept.id }}"
-class="table-row-modern dept-row"
-style="grid-template-columns:
-minmax(200px,1.6fr)
-repeat(2,minmax(70px,.8fr))
-minmax(90px,.9fr)
-minmax(100px,1fr)
-minmax(110px,1fr)
-minmax(110px,1fr);">
+<div id="dept_row_{{ dept.id }}" class="table-row-modern dept-grid dept-row">
 
 <div class="font-semibold">{{ dept.name }}</div>
 
@@ -120,23 +102,35 @@ class="table-box-modern total-modern">
 </div>
 
 </div>
-<!-- ===== DEPT PREMIUM POLISH ===== -->
+
+<!-- ================= STYLES ================= -->
+
 <style>
-/* ===== SECTION HEADER ===== */
+
+/* GRID */
+
+.dept-grid{
+display:grid;
+grid-template-columns:
+minmax(200px,1.6fr)
+repeat(2,minmax(70px,.8fr))
+minmax(90px,.9fr)
+minmax(100px,1fr)
+minmax(110px,1fr)
+minmax(110px,1fr);
+}
+
+/* SECTION HEADER */
 
 .section-header-modern{
 display:flex;
 align-items:center;
 justify-content:space-between;
-
 padding:14px 18px;
 border-radius:14px;
-
 border:1px solid #e2e8f0;
 background:linear-gradient(180deg,#ffffff,#f8fafc);
-
 font-weight:900;
-cursor:pointer;
 margin-top:22px;
 }
 
@@ -151,7 +145,6 @@ width:32px;
 height:32px;
 border-radius:8px;
 background:#f1f5f9;
-
 display:flex;
 align-items:center;
 justify-content:center;
@@ -159,11 +152,10 @@ justify-content:center;
 
 .section-actions{
 display:flex;
-align-items:center;
 gap:10px;
 }
 
-/* ===== CARD ===== */
+/* CARD */
 
 .table-card-modern{
 margin-top:8px;
@@ -171,38 +163,40 @@ background:white;
 border-radius:18px;
 border:1px solid #e5e7eb;
 overflow:hidden;
-
 box-shadow:
 0 10px 30px rgba(0,0,0,.05),
 inset 0 1px 0 rgba(255,255,255,.6);
 }
 
-/* ===== HEADER ===== */
+/* HEADER */
 
 .table-head-modern{
 display:grid;
 background:linear-gradient(180deg,#f8fafc,#eef2ff);
 padding:10px 14px;
-
 font-size:.72rem;
 font-weight:900;
 color:#475569;
-
 border-bottom:1px solid #e5e7eb;
 letter-spacing:.04em;
 }
 
-/* ===== ROW ===== */
+/* BODY */
+
+.table-body-modern{
+max-height:420px;
+overflow-y:auto;
+}
+
+/* ROW */
 
 .table-row-modern{
 display:grid;
 align-items:center;
 gap:8px;
 padding:10px 14px;
-
 border-bottom:1px solid #f1f5f9;
 background:white;
-transition:.15s ease;
 }
 
 .table-row-modern:nth-child(even){
@@ -213,14 +207,13 @@ background:#fafafa;
 background:#f8fafc;
 }
 
-/* ===== INPUT ===== */
+/* INPUT */
 
 .table-input-modern{
+width:100%;
 height:32px;
-
 border:1px solid #e2e8f0;
 border-radius:8px;
-
 padding:2px 8px;
 font-size:.82rem;
 font-weight:700;
@@ -232,22 +225,20 @@ border-color:#facc15;
 box-shadow:0 0 0 2px rgba(250,204,21,.18);
 }
 
-/* ===== BOX ===== */
+/* BOX */
 
 .table-box-modern{
 height:32px;
 display:flex;
 align-items:center;
 justify-content:center;
-
 background:#f1f5f9;
 border-radius:6px;
-
 font-weight:800;
 font-size:.82rem;
 }
 
-/* ===== FINANCIAL COLORS ===== */
+/* COLORS */
 
 .labour-modern{
 background:#fff7ed;
@@ -267,7 +258,7 @@ background:#fff7ed;
 background:linear-gradient(180deg,#ffffff,#fef3c7);
 }
 
-/* ===== MOBILE ===== */
+/* MOBILE */
 
 @media (max-width:768px){
 
@@ -276,9 +267,11 @@ min-width:760px;
 }
 
 }
+
 </style>
 
-<!-- ===== SAFE TOGGLE HELPER ===== -->
+<!-- ================= SCRIPT ================= -->
+
 <script>
 
 document.getElementById("deptSelect")
@@ -286,59 +279,79 @@ document.getElementById("deptSelect")
 
 function addDept(){
 
-  const select = document.getElementById("deptSelect");
-  const option = select.options[select.selectedIndex];
+const select = document.getElementById("deptSelect");
+const option = select.options[select.selectedIndex];
 
-  const deptId = option.value;
-  const deptName = option.text;
-  const rate = option.dataset.rate;
+const deptId = option.value;
+const deptName = option.text;
+const rate = option.dataset.rate;
 
-  if(!deptId){
-    alert("Select department first");
-    return;
-  }
-
-  if(document.getElementById("dept_row_"+deptId)){
-    alert("Department already added");
-    return;
-  }
-
-  const container = document.getElementById("deptBody");
-
-  const html = `
-  <div id="dept_row_${deptId}" class="table-row-modern dept-row"
-  style="grid-template-columns:
-  minmax(200px,1.6fr)
-  repeat(2,minmax(70px,.8fr))
-  minmax(90px,.9fr)
-  minmax(100px,1fr)
-  minmax(110px,1fr)
-  minmax(110px,1fr);">
-
-  <div class="font-semibold">${deptName}</div>
-
-  <input name="dept_full_${deptId}" class="table-input-modern money"
-  oninput="calcDept(${deptId})">
-
-  <input name="dept_half_${deptId}" class="table-input-modern money"
-  oninput="calcDept(${deptId})">
-
-  <input name="dept_rate_${deptId}" value="${rate}"
-  class="table-input-modern money"
-  oninput="calcDept(${deptId})">
-
-  <input name="dept_advance_${deptId}" class="table-input-modern money"
-  oninput="calcDept(${deptId})">
-
-  <div id="dept_labour_${deptId}" class="table-box-modern labour-modern">0</div>
-
-  <div id="dept_total_${deptId}" class="table-box-modern total-modern">0</div>
-
-  </div>
-  `;
-
-  container.insertAdjacentHTML("beforeend", html);
-
-  select.value="";
+if(!deptId){
+alert("Select department first");
+return;
 }
+
+if(document.getElementById("dept_row_"+deptId)){
+alert("Department already added");
+return;
+}
+
+const container = document.getElementById("deptBody");
+
+const html = `
+
+<div id="dept_row_${deptId}" class="table-row-modern dept-grid dept-row">
+
+<div class="font-semibold">${deptName}</div>
+
+<input name="dept_full_${deptId}" class="table-input-modern money"
+oninput="calcDept(${deptId})">
+
+<input name="dept_half_${deptId}" class="table-input-modern money"
+oninput="calcDept(${deptId})">
+
+<input name="dept_rate_${deptId}" value="${rate}"
+class="table-input-modern money"
+oninput="calcDept(${deptId})">
+
+<input name="dept_advance_${deptId}" class="table-input-modern money"
+oninput="calcDept(${deptId})">
+
+<div id="dept_labour_${deptId}" class="table-box-modern labour-modern">0</div>
+
+<div id="dept_total_${deptId}" class="table-box-modern total-modern">0</div>
+
+</div>
+
+`;
+
+container.insertAdjacentHTML("beforeend", html);
+
+select.value="";
+
+}
+
+
+/* CALCULATION */
+
+function calcDept(id){
+
+let full = +document.querySelector(`[name="dept_full_${id}"]`)?.value || 0;
+let half = +document.querySelector(`[name="dept_half_${id}"]`)?.value || 0;
+let advance = +document.querySelector(`[name="dept_advance_${id}"]`)?.value || 0;
+let rate = +document.querySelector(`[name="dept_rate_${id}"]`)?.value || 0;
+
+let labour = (full * rate) + (half * rate / 2);
+let total = Math.max(labour - advance);
+
+document.getElementById(`dept_labour_${id}`).innerText =
+labour.toLocaleString("en-IN");
+
+document.getElementById(`dept_total_${id}`).innerText =
+total.toLocaleString("en-IN");
+
+updateLiveGrandTotal();
+
+}
+
 </script>

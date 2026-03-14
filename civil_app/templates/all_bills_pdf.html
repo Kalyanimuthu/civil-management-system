@@ -353,20 +353,20 @@ color:#6b7280;
 
 <tbody>
 
-{% for e in expense_rows %}
+{% for s in expense_rows %}
 
 <tr class="group">
-<td>{{ e.name }}</td>
-<td></td>
-<td class="money total">₹{{ e.total|intcomma }}</td>
+<td>{{ s.site }}</td>
+<td>-</td>
+<td class="money total">₹{{ s.total|intcomma }}</td>
 </tr>
 
-{% for s in e.sites %}
+{% for e in s.expenses %}
 
 <tr class="child">
-<td>{{ s.site }}</td>
-<td>{{ s.owner }}</td>
-<td class="money total">₹{{ s.total|intcomma }}</td>
+<td>{{ e.name }}</td>
+<td>{{ e.owner }}</td>
+<td class="money total">₹{{ e.total|intcomma }}</td>
 </tr>
 
 {% endfor %}

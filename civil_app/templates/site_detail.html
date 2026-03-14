@@ -634,50 +634,8 @@ function money(n){
   return "₹" + Number(n || 0).toLocaleString("en-IN");
 }
 
-/* ================= CIVIL ================= */
-function calcCivil(id, masonRate, helperRate) {
 
-  const mf = +document.querySelector(`[name="mason_full_${id}"]`)?.value || 0;
-  const hf = +document.querySelector(`[name="helper_full_${id}"]`)?.value || 0;
-  const mh = +document.querySelector(`[name="mason_half_${id}"]`)?.value || 0;
-  const hh = +document.querySelector(`[name="helper_half_${id}"]`)?.value || 0;
-  const advance = +document.querySelector(`[name="advance_${id}"]`)?.value || 0;
 
-  const labour =
-    (mf * masonRate) +
-    (mh * masonRate / 2) +
-    (hf * helperRate) +
-    (hh * helperRate / 2);
-
-  const total = Math.max(labour - advance);
-
-  document.getElementById(`civil_labour_${id}`).innerText =
-    labour.toLocaleString("en-IN");
-
-  document.getElementById(`civil_total_${id}`).innerText =
-    total.toLocaleString("en-IN");
-
-  updateLiveGrandTotal();
-}
-
-/* ================= DEPT ================= */
-function calcDept(id) {
-  let full = +document.querySelector(`[name="dept_full_${id}"]`)?.value || 0;
-  let half = +document.querySelector(`[name="dept_half_${id}"]`)?.value || 0;
-  let advance = +document.querySelector(`[name="dept_advance_${id}"]`)?.value || 0;
-  let rate = +document.querySelector(`[name="dept_rate_${id}"]`)?.value || 0;
-
-  let labour = (full * rate) + (half * rate / 2);
-  let total = Math.max(labour - advance, 0);
-
-  document.getElementById(`dept_labour_${id}`).innerText =
-    labour.toLocaleString("en-IN");
-
-  document.getElementById(`dept_total_${id}`).innerText =
-    total.toLocaleString("en-IN");
-
-  updateLiveGrandTotal();
-}
 
 /* ================= LIVE GRAND ================= */
 

@@ -64,7 +64,12 @@ class CivilDailyWork(models.Model):
     helper_half = models.IntegerField(default=0)
 
     labour_amount = models.IntegerField(default=0)
-    total_amount = models.FloatField(default=0)    
+
+    # ⭐ ADD THESE
+    extra_allowance = models.FloatField(default=0)
+    allowance_type = models.CharField(max_length=50, blank=True)
+
+    total_amount = models.FloatField(default=0)
 
     class Meta:
         unique_together = ("site", "team", "date")
