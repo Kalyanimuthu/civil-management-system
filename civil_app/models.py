@@ -54,18 +54,21 @@ class TeamRate(models.Model):
 
 # ---------- CIVIL DAILY WORK ----------
 class CivilDailyWork(models.Model):
+
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     date = models.DateField()
 
     mason_full = models.IntegerField(default=0)
     mason_half = models.IntegerField(default=0)
+
     helper_full = models.IntegerField(default=0)
     helper_half = models.IntegerField(default=0)
 
-    labour_amount = models.IntegerField(default=0)
+    advance_amount = models.FloatField(default=0)
 
-    # ⭐ ADD THESE
+    labour_amount = models.FloatField(default=0)
+
     extra_allowance = models.FloatField(default=0)
     allowance_type = models.CharField(max_length=50, blank=True)
 
@@ -73,6 +76,9 @@ class CivilDailyWork(models.Model):
 
     class Meta:
         unique_together = ("site", "team", "date")
+
+    def __str__(self):
+        return f"{self.site} - {self.team} - {self.date}"
 
 # ---------- OTHER DEPARTMENT WORK ----------
 class DepartmentWork(models.Model):

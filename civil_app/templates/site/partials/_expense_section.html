@@ -44,25 +44,31 @@
              class="table-input-modern">
 
       <!-- Owner -->
-      <select name="expense_owner_{{ forloop.counter0 }}"
-              class="table-input-modern owner-select">
+      <div>
+        <select name="expense_owner_{{ forloop.counter0 }}"
+        class="table-input-modern owner-select"
+        onchange="handleOwnerChange(this)">
 
-        <option value="">Select</option>
+  <option value="">-- Choose Owner --</option>
 
-        {% for oc in owner_cash_entries %}
-          <option value="{{ oc.id }}"
-            {% if e.owner and e.owner.id == oc.id %}selected{% endif %}>
-            {{ oc.owner.name }}
-          </option>
-        {% endfor %}
+  {% for o in owners %}
+    <option value="{{ o.id }}"
+            data-balance="{{ o.balance|default:0 }}"
+            {% if e.owner and e.owner.id == o.id %}selected{% endif %}>
+      {{ o.name }}
+    </option>
+  {% endfor %}
 
-      </select>
+</select>
+
+        <div class="text-xs text-gray-500 balance-preview"></div>
+      </div>
 
       <!-- Amount -->
       <input name="expense_amount_{{ forloop.counter0 }}"
-              value="{{ e.amount }}"
-              class="table-input-modern money amount-field"
-              oninput="validateExpenseBalance(this); updateLiveGrandTotal?.()">
+             value="{{ e.amount }}"
+             class="table-input-modern money amount-field"
+             oninput="validateExpenseBalance(this); updateLiveGrandTotal?.()">
 
       <!-- Notes -->
       <input name="expense_notes_{{ forloop.counter0 }}"
@@ -85,56 +91,32 @@
 
   <!-- ===== FOOTER ===== -->
   <div class="table-footer-modern">
-    <span>💡 Expense will reduce owner balance</span>
+    <span>💡 Expense will reduce owner balance (can go negative)</span>
     <button type="button" onclick="addExpenseRow()" class="btn-green-modern">
       ➕ Add Expense
     </button>
   </div>
 
 </div>
-<!-- ===== EXPENSE PREMIUM POLISH ===== -->
-<style>/* ===== HEADER GLASS ===== */
-.expense-header{
-  background:linear-gradient(180deg,#faf5ff,#ffffff);
-  backdrop-filter:blur(6px);
-  box-shadow:0 4px 12px rgba(0,0,0,.04);
-}
 
-/* ===== ROW FEEL ===== */
-.expense-row{
-  transition:all .18s ease;
-}
-/* ===== EXPENSE ROW ===== */
+<!-- ================= STYLE ================= -->
+<style>
 .expense-row:hover{
   background:linear-gradient(to right,#faf5ff,#ffffff);
   transform:scale(1.002);
   transition:.15s ease;
 }
 
-/* ===== OWNER SELECT ===== */
 .owner-select{
   background:linear-gradient(180deg,#ffffff,#faf5ff);
 }
 
-/* ===== AMOUNT FIELD ===== */
 .amount-field{
   background:linear-gradient(180deg,#ffffff,#f3e8ff);
   color:#6b21a8;
   font-weight:800;
 }
-/* ===== DELETE BUTTON ===== */
-.premium-delete{
-  border-radius:10px;
-  padding:6px 10px;
-  font-weight:900;
-  transition:.2s;
-}
 
-.premium-delete:hover{
-  transform:scale(1.12);
-}
-
-/* ===== MOBILE ===== */
 @media (max-width:768px){
   .expense-row{
     min-width:860px;
@@ -142,32 +124,14 @@
 }
 </style>
 
-<!-- ===== SAFE TOGGLE HELPER ===== -->
+<!-- ================= SCRIPT ================= -->
 <script>
-if (typeof toggleSection === "undefined") {
-  function toggleSection(el){
-    const card = el.nextElementSibling;
-    const arrow = el.querySelector(".section-arrow");
 
-    if (!card) return;
-
-    card.classList.toggle("hidden");
-
-    if (arrow) {
-      arrow.style.transform =
-        card.classList.contains("hidden") ? "rotate(-90deg)" : "rotate(0deg)";
-    }
-  }
-}
-
-
-/* ================= EXPENSE INDEX ================= */
 let expenseIndex = {{ other_expenses|length|default:0 }};
 
-/* ================= ADD EXPENSE ROW ================= */
+/* ===== ADD ROW ===== */
 function addExpenseRow(){
   const container = document.getElementById("expenseRows");
-  if (!container) return;
 
   const row = document.createElement("div");
   row.className = "table-row-modern expense-row";
@@ -184,29 +148,34 @@ function addExpenseRow(){
     <input name="expense_title_${expenseIndex}"
            class="table-input-modern">
 
-    <select name="expense_owner_${expenseIndex}"
-            class="table-input-modern owner-select"
-            onchange="validateExpenseBalance(this.closest('.expense-row').querySelector('[name^=expense_amount_]'))">
-      <option value="">Select</option>
-      {% for oc in owner_cash_entries %}
-        <option value="{{ oc.id }}"
-                data-balance="{{ oc.balance|default:oc.amount }}">
-          {{ oc.owner.name }}
-        </option>
-      {% endfor %}
-    </select>
+    <div>
+      <select name="expense_owner_${expenseIndex}"
+              class="table-input-modern owner-select"
+              onchange="handleOwnerChange(this)">
+        <option value="" disabled selected hidden>Choose Owner</option>
+
+        {% for oc in owner_cash_entries %}
+          <option value="{{ oc.id }}"
+                  data-balance="{{ oc.balance|default:oc.amount }}">
+            {{ oc.owner.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <div class="text-xs text-gray-500 balance-preview"></div>
+    </div>
 
     <input name="expense_amount_${expenseIndex}"
-       value="0"
-       class="table-input-modern money amount-field"
-       oninput="validateExpenseBalance(this); updateLiveGrandTotal?.()">
+           value="0"
+           class="table-input-modern money amount-field"
+           oninput="validateExpenseBalance(this)">
 
     <input name="expense_notes_${expenseIndex}"
            class="table-input-modern">
 
     <div class="flex justify-center">
       <button type="button"
-        onclick="this.closest('.expense-row').remove(); updateLiveGrandTotal?.();"
+        onclick="this.closest('.expense-row').remove()"
         class="delete-btn-modern">
         ✕
       </button>
@@ -214,43 +183,54 @@ function addExpenseRow(){
   `;
 
   container.appendChild(row);
-
-  // focus first field
-  row.querySelector("input")?.focus();
-
   expenseIndex++;
 }
 
-/* ================= OWNER CASH VALIDATION ================= */
+/* ===== OWNER CHANGE ===== */
+function handleOwnerChange(select){
 
+  const row = select.closest(".expense-row");
+  const preview = row.querySelector(".balance-preview");
+
+  const option = select.selectedOptions[0];
+  const balance = Number(option.dataset.balance || 0);
+
+  preview.textContent = `Available: ₹${balance.toLocaleString("en-IN")}`;
+
+  const amountInput = row.querySelector('[name^="expense_amount_"]');
+  validateExpenseBalance(amountInput);
+}
+
+/* ===== VALIDATION (NEGATIVE ALLOWED) ===== */
 function validateExpenseBalance(amountInput){
 
   const row = amountInput.closest(".expense-row");
-  if (!row) return;
-
   const ownerSelect = row.querySelector('[name^="expense_owner_"]');
-  if (!ownerSelect) return;
 
-  const selectedOption = ownerSelect.selectedOptions[0];
-  if (!selectedOption) return;
-
-  // 🔥 SAFE BALANCE PARSE
-  const balanceRaw = selectedOption.dataset.balance || "0";
-  const balance = Number(String(balanceRaw).replace(/,/g,'')) || 0;
-
-  const amount = Number(amountInput.value || 0);
-
-  // remove old warning
-  amountInput.classList.remove("ring-2","ring-red-400");
-
-  // 🚨 IMPORTANT: must check owner selected
   if (!ownerSelect.value) return;
 
-  if (amount > balance){
-    alert(`⚠️ Amount exceeds owner cash.\nAvailable: ₹${balance.toLocaleString("en-IN")}`);
+  const option = ownerSelect.selectedOptions[0];
+  const balance = Number(option.dataset.balance || 0);
+  const amount = Number(amountInput.value || 0);
+
+  const remaining = balance - amount;
+
+  amountInput.classList.remove("ring-2","ring-red-400","ring-green-400");
+
+  if (remaining < 0){
     amountInput.classList.add("ring-2","ring-red-400");
-    amountInput.focus();
+  } else {
+    amountInput.classList.add("ring-2","ring-green-400");
   }
+
+  amountInput.title = `After: ₹${remaining.toLocaleString("en-IN")}`;
+}
+
+/* ===== TOGGLE ===== */
+function toggleSection(el){
+  const card = el.nextElementSibling;
+  if (!card) return;
+  card.classList.toggle("hidden");
 }
 
 </script>

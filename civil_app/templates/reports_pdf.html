@@ -196,7 +196,7 @@ tbody tr{
 
 <!-- ================= SUMMARY ================= -->
 <div class="summary">
-  <strong>Labour:</strong> ₹{{ total_labour }}
+  <strong>Labour & Allowance:</strong> ₹{{ total_labour }}
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <strong>Material:</strong> ₹{{ total_material }}
   &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -213,9 +213,10 @@ tbody tr{
       <th style="width:16%">Site</th>
       <th style="width:16%">Department</th>
       <th style="width:16%">Team / Party</th>
-      <th style="width:10%">Labour</th>
-      <th style="width:10%">Material</th>
-      <th style="width:10%">Advance</th>
+      <th style="width:9%">Labour</th>
+      <th style="width:9%">Allowance</th>
+      <th style="width:9%">Material</th>
+      <th style="width:9%">Advance</th>
       <th style="width:12%">Total</th>
     </tr>
   </thead>
@@ -228,13 +229,14 @@ tbody tr{
       <td class="dept">{{ r.department }}</td>
       <td>{{ r.team }}</td>
       <td class="right money">₹{{ r.labour }}</td>
+      <td class="right money">₹{{ r.allowance|default:0 }}</td>
       <td class="right money">₹{{ r.material }}</td>
       <td class="right money">₹{{ r.advance }}</td>
       <td class="right money"><strong>₹{{ r.total }}</strong></td>
     </tr>
     {% empty %}
     <tr>
-      <td colspan="8" class="center" style="padding:20px;color:#9ca3af;">
+      <td colspan="9" class="center" style="padding:20px;color:#9ca3af;">
         No records found for selected period
       </td>
     </tr>
@@ -243,7 +245,8 @@ tbody tr{
     <!-- TOTAL -->
     <tr class="total-row">
       <td colspan="4">TOTAL</td>
-      <td class="right">₹{{ total_labour }}</td>
+      <td colspan="2" class="center">₹{{ total_labour }}</td>
+      
       <td class="right">₹{{ total_material }}</td>
       <td class="right">₹{{ total_advance }}</td>
       <td class="right grand">₹{{ grand_total }}</td>

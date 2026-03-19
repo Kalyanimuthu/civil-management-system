@@ -51,6 +51,7 @@
         <tr>
           <th class="text-left">Team</th>
           <th>Advance</th>
+          <th>Allowance</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -60,6 +61,7 @@
             onclick="openBill('civil', {{ c.team__id }}, '{{ c.team__name|escapejs }}')">
           <td class="link">{{ c.team__name }}</td>
           <td class="amount-red">₹{{ c.total_advance|default:0 }}</td>
+          <td class="amount-blue">₹{{ c.total_allowance|default:0 }}</td>
           <td class="amount-green">₹{{ c.total_amount }}</td>
         </tr>
         {% empty %}
@@ -78,6 +80,7 @@
         <tr>
           <th class="text-left">Department</th>
           <th>Advance</th>
+          <th>Allowance</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -87,6 +90,7 @@
             onclick="openBill('dept', {{ d.department_id }}, '{{ d.department__name|escapejs }}')">
           <td class="link">{{ d.department__name }}</td>
           <td class="amount-red">₹{{ d.total_advance|default:0 }}</td>
+          <td class="amount-blue">₹{{ d.total_allowance|default:0 }}</td>
           <td class="amount-green">₹{{ d.total_amount }}</td>
         </tr>
         {% empty %}
@@ -105,6 +109,7 @@
         <tr>
           <th class="text-left">Agent</th>
           <th>Advance</th>
+          <th>Allowance</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -114,6 +119,7 @@
             onclick="openBill('material', '{{ m.agent_name|escapejs }}', '{{ m.agent_name|escapejs }}')">
           <td class="link">{{ m.agent_name }}</td>
           <td class="amount-red">₹{{ m.total_advance|default:0 }}</td>
+          <td class="amount-blue">₹0</td>
           <td class="amount-green">₹{{ m.total_amount }}</td>
         </tr>
         {% empty %}
@@ -132,6 +138,7 @@
         <tr>
           <th class="text-left">Expense</th>
           <th>Advance</th>
+          <th>Allowance</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -141,6 +148,7 @@
             onclick="openBill('expense', '{{ e.title|escapejs }}', '{{ e.title|escapejs }}')">
           <td class="link">{{ e.title }}</td>
           <td class="amount-red">₹{{ e.total_advance|default:0 }}</td>
+          <td class="amount-blue">₹0</td>
           <td class="amount-green">₹{{ e.total_amount }}</td>
         </tr>
         {% empty %}
@@ -176,18 +184,20 @@
     </div>
 
     <div class="modal-table-wrap">
-  <table class="bill-table">
-      <thead>
-        <tr>
-          <th>Site</th>
-          <th>Owner</th>
-          <th>Advance</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="modalBody"></tbody>
-    </table>
-  </div>
+      <table class="bill-table">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>Owner</th>
+            <th>Advance</th>
+            <th>Allowance Type</th>
+            <th>Allowance</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="modalBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -201,7 +211,9 @@ function openBill(type, id, title) {
   const pdfLink = document.getElementById("pdfLink");
 
   titleEl.innerText = title;
-  body.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
+
+  // ✅ loading (6 columns now)
+  body.innerHTML = "<tr><td colspan='6'>Loading...</td></tr>";
 
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -209,6 +221,7 @@ function openBill(type, id, title) {
   let apiUrl = "";
   let pdfUrl = "";
 
+  // ✅ API routing
   if (type === "civil") {
     apiUrl = `/api/bill/civil/${id}/`;
     pdfUrl = `/bill/team/${id}/`;
@@ -229,51 +242,87 @@ function openBill(type, id, title) {
     pdfUrl = `/bill/expense/${encodeURIComponent(id)}/`;
   }
 
+  // ✅ PDF link
   pdfLink.href = `${pdfUrl}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&pdf=1`;
 
+  // ✅ Fetch data
   fetch(`${apiUrl}?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}`)
     .then(res => res.json())
     .then(data => {
 
-      // 🔥 supports BOTH old + new API
       const rows = Array.isArray(data) ? data : (data.rows || []);
       const totals = data.team_total || {};
 
+      // ✅ No data
       if (!rows.length) {
-        body.innerHTML = "<tr><td colspan='4'>No records</td></tr>";
+        body.innerHTML = "<tr><td colspan='6'>No records</td></tr>";
         return;
       }
 
       let html = "";
 
+      // ✅ Rows loop
       rows.forEach(r => {
+
+        const site = r.site__name || r.site || '-';
+        const owner = r.site__owner__name || '-';
+        const advance = r.advance ?? 0;
+        const allowanceType = r.allowance_type || '-';
+        const allowance = r.allowance ?? 0;
+        const total = r.total || 0;
+
         html += `
           <tr>
-            <td>${r.site__name || r.site || '-'}</td>
-            <td>${r.site__owner__name || '-'}</td>
-            <td class="text-red-600">₹${r.advance ?? 0}</td>
-            <td class="font-bold text-green-700">₹${r.total || 0}</td>
+            <td>${site}</td>
+            <td>${owner}</td>
+
+            <td class="text-red-600">₹${advance}</td>
+
+            <td>
+              <span class="px-2 py-1 rounded bg-slate-100 text-xs font-semibold">
+                ${allowanceType}
+              </span>
+            </td>
+
+            <td class="text-blue-600">₹${allowance}</td>
+
+            <td class="font-bold text-green-700">₹${total}</td>
           </tr>
         `;
       });
 
-      // team total (only if exists)
-      if (totals && (totals.advance_total || totals.grand_total)) {
+      // ✅ Team total row
+      if (totals && (totals.advance_total || totals.grand_total || totals.allowance_total)) {
+
         html += `
           <tr class="bg-slate-100 font-extrabold">
             <td colspan="2">TEAM TOTAL</td>
-            <td class="text-red-700 text-right">₹${totals.advance_total || 0}</td>
-            <td class="text-green-800">₹${totals.grand_total || 0}</td>
+
+            <td class="text-red-700 text-right">
+              ₹${totals.advance_total || 0}
+            </td>
+
+            <td></td>
+
+            <td class="text-blue-700">
+              ₹${totals.allowance_total || 0}
+            </td>
+
+            <td class="text-green-800">
+              ₹${totals.grand_total || 0}
+            </td>
           </tr>
         `;
       }
 
       body.innerHTML = html;
     })
+
     .catch(() => {
-      body.innerHTML = "<tr><td colspan='4'>Error loading data</td></tr>";
+      body.innerHTML = "<tr><td colspan='6'>Error loading data</td></tr>";
     });
 }
+
 
 function closeModal(){
   const modal = document.getElementById("billModal");
@@ -397,25 +446,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
 /* column sizing (main tables) */
 .bill-table th:nth-child(1),
-.bill-table td:nth-child(1){
-  width:50%;
-  text-align:left;
-}
+.bill-table td:nth-child(1){ width:40%; text-align:left; }
 
 .bill-table th:nth-child(2),
-.bill-table td:nth-child(2){
-  width:25%;
-  text-align:right;
-}
+.bill-table td:nth-child(2){ width:20%; text-align:right; }
 
 .bill-table th:nth-child(3),
-.bill-table td:nth-child(3){
-  width:25%;
-  text-align:right;
-}
+.bill-table td:nth-child(3){ width:20%; text-align:right; }
+
+.bill-table th:nth-child(4),
+.bill-table td:nth-child(4){ width:20%; text-align:right; }
 
 /* ================= ROW STATES ================= */
-
+.amount-blue{
+  color:#2563eb;
+  font-weight:800;
+}
 .row-click{
   cursor:pointer;
   transition:.15s ease;
@@ -455,6 +501,29 @@ document.addEventListener("DOMContentLoaded", function () {
   border-radius:18px;
 }
 
+/* prevent breaking */
+#billModal .bill-table td{
+  white-space: nowrap;
+}
+
+/* give total column more space */
+#billModal .bill-table th:nth-child(6),
+#billModal .bill-table td:nth-child(6){
+  width: 24%;
+  text-align:right;
+}
+
+/* slightly reduce others */
+#billModal .bill-table th:nth-child(4),
+#billModal .bill-table td:nth-child(4){
+  width: 15%;
+}
+
+#billModal .bill-table th:nth-child(5),
+#billModal .bill-table td:nth-child(5){
+  width: 15%;
+  
+}
 /* scroll wrapper */
 .modal-table-wrap{
   width:100%;

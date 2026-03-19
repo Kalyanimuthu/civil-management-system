@@ -99,13 +99,23 @@ table{
   margin-top:14px;
   table-layout:fixed;
 }
-
+thead th:first-child{
+  background:#111827;
+  color:#ffffff;
+  font-weight:800;
+  font-size:9px;
+  text-transform:uppercase;
+  text-align:left;
+  padding:7px 5px;
+  border:1px solid #000;
+}
 thead th{
   background:#111827;
   color:#ffffff;
   font-weight:800;
   font-size:9px;
   text-transform:uppercase;
+  text-align:right;
   padding:7px 5px;
   border:1px solid #000;
 }
@@ -192,6 +202,8 @@ tbody tr{
   <strong class="grand">
     Team Advance: ₹{{ advance_total }}
     &nbsp;&nbsp;|&nbsp;&nbsp;
+    Allowance: ₹{{ allowance_total }}
+    &nbsp;&nbsp;|&nbsp;&nbsp;
     Team Total: ₹{{ grand_total }}
   </strong>
 </div>
@@ -200,8 +212,9 @@ tbody tr{
 <table>
   <thead>
     <tr>
-      <th style="width:60%">Site</th>
-      <th style="width:20%">Advance</th>
+      <th style="width:50%">Site</th>
+      <th style="width:15%">Advance</th>
+      <th style="width:15%">Allowance</th> <!-- NEW -->
       <th style="width:20%">Total</th>
     </tr>
   </thead>
@@ -211,11 +224,12 @@ tbody tr{
     <tr>
       <td class="site">{{ r.site }}</td>
       <td class="right money">₹{{ r.advance }}</td>
+      <td class="right money">₹{{ r.allowance }}</td> <!-- NEW -->
       <td class="right money">₹{{ r.total }}</td>
     </tr>
     {% empty %}
     <tr>
-      <td colspan="3" class="center" style="padding:18px;color:#9ca3af;">
+      <td colspan="4" class="center" style="padding:18px;color:#9ca3af;">
         No records found
       </td>
     </tr>
@@ -224,6 +238,7 @@ tbody tr{
     <tr class="total-row">
       <td>TEAM TOTAL</td>
       <td class="right">₹{{ advance_total }}</td>
+      <td class="right">₹{{ allowance_total }}</td> <!-- NEW -->
       <td class="right grand">₹{{ grand_total }}</td>
     </tr>
   </tbody>

@@ -85,7 +85,7 @@ margin:0;
 
 }
 .table95{
-width:95%;
+width:90%;
 border-collapse:collapse;
 table-layout:fixed;
 margin:0;
@@ -128,7 +128,7 @@ color:#374151;
 /* ===== COLUMN WIDTHS ===== */
 
 .col-name{
-width:55%;
+width:40%;
 }
 
 .col-money{
@@ -208,10 +208,11 @@ color:#6b7280;
 
 <thead>
 <tr>
-<th class="col-name">Team / Site</th>
-<th class="col-money">Labour</th>
-<th class="col-money">Advance</th>
-<th class="col-money">Net Total</th>
+  <th class="col-name">Team / Site</th>
+  <th class="col-money">Labour</th>
+  <th class="col-money">Advance</th>
+  <th class="col-money">Allowance</th> <!-- NEW -->
+  <th class="col-money">Net Total</th>
 </tr>
 </thead>
 
@@ -220,19 +221,21 @@ color:#6b7280;
 {% for team in civil_rows %}
 
 <tr class="group">
-<td>{{ team.name }}</td>
-<td class="money">₹{{ team.labour|intcomma }}</td>
-<td class="money advance">₹{{ team.advance|intcomma }}</td>
-<td class="money total">₹{{ team.total|intcomma }}</td>
+  <td>{{ team.name }}</td>
+  <td class="money">₹{{ team.labour|intcomma }}</td>
+  <td class="money advance">₹{{ team.advance|intcomma }}</td>
+  <td class="money">₹{{ team.allowance|intcomma }}</td> <!-- NEW -->
+  <td class="money total">₹{{ team.total|intcomma }}</td>
 </tr>
 
 {% for s in team.sites %}
 
 <tr class="child">
-<td>{{ s.site }}</td>
-<td class="money">₹{{ s.labour|intcomma }}</td>
-<td class="money advance">₹{{ s.advance|intcomma }}</td>
-<td class="money total">₹{{ s.total|intcomma }}</td>
+  <td>{{ s.site }}</td>
+  <td class="money">₹{{ s.labour|intcomma }}</td>
+  <td class="money advance">₹{{ s.advance|intcomma }}</td>
+  <td class="money">₹{{ s.allowance|intcomma }}</td> <!-- NEW -->
+  <td class="money total">₹{{ s.total|intcomma }}</td>
 </tr>
 
 {% endfor %}
@@ -258,10 +261,11 @@ color:#6b7280;
 
 <thead>
 <tr>
-<th class="col-name">Department / Site</th>
-<th class="col-money">Labour</th>
-<th class="col-money">Advance</th>
-<th class="col-money">Net Total</th>
+  <th class="col-name">Department / Site</th>
+  <th class="col-money">Labour</th>
+  <th class="col-money">Advance</th>
+  <th class="col-money">Allowance</th> <!-- NEW -->
+  <th class="col-money">Net Total</th>
 </tr>
 </thead>
 
@@ -270,19 +274,21 @@ color:#6b7280;
 {% for d in dept_rows %}
 
 <tr class="group">
-<td>{{ d.name }}</td>
-<td class="money">₹{{ d.labour|intcomma }}</td>
-<td class="money advance">₹{{ d.advance|intcomma }}</td>
-<td class="money total">₹{{ d.total|intcomma }}</td>
+  <td>{{ d.name }}</td>
+  <td class="money">₹{{ d.labour|intcomma }}</td>
+  <td class="money advance">₹{{ d.advance|intcomma }}</td>
+  <td class="money">₹{{ d.allowance|intcomma }}</td> <!-- NEW -->
+  <td class="money total">₹{{ d.total|intcomma }}</td>
 </tr>
 
 {% for s in d.sites %}
 
 <tr class="child">
-<td>{{ s.site }}</td>
-<td class="money">₹{{ s.labour|intcomma }}</td>
-<td class="money advance">₹{{ s.advance|intcomma }}</td>
-<td class="money total">₹{{ s.total|intcomma }}</td>
+  <td>{{ s.site }}</td>
+  <td class="money">₹{{ s.labour|intcomma }}</td>
+  <td class="money advance">₹{{ s.advance|intcomma }}</td>
+  <td class="money">₹{{ s.allowance|intcomma }}</td> <!-- NEW -->
+  <td class="money total">₹{{ s.total|intcomma }}</td>
 </tr>
 
 {% endfor %}

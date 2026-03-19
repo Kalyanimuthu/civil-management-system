@@ -58,6 +58,7 @@
   <!-- FULL DAY RATE -->
   <td class="text-center">
     <input type="number"
+          min="0"
            name="full"
            value="{{ r.full_day_rate }}"
            form="dept-form-{{ r.id }}"
@@ -73,6 +74,7 @@
   <input type="hidden" name="rate_id" value="{{ r.id }}">
 
   <input type="number"
+         min="0"
          name="full"
          value="{{ r.full_day_rate }}"
          class="rate-input"

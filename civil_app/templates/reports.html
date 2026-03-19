@@ -149,11 +149,13 @@ Filters
       <table class="modern-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Site</th>
-            <th>Department</th>
-            <th>Team</th>
+            <th class="text-left">Date</th>
+            <th class="text-left">Site</th>
+            <th class="text-left">Department</th>
+            <th class="text-left">Team</th>
             <th class="text-right">Labour</th>
+            <th class="text-right">Allowance Type</th>
+            <th class="text-right">Allowance</th>
             <th class="text-right">Material</th>
             <th class="text-right">Advance</th>
             <th class="text-right">Total</th>
@@ -168,6 +170,8 @@ Filters
             <td>{{ r.department }}</td>
             <td>{{ r.team }}</td>
             <td class="text-right text-orange-600">₹{{ r.labour }}</td>
+            <td class="text-center text-orange-600">{{ r.allowance_type }}</td>
+            <td class="text-right text-orange-600">₹{{ r.allowance }}</td>
             <td class="text-right text-blue-600">₹{{ r.material }}</td>
             <td class="text-right text-red-500">₹{{ r.advance }}</td>
             <td class="text-right font-bold text-green-700">₹{{ r.total }}</td>
