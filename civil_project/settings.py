@@ -90,11 +90,14 @@ WSGI_APPLICATION = 'civil_project.wsgi.application'
 # }
 
 
+import os
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.parse(
-        "postgresql://postgres:kalyani123!123@db.cjqdicxayeyqmvvlhyls.supabase.co:5432/postgres"
+    'default': dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
     )
 }
 
