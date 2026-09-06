@@ -432,10 +432,10 @@ def site_detail(request, site_id):
             except Team.DoesNotExist:
                 continue
 
-            mf = int(request.POST.get(f"mason_full_{team_id}") or 0)
-            hf = int(request.POST.get(f"helper_full_{team_id}") or 0)
-            mh = int(request.POST.get(f"mason_half_{team_id}") or 0)
-            hh = int(request.POST.get(f"helper_half_{team_id}") or 0)
+            mf = int(float(request.POST.get(f"mason_full_{team_id}") or 0))
+            hf = int(float(request.POST.get(f"helper_full_{team_id}") or 0))
+            mh = int(float(request.POST.get(f"mason_half_{team_id}") or 0))
+            hh = int(float(request.POST.get(f"helper_half_{team_id}") or 0))
 
             mason_full_amount = float(request.POST.get(f"mason_full_amount_{team_id}") or 0)
             mason_half_amount = float(request.POST.get(f"mason_half_amount_{team_id}") or 0)
@@ -721,22 +721,25 @@ def reports(request):
     dept_id = request.GET.get("department")
     material_only = request.GET.get("material") == "yes"
 
-    sites = Site.objects.all()
-    teams = Team.objects.all()
-    departments = Department.objects.all()
+    sites = Site.objects.all().order_by("name")
+    teams = Team.objects.all().order_by("name")
+    departments = Department.objects.all().order_by("name")
 
     rows = []
 
     total_labour = 0
     total_material = 0
+    total_expense = 0
     total_advance = 0
 
-    # ===================== CIVIL =====================
+    # =====================================================
+    # ===================== CIVIL =========================
+    # =====================================================
     if not material_only and not dept_id:
 
         civil_qs = CivilDailyWork.objects.filter(
             date__range=[from_date, to_date]
-        )
+        ).select_related("site", "team")
 
         if site_id:
             civil_qs = civil_qs.filter(site_id=site_id)
@@ -748,147 +751,315 @@ def reports(request):
 
             labour = r.labour_amount or 0
             allowance = r.extra_allowance or 0
-            allowance_type = r.allowance_type
-            adv = r.advance_amount or 0
+            advance = r.advance_amount or 0
 
-            total = labour + allowance - adv
+            gross = labour + allowance
+
+            # Stored total already follows labour + allowance - advance
+            total = max(gross - advance, 0)
 
             rows.append({
+                "type": "Civil",
                 "date": r.date,
                 "site": r.site,
                 "department": "Civil",
-                "team": r.team.name,
+                "team": r.team.name if r.team else "-",
+
+                # Civil manpower
+                "mason_full": r.mason_full or 0,
+                "mason_half": r.mason_half or 0,
+                "helper_full": r.helper_full or 0,
+                "helper_half": r.helper_half or 0,
+
+                # Labour
                 "labour": labour,
-                "allowance": allowance,
+
+                # Allowance
                 "allowance_type": r.allowance_type or "-",
-                "material": 0,
-                "advance": adv,
+                "allowance": allowance,
+
+                # Material
+                "material_name": "-",
+                "quantity": 0,
+                "unit": "-",
+                "rate": 0,
+
+                # Advance / Total
+                "advance": advance,
+
+                # Expense
+                "expense_title": "-",
+                "owner": "-",
+                "notes": "",
+
                 "total": total,
             })
 
-            total_labour += labour + allowance
-            total_advance += adv
+            total_labour += gross
+            total_advance += advance
 
-    # ===================== DEPARTMENT =====================
+    # =====================================================
+    # ================== DEPARTMENT =======================
+    # =====================================================
     if not material_only and not team_id:
-        dept_qs = DepartmentWork.objects.filter(date__range=[from_date, to_date])
+
+        dept_qs = DepartmentWork.objects.filter(
+            date__range=[from_date, to_date]
+        ).select_related("site", "department")
 
         if site_id:
             dept_qs = dept_qs.filter(site_id=site_id)
+
         if dept_id:
             dept_qs = dept_qs.filter(department_id=dept_id)
 
         for d in dept_qs:
-            total = d.labour_amount - (d.advance_amount or 0)
+
+            labour = d.labour_amount or 0
+            advance = d.advance_amount or 0
+
+            total = labour - advance
 
             rows.append({
+                "type": "Department",
                 "date": d.date,
                 "site": d.site,
-                "department": d.department.name,
+                "department": d.department.name if d.department else "-",
                 "team": "-",
-                "labour": d.labour_amount,
+
+                # Civil manpower
+                "mason_full": 0,
+                "mason_half": 0,
+                "helper_full": 0,
+                "helper_half": 0,
+
+                # Department manpower
+                "full_day_count": d.full_day_count or 0,
+                "half_day_count": d.half_day_count or 0,
+                "full_day_rate": d.full_day_rate or 0,
+                "half_day_rate": d.half_day_rate or 0,
+
+                # Labour
+                "labour": labour,
+
+                # Allowance
+                "allowance_type": "-",
                 "allowance": 0,
-                "material": 0,
-                "advance": d.advance_amount or 0,
+
+                # Material
+                "material_name": "-",
+                "quantity": 0,
+                "unit": "-",
+                "rate": 0,
+
+                # Advance
+                "advance": advance,
+
+                # Expense
+                "expense_title": "-",
+                "owner": "-",
+                "notes": "",
+
                 "total": total,
             })
 
-            total_labour += d.labour_amount
-            total_advance += d.advance_amount or 0
+            total_labour += labour
+            total_advance += advance
 
-    # ===================== MATERIAL =====================
+    # =====================================================
+    # ===================== MATERIAL ======================
+    # =====================================================
     if material_only or (not team_id and not dept_id):
-        material_qs = MaterialEntry.objects.filter(date__range=[from_date, to_date])
+
+        material_qs = MaterialEntry.objects.filter(
+            date__range=[from_date, to_date]
+        ).select_related("site")
 
         if site_id:
             material_qs = material_qs.filter(site_id=site_id)
 
         for m in material_qs:
-            adv = m.advance or 0
-            net = (m.total or 0) - adv
+
+            quantity = m.quantity or 0
+            rate = m.rate or 0
+            advance = m.advance or 0
+
+            # Gross material amount
+            gross = quantity * rate
+
+            # m.total is already net amount after advance
+            total = m.total or max(gross - advance, 0)
 
             rows.append({
+                "type": "Material",
                 "date": m.date,
                 "site": m.site,
                 "department": "Material",
                 "team": m.agent_name or "-",
+
+                # Civil manpower
+                "mason_full": 0,
+                "mason_half": 0,
+                "helper_full": 0,
+                "helper_half": 0,
+
+                # Department manpower
+                "full_day_count": 0,
+                "half_day_count": 0,
+                "full_day_rate": 0,
+                "half_day_rate": 0,
+
+                # Labour
                 "labour": 0,
+
+                # Allowance
+                "allowance_type": "-",
                 "allowance": 0,
-                "material": m.total,
-                "advance": adv,
-                "total": net,
+
+                # Material
+                "material_name": m.name or "-",
+                "quantity": quantity,
+                "unit": m.unit or "-",
+                "rate": rate,
+                "material": gross,
+
+                # Advance
+                "advance": advance,
+
+                # Expense
+                "expense_title": "-",
+                "owner": "-",
+                "notes": "",
+
+                # Net total
+                "total": total,
             })
 
-            total_material += m.total
-            total_advance += adv
+            total_material += gross
+            total_advance += advance
 
-    # ===================== EXPENSE =====================
+    # =====================================================
+    # ===================== EXPENSE =======================
+    # =====================================================
     if not material_only and not team_id and not dept_id:
+
         expense_qs = OtherExpense.objects.filter(
             date__range=[from_date, to_date]
-        )
+        ).select_related("site", "owner")
 
         if site_id:
             expense_qs = expense_qs.filter(site_id=site_id)
 
         for e in expense_qs:
+
+            amount = e.amount or 0
+
             rows.append({
+                "type": "Expense",
                 "date": e.date,
                 "site": e.site,
                 "department": "Expense",
-                "team": e.title or "-",
+                "team": "-",
+
+                # Civil manpower
+                "mason_full": 0,
+                "mason_half": 0,
+                "helper_full": 0,
+                "helper_half": 0,
+
+                # Department manpower
+                "full_day_count": 0,
+                "half_day_count": 0,
+                "full_day_rate": 0,
+                "half_day_rate": 0,
+
+                # Labour
                 "labour": 0,
+
+                # Allowance
+                "allowance_type": "-",
                 "allowance": 0,
+
+                # Material
+                "material_name": "-",
+                "quantity": 0,
+                "unit": "-",
+                "rate": 0,
                 "material": 0,
+
+                # Advance
                 "advance": 0,
-                "total": e.amount or 0,
+
+                # Expense
+                "expense_title": e.title or "-",
+                "owner": e.owner.name if e.owner else "-",
+                "notes": e.notes or "",
+
+                "expense": amount,
+                "total": amount,
             })
 
-            # IMPORTANT
-            total_material += e.amount or 0
+            total_expense += amount
 
-    # ================= SORT =================
+    # =====================================================
+    # ======================= SORT =========================
+    # =====================================================
+
     rows = sorted(
         rows,
         key=lambda x: (
             x["date"],
-            (x["site"].name if x["site"] else ""),
-            (x["department"] or ""),
-            (x["team"] or ""),
+            x["site"].name if x["site"] else "",
+            x["department"],
+            x["team"],
         )
     )
 
-    grand_total = total_labour + total_material - total_advance
+    # =====================================================
+    # ===================== GRAND TOTAL ===================
+    # =====================================================
 
-    # ================= SUMMARY =================
-    
+    grand_total = (
+        total_labour
+        + total_material
+        + total_expense
+        - total_advance
+    )
+
+    # =====================================================
+    # ===================== SUMMARY =======================
+    # =====================================================
+
     team_site_totals = defaultdict(lambda: defaultdict(float))
     dept_site_totals = defaultdict(lambda: defaultdict(float))
     material_site_totals = defaultdict(lambda: defaultdict(float))
 
     for r in rows:
-        site = r["site"].name
+
+        site_name = r["site"].name if r["site"] else "-"
 
         if r["department"] == "Civil":
-            team_site_totals[r["team"]][site] += r["total"]
+            team_site_totals[r["team"]][site_name] += r["total"]
 
         elif r["department"] == "Material":
-            material_site_totals["Material"][site] += r["total"]
+            material_site_totals["Material"][site_name] += r["total"]
 
         elif r["department"] == "Expense":
-            material_site_totals["Expense"][site] += r["total"]
+            material_site_totals["Expense"][site_name] += r["total"]
 
         else:
-            dept_site_totals[r["department"]][site] += r["total"]
+            dept_site_totals[r["department"]][site_name] += r["total"]
 
     return render(request, "reports.html", {
         "sites": sites,
         "teams": teams,
         "departments": departments,
+
         "rows": rows,
 
         "total_labour": total_labour,
         "total_material": total_material,
+        "total_expense": total_expense,
         "total_advance": total_advance,
         "grand_total": grand_total,
 
@@ -898,12 +1069,12 @@ def reports(request):
 
         "from_date": from_date,
         "to_date": to_date,
+
         "selected_site": site_id,
         "selected_team": team_id,
         "selected_department": dept_id,
         "selected_material": request.GET.get("material"),
     })
-
 
 @login_required
 @admin_required
@@ -2332,9 +2503,9 @@ def bill_expense_pdf(request, name):
 @login_required
 def api_day_full_detail(request):
 
-    from_date = parse_date(request.GET.get("date"))
+    selected_date = parse_date(request.GET.get("date"))
 
-    if not from_date:
+    if not selected_date:
         return JsonResponse({"sites": []})
 
     sites = Site.objects.all().order_by("name")
@@ -2343,74 +2514,162 @@ def api_day_full_detail(request):
 
     for site in sites:
 
-        # ================= CIVIL =================
+        # =================================================
+        # ===================== CIVIL =====================
+        # =================================================
+
         civil_qs = CivilDailyWork.objects.filter(
             site=site,
-            date=from_date
-        )
+            date=selected_date
+        ).select_related("team")
 
-        civil_rows = [
-            {
-                "team": c.team.name,
-                "mason_full": c.mason_full,
-                "mason_half": c.mason_half,
-                "helper_full": c.helper_full,
-                "helper_half": c.helper_half,
-            }
-            for c in civil_qs
-        ]
+        civil_rows = []
 
-        # ================= MATERIAL =================
-        material_qs = MaterialEntry.objects.filter(
-            site=site,
-            date=from_date
-        )
+        for c in civil_qs:
 
-        material_rows = [
-            {
-                "agent": m.agent_name,
-                "qty": m.quantity,   # correct field
-            }
-            for m in material_qs
-        ]
+            labour = c.labour_amount or 0
+            allowance = c.extra_allowance or 0
+            advance = c.advance_amount or 0
 
-        # ================= DEPARTMENT =================
+            total = max(
+                labour + allowance - advance,
+                0
+            )
+
+            civil_rows.append({
+                "team": c.team.name if c.team else "-",
+
+                "mason_full": c.mason_full or 0,
+                "mason_half": c.mason_half or 0,
+                "helper_full": c.helper_full or 0,
+                "helper_half": c.helper_half or 0,
+
+                "labour": labour,
+
+                "allowance_type": c.allowance_type or "-",
+                "allowance": allowance,
+
+                "advance": advance,
+                "total": total,
+            })
+
+        # =================================================
+        # ================== DEPARTMENT ===================
+        # =================================================
+
         dept_qs = DepartmentWork.objects.filter(
             site=site,
-            date=from_date
+            date=selected_date
+        ).select_related("department")
+
+        dept_rows = []
+
+        for d in dept_qs:
+
+            labour = d.labour_amount or 0
+            advance = d.advance_amount or 0
+
+            dept_rows.append({
+                "department": (
+                    d.department.name
+                    if d.department else "-"
+                ),
+
+                "full": d.full_day_count or 0,
+                "half": d.half_day_count or 0,
+
+                "full_rate": d.full_day_rate or 0,
+                "half_rate": d.half_day_rate or 0,
+
+                "labour": labour,
+                "advance": advance,
+
+                "total": d.total_amount or (
+                    labour - advance
+                ),
+            })
+
+        # =================================================
+        # ==================== MATERIAL ====================
+        # =================================================
+
+        material_qs = MaterialEntry.objects.filter(
+            site=site,
+            date=selected_date
         )
 
-        dept_rows = [
-            {
-                "department": d.department.name,
-                "full": d.full_day_count,
-                "half": d.half_day_count,
-            }
-            for d in dept_qs
-        ]
+        material_rows = []
 
-        # ================= EXPENSE =================
+        for m in material_qs:
+
+            quantity = m.quantity or 0
+            rate = m.rate or 0
+            advance = m.advance or 0
+
+            gross = quantity * rate
+
+            material_rows.append({
+                "agent": m.agent_name or "-",
+                "name": m.name or "-",
+
+                "qty": quantity,
+                "unit": m.unit or "-",
+                "rate": rate,
+
+                "gross": gross,
+                "advance": advance,
+
+                "total": m.total or max(
+                    gross - advance,
+                    0
+                ),
+            })
+
+        # =================================================
+        # ===================== EXPENSE ====================
+        # =================================================
+
         expense_qs = OtherExpense.objects.filter(
             site=site,
-            date=from_date
-        )
+            date=selected_date
+        ).select_related("owner")
 
-        expense_rows = [
-            {
-                "title": e.title,
-                "owner": e.owner.name if e.owner else "-",
-            }
-            for e in expense_qs
-        ]
+        expense_rows = []
 
-        # skip empty sites
-        if civil_rows or material_rows or dept_rows or expense_rows:
+        for e in expense_qs:
+
+            expense_rows.append({
+                "title": e.title or "-",
+
+                "owner": (
+                    e.owner.name
+                    if e.owner else "-"
+                ),
+
+                "amount": e.amount or 0,
+                "notes": e.notes or "",
+            })
+
+        # =================================================
+        # ===================== RESULT =====================
+        # =================================================
+
+        if (
+            civil_rows
+            or material_rows
+            or dept_rows
+            or expense_rows
+        ):
+
             result.append({
                 "site": site.name,
+
                 "civil": civil_rows,
-                "material": material_rows,
                 "department": dept_rows,
+                "material": material_rows,
                 "expense": expense_rows,
             })
 
-    return JsonResponse({"sites": result})
+    return JsonResponse({
+        "sites": result
+    })
