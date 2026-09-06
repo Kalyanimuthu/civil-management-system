@@ -437,11 +437,22 @@ def site_detail(request, site_id):
             mh = int(request.POST.get(f"mason_half_{team_id}") or 0)
             hh = int(request.POST.get(f"helper_half_{team_id}") or 0)
 
+            mason_full_amount = float(request.POST.get(f"mason_full_amount_{team_id}") or 0)
+            mason_half_amount = float(request.POST.get(f"mason_half_amount_{team_id}") or 0)
+            helper_full_amount = float(request.POST.get(f"helper_full_amount_{team_id}") or 0)
+            helper_half_amount = float(request.POST.get(f"helper_half_amount_{team_id}") or 0)
+
             adv = float(request.POST.get(f"advance_{team_id}") or 0)
             extra = float(request.POST.get(f"extra_{team_id}") or 0)
             allowance_type = request.POST.get(f"allowance_type_{team_id}") or ""
 
-            labour = calculate_civil_labour(team, mf, hf, mh, hh, work_date)
+            labour = (
+                mason_full_amount
+                + mason_half_amount
+                + helper_full_amount
+                + helper_half_amount
+            )
+
             total = max(labour + extra - adv, 0)
 
             if not any([mf, hf, mh, hh, adv, extra, allowance_type]):

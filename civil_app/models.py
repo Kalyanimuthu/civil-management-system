@@ -65,6 +65,12 @@ class CivilDailyWork(models.Model):
     helper_full = models.IntegerField(default=0)
     helper_half = models.IntegerField(default=0)
 
+    mason_full = models.FloatField(default=0)
+    mason_half = models.FloatField(default=0)
+    
+    helper_full = models.FloatField(default=0)
+    helper_half = models.FloatField(default=0)
+
     advance_amount = models.FloatField(default=0)
 
     labour_amount = models.FloatField(default=0)
