@@ -207,7 +207,15 @@ class="h-9 sm:h-10 rounded-lg shadow">
 <a href="/sites/" class="nav-top {% if '/sites' in request.path %}active-top{% endif %}">
 🏗 Sites
 </a>
+<a href="{% url 'team_entry' %}" class="team-entry-link">
+    <span class="link-icon">👷</span>
 
+    <span class="link-content">
+        <strong>Team Entry</strong>
+        
+    </span>
+
+</a>
 <a href="{% url 'reports' %}" class="nav-top {% if 'reports' in request.path %}active-top{% endif %}">
 📊 Reports
 </a>

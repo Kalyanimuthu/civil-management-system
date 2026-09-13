@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Team Entry</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            max-width: 1450px;
+            margin: auto;
+            padding: 28px;
+        }
+
+        /* Header */
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 20px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-icon {
+            width: 55px;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            border-radius: 15px;
+            font-size: 26px;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+        }
+
+        .page-title h1 {
+            font-size: 27px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .page-title p {
+            margin-top: 4px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .date-badge {
+            background: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+
+        /* Messages */
+
+        .message {
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            border-radius: 10px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            font-size: 14px;
+        }
+
+        /* Main Card */
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-header-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 20px;
+        }
+
+        .card-header h2 {
+            font-size: 19px;
+            color: #0f172a;
+        }
+
+        .card-header p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        /* Form */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            height: 44px;
+            padding: 0 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            background: #fff;
+            color: #1e293b;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Labour Boxes */
+
+        .labour-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .labour-box h3 {
+            font-size: 15px;
+            margin-bottom: 16px;
+            color: #334155;
+        }
+
+        .labour-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+        }
+
+        /* Buttons */
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 9px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            box-shadow: 0 5px 14px rgba(37, 99, 235, 0.22);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Table */
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .entries-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 950px;
+        }
+
+        .entries-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 15px 14px;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .entries-table thead th:first-child {
+            border-left: 1px solid #e2e8f0;
+            border-top-left-radius: 10px;
+        }
+
+        .entries-table thead th:last-child {
+            border-right: 1px solid #e2e8f0;
+            border-top-right-radius: 10px;
+        }
+
+        .entries-table tbody td {
+            padding: 15px 14px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            background: white;
+        }
+
+        .entries-table tbody tr:hover td {
+            background: #f8fbff;
+        }
+
+        .team-name {
+            font-weight: 700;
+            color: #1d4ed8;
+        }
+
+        .site-name {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .count-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .total-amount {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 7px;
+            background: #dcfce7;
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .empty-row {
+            padding: 35px !important;
+            color: #94a3b8 !important;
+            font-size: 14px !important;
+        }
+
+        /* Responsive */
+
+        @media (max-width: 1000px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .labour-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-wrapper {
+                padding: 15px;
+            }
+
+            .card {
+                padding: 17px;
+                border-radius: 13px;
+            }
+
+            .form-grid,
+            .labour-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title h1 {
+                font-size: 22px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page-wrapper">
+
+    <!-- Header -->
+    <div class="page-header">
+
+        <div class="page-title">
+            <div class="title-icon">👷</div>
+
+            <div>
+                <h1>Team Entry</h1>
+                <p>Manage team labour and site-wise daily work details</p>
+            </div>
+        </div>
+
+        <div class="date-badge">
+            📅 {{ work_date|date:"d M Y" }}
+        </div>
+
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+        <div class="message">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <!-- Entry Form -->
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Basic Details -->
+        <div class="card">
+
+            <div class="card-header">
+                <div class="card-header-icon">📋</div>
+
+                <div>
+                    <h2>Basic Details</h2>
+                    <p>Select the work date, team and site</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="work_date">Work Date</label>
+
+                    <input
+                        type="date"
+                        id="work_date"
+                        name="date"
+                        value="{{ work_date|date:'Y-m-d' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="team">Team</label>
+
+                    <select name="team" id="team" required>
+                        <option value="">Select Team</option>
+
+                        {% for team in teams %}
+                            <option value="{{ team.id }}">
+                                {{ team.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="site">Site</label>
+
+                    <select name="site" id="site" required>
+                        <option value="">Select Site</option>
+
+                        {% for site in sites %}
+                            <option value="{{ site.id }}">
+                                {{ site.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Labour Count -->
+        <div class="card">
+
+            <div class="card-header">
+                <div class="card-header-icon">👥</div>
+
+                <div>
+                    <h2>Labour Count</h2>
+                    <p>Enter full-day and half-day labour count</p>
+                </div>
+            </div>
+
+            <div class="labour-box">
+
+                <div class="labour-grid">
+
+                    <div class="form-group">
+                        <label for="mason_full">Mason Full</label>
+
+                        <input
+                            type="number"
+                            id="mason_full"
+                            name="mason_full"
+                            min="0"
+                            value="0"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mason_half">Mason Half</label>
+
+                        <input
+                            type="number"
+                            id="mason_half"
+                            name="mason_half"
+                            min="0"
+                            value="0"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="helper_full">Helper Full</label>
+
+                        <input
+                            type="number"
+                            id="helper_full"
+                            name="helper_full"
+                            min="0"
+                            value="0"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="helper_half">Helper Half</label>
+
+                        <input
+                            type="number"
+                            id="helper_half"
+                            name="helper_half"
+                            min="0"
+                            value="0"
+                        >
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Amount Details -->
+        <div class="card">
+
+            <div class="card-header">
+                <div class="card-header-icon">💰</div>
+
+                <div>
+                    <h2>Amount Details</h2>
+                    <p>Enter labour rate, advance and allowance details</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="mason_full_amount">
+                        Mason Full Amount
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="mason_full_amount"
+                        name="mason_full_amount"
+                        placeholder="Enter mason amount"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="helper_full_amount">
+                        Helper Full Amount
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="helper_full_amount"
+                        name="helper_full_amount"
+                        placeholder="Enter helper amount"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="advance_amount">
+                        Advance Amount
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="advance_amount"
+                        name="advance_amount"
+                        value="0"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="extra_allowance">
+                        Extra Allowance
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="extra_allowance"
+                        name="extra_allowance"
+                        value="0"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="allowance_type">
+                        Allowance Type
+                    </label>
+
+                    <input
+                        type="text"
+                        id="allowance_type"
+                        name="allowance_type"
+                        placeholder="Food / Travel / Other"
+                    >
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button
+                    type="reset"
+                    class="btn btn-secondary"
+                >
+                    Reset
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    💾 Save Team Entry
+                </button>
+            </div>
+
+        </div>
+
+    </form>
+
+    <!-- Saved Entries -->
+    <div class="card">
+
+        <div class="card-header">
+            <div class="card-header-icon">📊</div>
+
+            <div>
+                <h2>Saved Team Entries</h2>
+                <p>
+                    Site-wise team labour details for
+                    {{ work_date|date:"d M Y" }}
+                </p>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+
+            <table class="entries-table">
+
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Site</th>
+                        <th>Mason</th>
+                        <th>Helper</th>
+                        <th>Labour Amount</th>
+                        <th>Advance</th>
+                        <th>Extra Allowance</th>
+                        <th>Total Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for entry in entries %}
+
+                        <tr>
+
+                            <td>
+                                <span class="team-name">
+                                    {{ entry.team.name }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="site-name">
+                                    {{ entry.site.name }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="count-badge">
+                                    Full: {{ entry.mason_full }}<br>
+                                    Half: {{ entry.mason_half }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="count-badge">
+                                    Full: {{ entry.helper_full }}<br>
+                                    Half: {{ entry.helper_half }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="amount">
+                                    ₹ {{ entry.labour_amount|floatformat:2 }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="amount">
+                                    ₹ {{ entry.advance_amount|floatformat:2 }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="amount">
+                                    ₹ {{ entry.extra_allowance|floatformat:2 }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="total-amount">
+                                    ₹ {{ entry.total_amount|floatformat:2 }}
+                                </span>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="8" class="empty-row">
+                                📭 No team entries found for this date.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

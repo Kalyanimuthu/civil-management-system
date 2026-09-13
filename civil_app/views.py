@@ -1,5 +1,7 @@
 import json
+from decimal import Decimal
 from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 from weasyprint import HTML
 from django.db.models.functions import Coalesce
 from civil_app.utils.pdf import render_to_pdf_weasy
@@ -17,10 +19,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Value, DecimalField, CharField, FloatField
 from django.contrib import messages
 from .models import (
-    Site, Team, Department,
+    Site, Team, TeamRate, Department,
     CivilDailyWork, DepartmentWork,
     TeamRate, DefaultRate, CivilAdvance, MaterialEntry, BillPayment, SiteDailyNote, OtherExpense, Owner, OwnerCashEntry
     )
+
+@require_POST
+def toggle_site_status(request, site_id):
+    site = get_object_or_404(Site, id=site_id)
+
+    site.is_active = request.POST.get("is_active") == "1"
+    site.save(update_fields=["is_active"])
+
+    return redirect("site_entry")
 
 def staff_required(view_func):
     return user_passes_test(lambda u: u.is_staff, login_url="login")(view_func)
@@ -240,6 +251,10 @@ def site_entry(request):
     week_end = week_start + timedelta(days=6)
 
     sites = Site.objects.all()
+
+    # Active projects count
+    active_count = Site.objects.filter(is_active=True).count()
+
     data = []
 
     for site in sites:
@@ -250,7 +265,6 @@ def site_entry(request):
             date__range=(week_start, week_end)
         ).aggregate(
             labour=Sum("labour_amount"),
-            
             advance=Sum("advance_amount"),
         )
 
@@ -282,7 +296,6 @@ def site_entry(request):
 
         # ===== VALUES =====
         civil_labour = civil["labour"] or 0
-        
         civil_adv_total = civil["advance"] or 0
 
         dept_labour = dept["labour"] or 0
@@ -314,7 +327,14 @@ def site_entry(request):
             "weekly_advance": weekly_advance,
         })
 
-    return render(request, "site_entry.html", {"sites": data})
+    return render(
+        request,
+        "site_entry.html",
+        {
+            "sites": data,
+            "active_count": active_count,
+        }
+    )
 
 # =========================================================
 # SITE MANAGEMENT
@@ -392,7 +412,9 @@ def site_detail(request, site_id):
     work_date = parse_date(raw_date) if raw_date else date.today()
     work_date = work_date or date.today()
 
-    teams = Team.objects.all()
+    teams = Team.objects.filter(
+        teamrate__isnull=False
+    ).distinct()
     departments = Department.objects.exclude(name="Civil")
 
     # ✅ OWNER
@@ -411,19 +433,20 @@ def site_detail(request, site_id):
     # =================================================
     if request.method == "POST":
 
-        # ================= CIVIL =================
+                # ================= CIVIL =================
         team_ids = set()
 
         for key in request.POST.keys():
             if key.startswith((
                 "mason_full_", "helper_full_",
                 "mason_half_", "helper_half_",
+                "mason_full_amount_", "helper_full_amount_",
                 "advance_", "extra_", "allowance_type_"
             )):
                 try:
                     team_id = int(key.split("_")[-1])
                     team_ids.add(team_id)
-                except:
+                except ValueError:
                     pass
 
         for team_id in team_ids:
@@ -432,30 +455,53 @@ def site_detail(request, site_id):
             except Team.DoesNotExist:
                 continue
 
-            mf = int(float(request.POST.get(f"mason_full_{team_id}") or 0))
-            hf = int(float(request.POST.get(f"helper_full_{team_id}") or 0))
-            mh = int(float(request.POST.get(f"mason_half_{team_id}") or 0))
-            hh = int(float(request.POST.get(f"helper_half_{team_id}") or 0))
-            
-            adv = float(request.POST.get(f"advance_{team_id}") or 0)
-            extra = float(request.POST.get(f"extra_{team_id}") or 0)
-            allowance_type = request.POST.get(f"allowance_type_{team_id}") or ""
-            
-            # Labour = count × rate
-            labour = calculate_civil_labour(
-                team,
-                mf,
-                hf,
-                mh,
-                hh,
-                work_date
+            mf = int(float(
+                request.POST.get(f"mason_full_{team_id}") or 0
+            ))
+            hf = int(float(
+                request.POST.get(f"helper_full_{team_id}") or 0
+            ))
+            mh = int(float(
+                request.POST.get(f"mason_half_{team_id}") or 0
+            ))
+            hh = int(float(
+                request.POST.get(f"helper_half_{team_id}") or 0
+            ))
+
+            # Edited amount from HTML input
+            mason_full_amount = Decimal(
+                request.POST.get(f"mason_full_amount_{team_id}") or "0"
             )
-            
-            total = max(labour + extra - adv, 0)
+            helper_full_amount = Decimal(
+                request.POST.get(f"helper_full_amount_{team_id}") or "0"
+            )
+
+            adv = Decimal(
+                request.POST.get(f"advance_{team_id}") or "0"
+            )
+            extra = Decimal(
+                request.POST.get(f"extra_{team_id}") or "0"
+            )
+
+            allowance_type = (
+                request.POST.get(f"allowance_type_{team_id}") or ""
+            )
+
+            # Labour = quantity × edited amount
+            labour = (
+                (mf * mason_full_amount)
+                + (hf * helper_full_amount)
+                + (mh * (mason_full_amount / Decimal("2")))
+                + (hh * (helper_full_amount / Decimal("2")))
+            )
+
+            total = max(labour + extra - adv, Decimal("0"))
 
             if not any([mf, hf, mh, hh, adv, extra, allowance_type]):
                 CivilDailyWork.objects.filter(
-                    site=site, team=team, date=work_date
+                    site=site,
+                    team=team,
+                    date=work_date
                 ).delete()
                 continue
 
@@ -468,6 +514,11 @@ def site_detail(request, site_id):
                     "helper_full": hf,
                     "mason_half": mh,
                     "helper_half": hh,
+
+                    # Save edited amounts
+                    "mason_full_amount": mason_full_amount,
+                    "helper_full_amount": helper_full_amount,
+
                     "labour_amount": labour,
                     "extra_allowance": extra,
                     "allowance_type": allowance_type,
@@ -2671,3 +2722,151 @@ def api_day_full_detail(request):
     return JsonResponse({
         "sites": result
     })
+
+@login_required
+@staff_required
+def team_entry(request):
+
+    raw_date = request.GET.get("date") or request.POST.get("date")
+    work_date = parse_date(raw_date) if raw_date else date.today()
+    work_date = work_date or date.today()
+
+    sites = Site.objects.filter(
+        is_active=True
+    ).order_by("name")
+
+    teams = Team.objects.filter(
+        teamrate__isnull=False
+    ).distinct().order_by("name")
+
+    if request.method == "POST":
+
+        site_id = request.POST.get("site")
+        team_id = request.POST.get("team")
+
+        if not site_id or not team_id:
+            messages.error(
+                request,
+                "Please select Site and Team."
+            )
+            return redirect("team_entry")
+
+        site = get_object_or_404(Site, id=site_id)
+        team = get_object_or_404(Team, id=team_id)
+
+        mf = int(float(
+            request.POST.get("mason_full") or 0
+        ))
+
+        mh = int(float(
+            request.POST.get("mason_half") or 0
+        ))
+
+        hf = int(float(
+            request.POST.get("helper_full") or 0
+        ))
+
+        hh = int(float(
+            request.POST.get("helper_half") or 0
+        ))
+
+        team_rate = get_team_rate(team, work_date)
+
+        if not team_rate:
+            messages.error(
+                request,
+                "இந்த Team-க்கு rate set செய்யப்படவில்லை."
+            )
+            return redirect("team_entry")
+
+        mason_full_amount = Decimal(
+            request.POST.get("mason_full_amount")
+            or str(team_rate.mason_full_rate)
+        )
+
+        helper_full_amount = Decimal(
+            request.POST.get("helper_full_amount")
+            or str(team_rate.helper_full_rate)
+        )
+
+        advance = Decimal(
+            request.POST.get("advance_amount") or "0"
+        )
+
+        extra = Decimal(
+            request.POST.get("extra_allowance") or "0"
+        )
+
+        allowance_type = (
+            request.POST.get("allowance_type") or ""
+        )
+
+        labour = (
+            (mf * mason_full_amount)
+            + (mh * (mason_full_amount / Decimal("2")))
+            + (hf * helper_full_amount)
+            + (hh * (helper_full_amount / Decimal("2")))
+        )
+
+        total = max(
+            labour + extra - advance,
+            Decimal("0")
+        )
+
+        if not any([
+            mf, mh, hf, hh,
+            advance, extra,
+            allowance_type
+        ]):
+            CivilDailyWork.objects.filter(
+                site=site,
+                team=team,
+                date=work_date
+            ).delete()
+
+        else:
+            CivilDailyWork.objects.update_or_create(
+                site=site,
+                team=team,
+                date=work_date,
+                defaults={
+                    "mason_full": mf,
+                    "mason_half": mh,
+                    "helper_full": hf,
+                    "helper_half": hh,
+
+                    "mason_full_amount": mason_full_amount,
+                    "helper_full_amount": helper_full_amount,
+
+                    "advance_amount": advance,
+                    "labour_amount": labour,
+                    "extra_allowance": extra,
+                    "allowance_type": allowance_type,
+                    "total_amount": total,
+                }
+            )
+
+        messages.success(
+            request,
+            "Team Entry saved successfully."
+        )
+
+        return redirect(
+            f"/team-entry/?date={work_date}"
+        )
+
+    entries = (
+        CivilDailyWork.objects
+        .filter(date=work_date)
+        .select_related("site", "team")
+        .order_by("team__name", "site__name")
+    )
+
+    return render(request, "team_entry.html", {
+        "sites": sites,
+        "teams": teams,
+        "entries": entries,
+        "work_date": work_date,
+    })
+
+    

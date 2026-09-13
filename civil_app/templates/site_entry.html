@@ -1,492 +1,803 @@
 {% extends 'base.html' %}
+
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-6 py-10 space-y-10 animate-fade">
-
-<!-- ================= HEADER ================= -->
-
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-<div>
-<h2 class="text-3xl font-extrabold text-slate-900">🏗 Sites Dashboard</h2>
-<p class="text-sm text-gray-500 mt-1">Manage and monitor all construction sites</p>
-</div>
-
-<div class="flex gap-3">
-
-<input
-id="siteSearch"
-onkeyup="filterSites()"
-placeholder="Search sites..."
-class="w-full sm:w-64 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
-
-<button onclick="openAddSiteModal()" class="btn-add">
-➕ Add Site
-</button>
-
-</div>
-
-
-</div>
-
-
-
-<!-- ================= EMPTY ================= -->
-
-{% if not sites %}
-<div class="text-center py-20">
-<p class="text-gray-400 font-semibold">No sites added yet.</p>
-</div>
-{% endif %}
-
-
-<!-- ================= GRID ================= -->
-
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-{% for row in sites %}
-
-<div class="site-card" data-name="{{ row.site.name|lower }}">
-
-<!-- CARD HEADER -->
-
-<div class="site-header">
-
-<div class="title">
-
-<h3>{{ row.site.name }}</h3>
-
-<div class="flex gap-2">
-
-<button onclick="openEditSiteModal({{ row.site.id }}, '{{ row.site.name }}')" class="btn-edit">
-✏
-</button>
-
-<span class="status">Active</span>
-
-</div>
-
-</div>
-</div>
-
-
-<!-- CARD DETAILS -->
-
-<div class="site-details">
-
-<div class="metric blue">
-<span>This Week</span>
-<strong>₹{{ row.weekly_total|default:0 }}</strong>
-</div>
-
-<div class="metric red">
-<span>Advance</span>
-<strong>₹{{ row.weekly_advance|default:0 }}</strong>
-</div>
-
-
-<!-- ACTIONS -->
-
-<div class="actions">
-
-<a href="/site/{{ row.site.id }}/" class="btn-primary">
-Open
-</a>
-
-<form method="post"
-action="/delete-site/{{ row.site.id }}/"
-onsubmit="return confirm('Delete site?')">
-
-{% csrf_token %}
-
-<button type="submit" class="btn-danger">
-Delete
-</button>
-
-</form>
-
-</div>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-</div>
-
-<!-- ADD SITE MODAL -->
-
-<div id="addSiteModal" class="modal">
-
-<div class="modal-box">
-
-<h3>Add New Site</h3>
-
-<input id="newSiteName" placeholder="Site name">
-
-<div class="modal-actions">
-
-<button onclick="closeAddSiteModal()">Cancel</button>
-
-<button onclick="saveNewSite()" class="btn-primary">Create</button>
-
-</div>
-
-</div>
-
-</div>
-
-
-
-<!-- EDIT SITE MODAL -->
-
-<div id="editSiteModal" class="modal">
-
-<div class="modal-box">
-
-<h3>Edit Site</h3>
-
-<input id="editSiteName">
-
-<input type="hidden" id="editSiteId">
-
-<div class="modal-actions">
-
-<button onclick="closeEditSiteModal()">Cancel</button>
-
-<button onclick="saveEditSite()" class="btn-primary">Save</button>
-
-</div>
-
-</div>
-
-</div>
-<!-- ================= STYLES ================= -->
-
 <style>
-.btn-add{
-background:#16a34a;
-color:white;
-padding:8px 14px;
-border-radius:8px;
-font-weight:700;
-font-size:13px;
+.status-select {
+    border: none;
+    outline: none;
+    padding: 7px 12px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
 }
 
-.btn-edit{
-background:#facc15;
-padding:4px 8px;
-border-radius:6px;
-font-size:12px;
+.active-select {
+    background: #dcfce7;
+    color: #15803d;
 }
 
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,.4);
-align-items:center;
-justify-content:center;
-z-index:50;
+.inactive-select {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+    .sites-page {
+        min-height: 100vh;
+        padding: 28px;
+        background: #f5f7fb;
+        color: #172033;
+    }
+
+    .sites-container {
+        max-width: 1400px;
+        margin: auto;
+    }
+
+    .sites-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    .page-title {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #7b8496;
+        margin-top: 6px;
+        font-size: 14px;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .search-box {
+        width: 250px;
+        padding: 13px 16px;
+        border: 1px solid #e2e7f0;
+        border-radius: 12px;
+        outline: none;
+        background: white;
+        font-size: 14px;
+    }
+
+    .search-box:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+    }
+
+    .btn-add {
+        border: none;
+        background: #2563eb;
+        color: white;
+        padding: 13px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .btn-add:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+    }
+
+    /* Summary Bento Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        background: white;
+        border: 1px solid #e7ebf3;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 8px 25px rgba(30, 41, 59, .04);
+    }
+
+    .summary-label {
+        color: #7b8496;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .summary-value {
+        display: block;
+        margin-top: 12px;
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    .summary-icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 20px;
+    }
+
+    .summary-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Sites Section */
+    .section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .section-heading h2 {
+        margin: 0;
+        font-size: 21px;
+        font-weight: 800;
+    }
+
+    .section-heading span {
+        color: #8a93a5;
+        font-size: 13px;
+    }
+
+    
+.site-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
 }
 
-.modal-box{
-background:white;
-padding:22px;
-border-radius:12px;
-width:300px;
-display:flex;
-flex-direction:column;
-gap:10px;
+.site-avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 22px;
+    box-shadow: inset 0 0 0 1px #dbeafe;
 }
 
-.modal-box input{
-border:1px solid #ddd;
-padding:8px;
-border-radius:6px;
+.site-name {
+    margin: 0;
+    color: #172033;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
-.modal-actions{
-display:flex;
-justify-content:flex-end;
-gap:10px;
+.site-label {
+    margin: 5px 0 0;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 500;
 }
-.animate-fade{
-animation:fadeIn .4s ease-out;
-}
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:translateY(0)}
-}
-
-/* ===== STATS ===== */
-
-.stat-card{
-background:white;
-border-radius:14px;
-padding:18px;
-border:1px solid #e5e7eb;
-box-shadow:0 10px 25px rgba(0,0,0,.05);
-display:flex;
-flex-direction:column;
-gap:6px;
+    .site-card {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #e8edf5;
+    border-radius: 22px;
+    padding: 24px;
+    min-height: 165px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    transition: all 0.25s ease;
+    overflow: hidden;
 }
 
-.stat-card span{
-font-size:12px;
-color:#6b7280;
+.site-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
 }
 
-.stat-card strong{
-font-size:22px;
-font-weight:900;
-color:#111827;
+.site-card:hover {
+    transform: translateY(-6px);
+    border-color: #bfdbfe;
+    box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
 }
 
+    .site-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
 
-/* ===== SITE CARD ===== */
+    .site-avatar {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 20px;
+        font-weight: 800;
+    }
 
-.site-card{
-position:relative;
-background:linear-gradient(145deg,#ffffff,#fffbeb);
-border-radius:18px;
-padding:20px;
-border:1px solid #fde68a;
-box-shadow:0 10px 30px rgba(0,0,0,.05);
-transition:.35s ease;
-display:flex;
-flex-direction:column;
-min-height:170px;
-overflow:hidden;
+    .site-name {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        word-break: break-word;
+    }
+
+    .site-label {
+        color: #9aa3b2;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .status {
+        padding: 6px 10px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 800;
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .site-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 24px 0;
+    }
+
+    .metric-box {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 14px;
+    }
+
+    .metric-box span {
+        display: block;
+        color: #8a93a5;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .metric-box strong {
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .metric-box.advance strong {
+        color: #dc2626;
+    }
+
+    .metric-box.weekly strong {
+        color: #2563eb;
+    }
+
+    .site-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 24px;
 }
 
-.site-card::before{
-content:"";
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:5px;
-background:linear-gradient(90deg,#facc15,#f97316);
+.btn-open {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    background: #172033;
+    color: white;
+    padding: 13px 15px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s ease;
 }
 
-.site-card:hover{
-transform:translateY(-6px);
-box-shadow:0 18px 45px rgba(0,0,0,.1);
+.btn-open:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
 }
 
-/* ===== HEADER ===== */
-
-.site-header h3{
-font-size:1.3rem;
-font-weight:800;
-color:#0f172a;
+.btn-edit,
+.btn-delete {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 17px;
+    transition: all 0.2s ease;
 }
 
-.title{
-display:flex;
-justify-content:space-between;
-align-items:center;
+.btn-edit {
+    background: #fff7ed;
+    color: #c2410c;
 }
 
-.status{
-font-size:11px;
-background:#ecfdf5;
-color:#047857;
-padding:3px 8px;
-border-radius:20px;
-font-weight:700;
+.btn-delete {
+    background: #fef2f2;
+    color: #dc2626;
 }
 
-/* ===== DETAILS ===== */
-
-.site-details{
-margin-top:14px;
-display:flex;
-flex-direction:column;
-gap:8px;
+.btn-edit:hover {
+    background: #ffedd5;
+    transform: translateY(-2px);
 }
 
-/* ===== METRICS ===== */
-
-.metric{
-display:flex;
-justify-content:space-between;
-padding:8px 10px;
-border-radius:10px;
-font-size:13px;
-font-weight:600;
+.btn-delete:hover {
+    background: #fee2e2;
+    transform: translateY(-2px);
 }
 
-.metric strong{
-font-weight:900;
-}
+    .empty-state {
+        grid-column: 1 / -1;
+        padding: 60px 20px;
+        text-align: center;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        color: #8a93a5;
+    }
 
-.metric.blue{
-background:#eff6ff;
-color:#1d4ed8;
-}
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(15, 23, 42, .55);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
 
-.metric.red{
-background:#fef2f2;
-color:#b91c1c;
-}
+    .modal-box {
+        width: 100%;
+        max-width: 430px;
+        background: white;
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .20);
+    }
 
-/* ===== ACTIONS ===== */
-.actions{
-margin-top:10px;
-display:flex;
-gap:8px;
-flex-wrap:wrap;
-}
+    .modal-box h3 {
+        margin: 0 0 20px;
+        font-size: 22px;
+    }
 
-/* ===== BUTTONS ===== */
+    .modal-box input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 13px;
+        border: 1px solid #dbe2ec;
+        border-radius: 10px;
+        outline: none;
+        margin-bottom: 15px;
+    }
 
-.btn-primary{
-background:#2563eb;
-color:white;
-padding:6px 14px;
-border-radius:8px;
-font-size:13px;
-font-weight:700;
-text-decoration:none;
-}
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
 
-.btn-primary:hover{
-background:#1d4ed8;
-}
+    .modal-actions button {
+        border: none;
+        padding: 11px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+    }
 
-.btn-danger{
-background:#dc2626;
-color:white;
-padding:6px 14px;
-border:none;
-border-radius:8px;
-font-size:13px;
-font-weight:700;
-cursor:pointer;
-}
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
 
-.btn-danger:hover{
-background:#b91c1c;
+    .btn-save {
+        background: #2563eb;
+        color: white;
+    }
+.sites-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
 }
-.site-card{
-cursor:pointer;
-}
-@media (max-width:640px){
+    @media (max-width: 1100px) {
+         .sites-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-.site-card{
-padding:16px;
-min-height:auto;
-}
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
 
-.site-header h3{
-font-size:1.1rem;
-}
+    @media (max-width: 700px) {
+        .sites-page {
+            padding: 18px;
+        }
 
-.metric{
-font-size:12px;
-padding:7px 8px;
-}
+        .sites-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
 
-.stat-card{
-padding:14px;
-}
+        .header-actions {
+            flex-direction: column;
+        }
 
-.stat-card strong{
-font-size:18px;
-}
+        .search-box {
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-}
+        .btn-add {
+            width: 100%;
+        }
 
+         .sites-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .site-card {
+        padding: 20px;
+    }
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
+<div class="sites-page">
+    <div class="sites-container">
 
-<!-- ================= SEARCH ================= -->
+        <!-- Header -->
+        <div class="sites-header">
+            <div>
+                <h1 class="page-title">Sites Overview</h1>
+                <p class="page-subtitle">
+                    Manage your construction projects in one place
+                </p>
+            </div>
+
+            <div class="header-actions">
+                <input
+                    type="text"
+                    id="siteSearch"
+                    class="search-box"
+                    placeholder="Search sites..."
+                    onkeyup="filterSites()"
+                >
+
+                <button class="btn-add" onclick="openAddSiteModal()">
+                    + Add Site
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-label">Total Sites</span>
+                    <div class="summary-icon">🏗️</div>
+                </div>
+                <strong class="summary-value">{{ sites|length }}</strong>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-label">Active Projects</span>
+                    <div class="summary-icon">✓</div>
+                </div>
+                <strong class="summary-value">
+    {{ active_count|default:0 }}
+</strong>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-label">Weekly Expense</span>
+                    <div class="summary-icon">₹</div>
+                </div>
+                <strong class="summary-value">
+                    ₹{{ total_weekly|default:0 }}
+                </strong>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-label">Total Advance</span>
+                    <div class="summary-icon">↗</div>
+                </div>
+                <strong class="summary-value">
+                    ₹{{ total_advance|default:0 }}
+                </strong>
+            </div>
+        </div>
+
+        <!-- Sites -->
+        <div class="section-heading">
+            <h2>Construction Sites</h2>
+            <span>All projects</span>
+        </div>
+
+        <div class="sites-grid" id="sitesGrid">
+
+            {% for row in sites %}
+            <div class="site-card" data-name="{{ row.site.name|lower }}">
+<div class="site-card-top">
+
+    <div class="site-heading">
+        <div class="site-avatar">
+            🏗️
+        </div>
+
+        <div>
+            <h3 class="site-name">
+                {{ row.site.name }}
+            </h3>
+
+            <p class="site-label">
+                Construction Project
+            </p>
+        </div>
+    </div>
+
+    <form method="post"
+          action="{% url 'toggle_site_status' row.site.id %}">
+        {% csrf_token %}
+
+        <select
+            name="is_active"
+            class="status-select {% if row.site.is_active %}active-select{% else %}inactive-select{% endif %}"
+            onchange="this.form.submit()">
+
+            <option value="1"
+                    {% if row.site.is_active %}selected{% endif %}>
+                Active
+            </option>
+
+            <option value="0"
+                    {% if not row.site.is_active %}selected{% endif %}>
+                Inactive
+            </option>
+
+        </select>
+    </form>
+
+</div>
+                
+                <!-- <div class="site-metrics">
+                    <div class="metric-box weekly">
+                        <span>This Week</span>
+                        <strong>₹{{ row.weekly_total|default:0 }}</strong>
+                    </div>
+
+                    <div class="metric-box advance">
+                        <span>Advance</span>
+                        <strong>₹{{ row.weekly_advance|default:0 }}</strong>
+                    </div>
+                </div> -->
+
+                <div class="site-actions">
+                    <a
+                        href="/site/{{ row.site.id }}/"
+                        class="btn-open"
+                    >
+                        Open Site →
+                    </a>
+
+                    <button
+                        class="btn-edit"
+                        onclick="openEditSiteModal(
+                            {{ row.site.id }},
+                            '{{ row.site.name|escapejs }}'
+                        )"
+                        title="Edit site"
+                    >
+                        ✎
+                    </button>
+
+                    <form
+                        method="post"
+                        action="/delete-site/{{ row.site.id }}/"
+                        onsubmit="return confirm('Delete this site?');"
+                    >
+                        {% csrf_token %}
+                        <button class="btn-delete" title="Delete site">
+                            🗑
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <h3>No sites found</h3>
+                <p>Click “Add Site” to create your first construction site.</p>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Add Site Modal -->
+<div class="modal" id="addSiteModal">
+    <div class="modal-box">
+        <h3>Add New Site</h3>
+
+        <input
+            type="text"
+            id="newSiteName"
+            placeholder="Enter site name"
+        >
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeAddSiteModal()">
+                Cancel
+            </button>
+
+            <button class="btn-save" onclick="saveNewSite()">
+                Save Site
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Site Modal -->
+<div class="modal" id="editSiteModal">
+    <div class="modal-box">
+        <h3>Edit Site</h3>
+
+        <input type="hidden" id="editSiteId">
+
+        <input
+            type="text"
+            id="editSiteName"
+            placeholder="Enter site name"
+        >
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeEditSiteModal()">
+                Cancel
+            </button>
+
+            <button class="btn-save" onclick="saveEditSite()">
+                Update Site
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
-function openAddSiteModal(){
-document.getElementById("addSiteModal").style.display="flex";
-}
+    function openAddSiteModal() {
+        document.getElementById("addSiteModal").style.display = "flex";
+        document.getElementById("newSiteName").focus();
+    }
 
-function closeAddSiteModal(){
-document.getElementById("addSiteModal").style.display="none";
-}
+    function closeAddSiteModal() {
+        document.getElementById("addSiteModal").style.display = "none";
+    }
 
-function openEditSiteModal(id,name){
+    function openEditSiteModal(id, name) {
+        document.getElementById("editSiteId").value = id;
+        document.getElementById("editSiteName").value = name;
+        document.getElementById("editSiteModal").style.display = "flex";
+        document.getElementById("editSiteName").focus();
+    }
 
-document.getElementById("editSiteId").value=id;
-document.getElementById("editSiteName").value=name;
+    function closeEditSiteModal() {
+        document.getElementById("editSiteModal").style.display = "none";
+    }
 
-document.getElementById("editSiteModal").style.display="flex";
+    function filterSites() {
+        const searchValue = document
+            .getElementById("siteSearch")
+            .value
+            .toLowerCase();
 
-}
+        document.querySelectorAll(".site-card").forEach(card => {
+            const siteName = card.dataset.name || "";
+            card.style.display = siteName.includes(searchValue)
+                ? "block"
+                : "none";
+        });
+    }
 
-function closeEditSiteModal(){
-document.getElementById("editSiteModal").style.display="none";
-}
+    async function saveNewSite() {
+        const name = document.getElementById("newSiteName").value.trim();
 
+        if (!name) {
+            alert("Please enter site name");
+            return;
+        }
 
-function saveNewSite(){
+        const response = await fetch("/add-site/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ name: name })
+        });
 
-const name=document.getElementById("newSiteName").value;
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Unable to add site");
+        }
+    }
 
-fetch("/add-site/",{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"X-CSRFToken":"{{ csrf_token }}"
-},
-body:JSON.stringify({name:name})
-})
-.then(r=>r.json())
-.then(data=>{
-location.reload();
-});
+    async function saveEditSite() {
+        const id = document.getElementById("editSiteId").value;
+        const name = document.getElementById("editSiteName").value.trim();
 
-}
+        if (!name) {
+            alert("Please enter site name");
+            return;
+        }
 
+        const response = await fetch(`/edit-site/${id}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ name: name })
+        });
 
-function saveEditSite(){
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Unable to update site");
+        }
+    }
 
-const id=document.getElementById("editSiteId").value;
-const name=document.getElementById("editSiteName").value;
+    window.onclick = function(event) {
+        const addModal = document.getElementById("addSiteModal");
+        const editModal = document.getElementById("editSiteModal");
 
-fetch(`/edit-site/${id}/`,{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"X-CSRFToken":"{{ csrf_token }}"
-},
-body:JSON.stringify({name:name})
-})
-.then(()=>{
-location.reload();
-});
+        if (event.target === addModal) {
+            closeAddSiteModal();
+        }
 
-}
-
-function filterSites(){
-
-const input=document.getElementById("siteSearch");
-const val=input.value.toLowerCase();
-
-document.querySelectorAll(".site-card").forEach(card=>{
-
-card.style.display =
-card.dataset.name.includes(val) ? "block" : "none";
-
-});
-
-}
-
+        if (event.target === editModal) {
+            closeEditSiteModal();
+        }
+    };
 </script>
-
 
 {% endblock %}

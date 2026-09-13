@@ -9,9 +9,11 @@ urlpatterns = [
 
     # ================= SITE =================
     path("sites/", views.site_entry, name="site_entry"),
-    
+    path("toggle-site-status/<int:site_id>/", views.toggle_site_status, name="toggle_site_status"),
     path("site/<int:site_id>/", views.site_detail, name="site_detail"),
     path("site/<int:site_id>/copy-previous/", views.copy_previous_day, name="copy_previous_day",),
+
+    path("team-entry/", views.team_entry, name="team_entry"),
 
     path("add-site/", views.add_site, name="add_site"),
     path("edit-site/<int:id>/", views.edit_site, name="edit_site"),
