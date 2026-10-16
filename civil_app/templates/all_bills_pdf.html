@@ -153,8 +153,8 @@ color:#065f46;
 }
 
 .sub_total{
-color:#34065f;
-font-size: medium;
+color:#06595f;
+font-size: small;
 }
 /* ===== GRAND TOTAL ===== */
 
@@ -282,7 +282,7 @@ color:#6b7280;
   <td class="money">₹{{ d.labour|intcomma }}</td>
   <td class="money advance">₹{{ d.advance|intcomma }}</td>
   <td class="money">₹{{ d.allowance|intcomma }}</td> <!-- NEW -->
-  <td class="money total">₹{{ d.total|intcomma }}</td>
+  <td class="money sub_total">₹{{ d.total|intcomma }}</td>
 </tr>
 
 {% for s in d.sites %}
@@ -332,7 +332,7 @@ color:#6b7280;
 <tr class="group">
 <td>{{ m.name }}</td>
 <td class="money advance">₹{{ m.advance|intcomma }}</td>
-<td class="money total">₹{{ m.total|intcomma }}</td>
+<td class="money sub_total">₹{{ m.total|intcomma }}</td>
 </tr>
 
 {% for s in m.sites %}
@@ -380,7 +380,7 @@ color:#6b7280;
 <tr class="group">
 <td>{{ s.site }}</td>
 <td>-</td>
-<td class="money total">₹{{ s.total|intcomma }}</td>
+<td class="money sub_total">₹{{ s.total|intcomma }}</td>
 </tr>
 
 {% for e in s.expenses %}
