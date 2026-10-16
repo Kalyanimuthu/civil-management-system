@@ -1198,8 +1198,8 @@ def reset_site_date(request, site_id):
 
     return redirect(f"/site/{site.id}/?date={selected_date}")
 
-def report_pdf(request):
 
+def report_pdf(request):
     today = date.today()
 
     from_date = parse_date(request.GET.get("from_date")) or today
@@ -1209,16 +1209,10 @@ def report_pdf(request):
     team_id = clean_id(request.GET.get("team"))
     dept_id = clean_id(request.GET.get("department"))
 
-    rows = []
-
-    total_labour = 0
-    total_material = 0
-    total_advance = 0
-
-    # ---------------- CIVIL ----------------
+    # ---------------- CIVIL - TEAM WISE ----------------
     civil_qs = CivilDailyWork.objects.filter(
         date__range=[from_date, to_date]
-    )
+    ).select_related("team", "site")
 
     if site_id:
         civil_qs = civil_qs.filter(site_id=site_id)
@@ -1226,34 +1220,55 @@ def report_pdf(request):
     if team_id:
         civil_qs = civil_qs.filter(team_id=team_id)
 
-    for r in civil_qs:
+    civil_rows = []
 
-        labour = r.labour_amount or 0
-        allowance = r.extra_allowance or 0
-        adv = r.advance_amount or 0
+    team_ids = civil_qs.values_list("team_id", flat=True).distinct()
 
-        labour_total = labour + allowance
-        total = labour_total - adv
+    for tid in team_ids:
+        team_qs = civil_qs.filter(team_id=tid)
+        first = team_qs.first()
 
-        rows.append({
-            "date": r.date,
-            "site": r.site.name,
-            "department": "Civil",
-            "team": r.team.name,
+        if not first:
+            continue
+
+        name = first.team.name if first.team else "-"
+
+        labour = sum((r.labour_amount or 0) for r in team_qs)
+        advance = sum((r.advance_amount or 0) for r in team_qs)
+        allowance = sum((r.extra_allowance or 0) for r in team_qs)
+
+        sites = []
+        site_ids = team_qs.values_list("site_id", flat=True).distinct()
+
+        for sid in site_ids:
+            sqs = team_qs.filter(site_id=sid)
+            site_obj = sqs.first().site
+
+            s_labour = sum((r.labour_amount or 0) for r in sqs)
+            s_advance = sum((r.advance_amount or 0) for r in sqs)
+            s_allowance = sum((r.extra_allowance or 0) for r in sqs)
+
+            sites.append({
+                "site": site_obj.name if site_obj else "-",
+                "labour": s_labour,
+                "advance": s_advance,
+                "allowance": s_allowance,
+                "total": s_labour + s_advance + s_allowance,
+            })
+
+        civil_rows.append({
+            "name": name,
             "labour": labour,
+            "advance": advance,
             "allowance": allowance,
-            "material": 0,
-            "advance": adv,
-            "total": total,
+            "total": labour + advance + allowance,
+            "sites": sites,
         })
 
-        total_labour += labour_total
-        total_advance += adv
-
-    # ---------------- DEPARTMENT ----------------
+    # ---------------- DEPARTMENT WISE ----------------
     dept_qs = DepartmentWork.objects.filter(
         date__range=[from_date, to_date]
-    )
+    ).select_related("department", "site")
 
     if site_id:
         dept_qs = dept_qs.filter(site_id=site_id)
@@ -1261,107 +1276,155 @@ def report_pdf(request):
     if dept_id:
         dept_qs = dept_qs.filter(department_id=dept_id)
 
-    for d in dept_qs:
+    dept_rows = []
 
-        labour = d.labour_amount or 0
-        adv = d.advance_amount or 0
-        total = labour - adv
+    department_ids = dept_qs.values_list(
+        "department_id", flat=True
+    ).distinct()
 
-        rows.append({
-            "date": d.date,
-            "site": d.site.name,
-            "department": d.department.name,
-            "team": "-",
+    for did in department_ids:
+        dqs = dept_qs.filter(department_id=did)
+        first = dqs.first()
+
+        if not first:
+            continue
+
+        name = first.department.name if first.department else "-"
+
+        labour = sum((r.labour_amount or 0) for r in dqs)
+        advance = sum((r.advance_amount or 0) for r in dqs)
+
+        sites = []
+        site_ids = dqs.values_list("site_id", flat=True).distinct()
+
+        for sid in site_ids:
+            sqs = dqs.filter(site_id=sid)
+            site_obj = sqs.first().site
+
+            s_labour = sum((r.labour_amount or 0) for r in sqs)
+            s_advance = sum((r.advance_amount or 0) for r in sqs)
+
+            sites.append({
+                "site": site_obj.name if site_obj else "-",
+                "labour": s_labour,
+                "advance": s_advance,
+                "allowance": 0,
+                "total": s_labour + s_advance,
+            })
+
+        dept_rows.append({
+            "name": name,
             "labour": labour,
+            "advance": advance,
             "allowance": 0,
-            "material": 0,
-            "advance": adv,
-            "total": total,
+            "total": labour + advance,
+            "sites": sites,
         })
 
-        total_labour += labour
-        total_advance += adv
-
-    # ---------------- MATERIAL ----------------
+    # ---------------- MATERIAL - AGENT WISE ----------------
     material_qs = MaterialEntry.objects.filter(
         date__range=[from_date, to_date]
-    )
+    ).select_related("site")
 
     if site_id:
         material_qs = material_qs.filter(site_id=site_id)
 
-    for m in material_qs:
+    material_rows = []
 
-        material_total = m.total or 0
-        adv = m.advance or 0
-        net = material_total - adv
+    agents = material_qs.values_list(
+        "agent_name", flat=True
+    ).distinct()
 
-        rows.append({
-            "date": m.date,
-            "site": m.site.name,
-            "department": "Material",
-            "team": m.agent_name or "-",
-            "labour": 0,
-            "allowance": 0,
-            "material": material_total,
-            "advance": adv,
-            "total": net,
+    for agent in agents:
+        aqs = material_qs.filter(agent_name=agent)
+
+        advance = sum((m.advance or 0) for m in aqs)
+        material_total = sum((m.total or 0) for m in aqs)
+
+        sites = []
+        site_ids = aqs.values_list("site_id", flat=True).distinct()
+
+        for sid in site_ids:
+            sqs = aqs.filter(site_id=sid)
+            site_obj = sqs.first().site
+
+            s_advance = sum((m.advance or 0) for m in sqs)
+            s_total = sum((m.total or 0) for m in sqs)
+
+            sites.append({
+                "site": site_obj.name if site_obj else "-",
+                "advance": s_advance,
+                "total": s_total + s_advance,
+            })
+
+        material_rows.append({
+            "name": agent or "-",
+            "advance": advance,
+            "total": material_total + advance,
+            "sites": sites,
         })
 
-        total_material += material_total
-        total_advance += adv
-
-    # ---------------- EXPENSE ----------------
+    # ---------------- OTHER EXPENSES - SITE WISE ----------------
     expense_qs = OtherExpense.objects.filter(
         date__range=[from_date, to_date]
-    )
+    ).select_related("site")
 
     if site_id:
         expense_qs = expense_qs.filter(site_id=site_id)
 
-    for e in expense_qs:
+    expense_rows = []
+    expense_site_ids = expense_qs.values_list(
+        "site_id", flat=True
+    ).distinct()
 
-        amt = e.amount or 0
+    for sid in expense_site_ids:
+        eqs = expense_qs.filter(site_id=sid)
+        first = eqs.first()
 
-        rows.append({
-            "date": e.date,
-            "site": e.site.name,
-            "department": "Expense",
-            "team": e.title or "-",
-            "labour": 0,
-            "allowance": 0,
-            "material": amt,
-            "advance": 0,
-            "total": amt,
+        if not first:
+            continue
+
+        site_obj = first.site
+        expenses = []
+
+        for e in eqs:
+            expenses.append({
+                "name": e.title or "-",
+                "owner": "-",
+                "total": e.amount or 0,
+            })
+
+        expense_rows.append({
+            "site": site_obj.name if site_obj else "-",
+            "total": sum((e.amount or 0) for e in eqs),
+            "expenses": expenses,
         })
 
-        total_material += amt
+    # ---------------- GRAND TOTAL ----------------
+    civil_total = sum(r["total"] for r in civil_rows)
+    dept_total = sum(r["total"] for r in dept_rows)
+    material_total = sum(r["total"] for r in material_rows)
+    expense_total = sum(r["total"] for r in expense_rows)
 
-    # ---------------- SORT ----------------
-    rows = sorted(
-        rows,
-        key=lambda x: (
-            x["date"],
-            x["site"],
-            x["department"],
-            x["team"],
-        )
+    grand_total = (
+        civil_total
+        + dept_total
+        + material_total
+        + expense_total
     )
 
-    grand_total = total_labour + total_material - total_advance
-
     context = {
-        "rows": rows,
+        "civil_rows": civil_rows,
+        "dept_rows": dept_rows,
+        "material_rows": material_rows,
+        "expense_rows": expense_rows,
         "from_date": from_date,
         "to_date": to_date,
-        "total_labour": total_labour,
-        "total_material": total_material,
-        "total_advance": total_advance,
         "grand_total": grand_total,
         "now": timezone.now(),
     }
 
-    return render_to_pdf_weasy("reports_pdf.html", context)
+    return render_to_pdf_weasy("all_bills_pdf.html", context)
 
 @login_required
 def all_bills(request):
