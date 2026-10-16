@@ -152,6 +152,10 @@ color:#b91c1c;
 color:#065f46;
 }
 
+.sub_total{
+color:#34065f;
+font-size: medium;
+}
 /* ===== GRAND TOTAL ===== */
 
 .grand{
@@ -225,7 +229,7 @@ color:#6b7280;
   <td class="money">₹{{ team.labour|intcomma }}</td>
   <td class="money advance">₹{{ team.advance|intcomma }}</td>
   <td class="money">₹{{ team.allowance|intcomma }}</td> <!-- NEW -->
-  <td class="money total">₹{{ team.total|intcomma }}</td>
+  <td class="money sub_total">₹{{ team.total|intcomma }}</td>
 </tr>
 
 {% for s in team.sites %}
